@@ -5,10 +5,16 @@ Project Description:
 
 
 
+Team Members  |         Contacts          
+------------- | ------------------------- 
+Anthony Silva | silvanth@oregonstate.edu  
+Devin Shook   | shookd@oregonstate.edu    
+Feifei Huang  | huangc6@oregonstate.edu   
 
-Team:              Contacts:                            Discord          
-  Anthony Silva  |  silvanth@oregonstate.edu    ---    
-  Devin Shook    |  shookd@oregonstate.edu      ---
-  Feifei Huang   |  huangc6@oregonstate.edu     --- 
 
-Response Expectations:...
+Discord replys: 24 ~ 48 hr response latest.
+
+Meetings:
+  - BiWeekly with TA
+  - Friday after 10am @ Library with Team
+  - Weekly discord meetings in evenings (after 6PM)
