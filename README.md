@@ -15,6 +15,6 @@ Feifei Huang  | huangc6@oregonstate.edu
 Discord replys: 24 ~ 48 hr response latest.
 
 Meetings:
-  - BiWeekly with TA
+  - BiWeekly with TA on Mondays @ 3:30pm
   - Friday after 10am @ Library with Team
   - Weekly discord meetings in evenings (after 6PM)
