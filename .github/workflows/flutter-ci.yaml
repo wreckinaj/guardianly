@@ -21,8 +21,9 @@ jobs:
       - name: Set up Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.0' # Adjust to your SDK version
+          flutter-version: '3.35.7' # or higher, to get Dart 3.6.x
           channel: 'stable'
+
 
       - name: Install dependencies
         run: flutter pub get
