@@ -1,0 +1,55 @@
+name: Flutter CI
+
+on:
+  pull_request:
+  push:
+    branches: [ main ]
+
+jobs:
+  analyze-test:
+    name: Analyze & Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.7'
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test --coverage
+
+  build-android:
+    name: Build Android
+    runs-on: ubuntu-latest
+    needs: analyze-test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.7'
+      - run: flutter pub get
+      - run: flutter build apk --release
+
+  build-ios:
+    name: Build iOS
+    runs-on: macos-latest
+    needs: analyze-test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.7'
+      - run: flutter pub get
+      - run: flutter build ipa --no-codesign
+
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
+    needs: analyze-test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.35.7'
+      - run: flutter pub get
+      - run: flutter build windows

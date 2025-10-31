@@ -1,0 +1,14 @@
+name: "CodeQL (Skipped for Flutter)"
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  skip:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Skip CodeQL (Not supported for Dart)
+        run: echo "CodeQL scanning skipped because Dart is not supported."
