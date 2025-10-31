@@ -39,7 +39,7 @@ jobs:
           if [ "${{ matrix.platform }}" == "android" ]; then
             flutter build apk --release
           elif [ "${{ matrix.platform }}" == "ios" ]; then
-            flutter build ios --no-codesign
+            flutter build ios
           elif [ "${{ matrix.platform }}" == "windows" ]; then
             flutter build windows
           fi
