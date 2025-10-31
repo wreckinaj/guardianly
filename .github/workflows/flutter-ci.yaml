@@ -6,40 +6,50 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
-    name: Analyze, Test & Build
+  analyze-test:
+    name: Analyze & Test
     runs-on: ubuntu-latest
-
-    strategy:
-      matrix:
-        platform: [android, ios, windows]
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.35.7' # or higher, to get Dart 3.6.x
-          channel: 'stable'
+          flutter-version: '3.24.0'
+      - run: flutter pub get
+      - run: flutter analyze
+      - run: flutter test --coverage
 
+  build-android:
+    name: Build Android
+    runs-on: ubuntu-latest
+    needs: analyze-test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+      - run: flutter pub get
+      - run: flutter build apk --release
 
-      - name: Install dependencies
-        run: flutter pub get
+  build-ios:
+    name: Build iOS
+    runs-on: macos-latest
+    needs: analyze-test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+      - run: flutter pub get
+      - run: flutter build ipa --no-codesign
 
-      - name: Lint & Analyze
-        run: flutter analyze
-
-      - name: Run Tests
-        run: flutter test --coverage
-
-      - name: Build for ${{ matrix.platform }}
-        run: |
-          if [ "${{ matrix.platform }}" == "android" ]; then
-            flutter build apk --release
-          elif [ "${{ matrix.platform }}" == "ios" ]; then
-            flutter build ios
-          elif [ "${{ matrix.platform }}" == "windows" ]; then
-            flutter build windows
-          fi
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
+    needs: analyze-test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.24.0'
+      - run: flutter pub get
+      - run: flutter build windows
