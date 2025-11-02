@@ -23,10 +23,9 @@ We follow the [Contributor Covenant](https://www.contributor-covenant.org/versio
 - **Git** and a GitHub account
 
 ### Setup
-```bash
-git clone https://github.com/wreckinaj/guardianly.git
+`git clone https://github.com/wreckinaj/guardianly.git
 cd guardianly
-flutter pub get
+flutter pub get`
 
 ### Environment Variables
 - Copy `.env.example` → `.env`
@@ -34,8 +33,8 @@ flutter pub get
 - `.env` is included in `.gitignore`.
 
 ### Running the App
-```bash
-flutter run
+
+`flutter run`
 
 ## Branching & Workflow
 
@@ -92,11 +91,11 @@ We enforce consistent style across all Flutter and Dart code.
 - **Linter:** Flutter analyzer  
   - Config file: `analysis_options.yaml`  
   - Run locally:
-    flutter analyze
+    `flutter analyze`
 
 - **Formatter:** Dart formatter  
   - Run locally:
-    dart format .
+    `dart format .`
 
 - PRs must have **zero lint errors** before merge.
 - Lint rules are declared in `analysis_options.yaml` (and we may reference `analysis_limits.yaml` for stricter project rules).
@@ -115,7 +114,7 @@ All code changes must include appropriate tests.
 - Integration tests for full app flows (where applicable)
 
 Run tests locally:
-    flutter test
+    `flutter test`
 
 Expectations:
 - All tests must pass before merge.
