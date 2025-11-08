@@ -1,0 +1,261 @@
+from flask import jsonify, request, Flask
+import requests
+import os
+import jwt
+import datetime
+from functools import wraps
+
+app = Flask(__name__)
+
+# Configuration
+MAPBOX_ACCESS_TOKEN = os.environ.get('MAPBOX_ACCESS_TOKEN', 'your_mapbox_token_here')
+SECRET_KEY = os.environ.get('SECRET_KEY', 'your_secret_key_here_change_in_production')
+
+# Mock user database (replace with real database in production)
+mock_users = {
+    "testuser": {
+        "password": "testpass123",
+        "user_id": "123",
+        "email": "test@guardianly.com"
+    },
+    "guardian": {
+        "password": "guardian123",
+        "user_id": "456",
+        "email": "guardian@guardianly.com"
+    }
+}
+
+mock_data = {
+    "user_id": "123",
+    "title": "Test Notification",
+    "message": "This is a mock push notification."
+}
+
+
+# Token verification decorator
+def token_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        token = request.headers.get('Authorization')
+        
+        if not token:
+            return jsonify({'error': 'Token is missing'}), 401
+        
+        try:
+            # Remove 'Bearer ' prefix if present
+            if token.startswith('Bearer '):
+                token = token[7:]
+            
+            data = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+            current_user = data['username']
+        except jwt.ExpiredSignatureError:
+            return jsonify({'error': 'Token has expired'}), 401
+        except jwt.InvalidTokenError:
+            return jsonify({'error': 'Invalid token'}), 401
+        
+        return f(current_user, *args, **kwargs)
+    
+    return decorated
+
+
+@app.route('/')
+def home():
+    return jsonify({
+        'message': 'Guardianly Backend API',
+        'endpoints': {
+            'login': '/api/login (POST)',
+            'register': '/api/register (POST)',
+            'push_notification': '/api/push (POST, requires auth)',
+            'geocoding': '/geocode?place=Corvallis OR',
+            'reverse_geocoding': '/reverse?lng=-123.262&lat=44.565',
+            'directions': '/directions?start=Corvallis,OR&end=Albany,OR'
+        }
+    })
+
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    """User login endpoint"""
+    data = request.get_json()
+    
+    if not data or not data.get('username') or not data.get('password'):
+        return jsonify({'error': 'Username and password required'}), 400
+    
+    username = data.get('username')
+    password = data.get('password')
+    
+    # Check if user exists and password matches
+    if username in mock_users and mock_users[username]['password'] == password:
+        # Generate JWT token
+        token = jwt.encode({
+            'username': username,
+            'user_id': mock_users[username]['user_id'],
+            'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
+        }, SECRET_KEY, algorithm="HS256")
+        
+        return jsonify({
+            'status': 'success',
+            'message': 'Login successful',
+            'token': token,
+            'user': {
+                'username': username,
+                'user_id': mock_users[username]['user_id'],
+                'email': mock_users[username]['email']
+            }
+        }), 200
+    
+    return jsonify({'error': 'Invalid username or password'}), 401
+
+
+@app.route('/api/register', methods=['POST'])
+def register():
+    """User registration endpoint"""
+    data = request.get_json()
+    
+    if not data or not data.get('username') or not data.get('password') or not data.get('email'):
+        return jsonify({'error': 'Username, password, and email required'}), 400
+    
+    username = data.get('username')
+    password = data.get('password')
+    email = data.get('email')
+    
+    # Check if user already exists
+    if username in mock_users:
+        return jsonify({'error': 'Username already exists'}), 409
+    
+    # Create new user (in production, hash the password!)
+    user_id = str(len(mock_users) + 1000)
+    mock_users[username] = {
+        'password': password,  # In production: use bcrypt or similar
+        'user_id': user_id,
+        'email': email
+    }
+    
+    return jsonify({
+        'status': 'success',
+        'message': 'User registered successfully',
+        'user': {
+            'username': username,
+            'user_id': user_id,
+            'email': email
+        }
+    }), 201
+
+
+@app.route('/api/push', methods=['POST'])
+@token_required
+def push_endpoint(current_user):
+    """Send push notification (requires authentication)"""
+    data = request.get_json()
+    print(f"Push notification from {current_user}:", data)
+    return jsonify({
+        "status": "success",
+        "message": "Notification pushed",
+        "user": current_user
+    }), 200
+
+
+@app.route('/geocode')
+def geocode():
+    """Forward geocoding - convert place name to coordinates"""
+    place = request.args.get('place', 'Corvallis OR')
+    
+    url = f'https://api.mapbox.com/geocoding/v5/mapbox.places/{place}.json'
+    params = {
+        'access_token': MAPBOX_ACCESS_TOKEN,
+        'limit': 5
+    }
+    
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        data = response.json()
+        
+        return jsonify({
+            'query': place,
+            'results': data.get('features', [])
+        })
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/reverse')
+def reverse_geocode():
+    """Reverse geocoding - convert coordinates to place name"""
+    lng = request.args.get('lng', '-123.262')
+    lat = request.args.get('lat', '44.565')
+    
+    url = f'https://api.mapbox.com/geocoding/v5/mapbox.places/{lng},{lat}.json'
+    params = {
+        'access_token': MAPBOX_ACCESS_TOKEN
+    }
+    
+    try:
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        data = response.json()
+        
+        return jsonify({
+            'coordinates': {'lng': lng, 'lat': lat},
+            'results': data.get('features', [])
+        })
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/directions')
+def directions():
+    """Get directions between two points"""
+    start = request.args.get('start', 'Corvallis,OR')
+    end = request.args.get('end', 'Albany,OR')
+    profile = request.args.get('profile', 'driving')  # driving, walking, cycling
+    
+    try:
+        # Geocode start location if it's not coordinates
+        if ',' in start and not start.replace(',', '').replace('.', '').replace('-', '').isdigit():
+            geocode_url = f'https://api.mapbox.com/geocoding/v5/mapbox.places/{start}.json'
+            geocode_params = {'access_token': MAPBOX_ACCESS_TOKEN, 'limit': 1}
+            start_response = requests.get(geocode_url, params=geocode_params)
+            start_response.raise_for_status()
+            start_coords = start_response.json()['features'][0]['geometry']['coordinates']
+            start_coords_str = f"{start_coords[0]},{start_coords[1]}"
+        else:
+            start_coords_str = start
+        
+        # Geocode end location if it's not coordinates
+        if ',' in end and not end.replace(',', '').replace('.', '').replace('-', '').isdigit():
+            geocode_url = f'https://api.mapbox.com/geocoding/v5/mapbox.places/{end}.json'
+            geocode_params = {'access_token': MAPBOX_ACCESS_TOKEN, 'limit': 1}
+            end_response = requests.get(geocode_url, params=geocode_params)
+            end_response.raise_for_status()
+            end_coords = end_response.json()['features'][0]['geometry']['coordinates']
+            end_coords_str = f"{end_coords[0]},{end_coords[1]}"
+        else:
+            end_coords_str = end
+        
+        # Get directions
+        url = f'https://api.mapbox.com/directions/v5/mapbox/{profile}/{start_coords_str};{end_coords_str}'
+        params = {
+            'access_token': MAPBOX_ACCESS_TOKEN,
+            'geometries': 'geojson',
+            'steps': 'true'
+        }
+        
+        response = requests.get(url, params=params)
+        response.raise_for_status()
+        data = response.json()
+        
+        return jsonify({
+            'start': start,
+            'end': end,
+            'profile': profile,
+            'routes': data.get('routes', [])
+        })
+    except requests.exceptions.RequestException as e:
+        return jsonify({'error': str(e)}), 500
+
+
+# Listener
+if __name__ == "__main__":
+    # Start the app to run on a port of your choosing
+    app.run(port=5000, debug=True)
