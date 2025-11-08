@@ -42,7 +42,7 @@ RUNNING THE SERVER
 
 2. Run the server:
    
-   python server.py
+   python server.py or python3 server.py
 
 3. The server will start on http://localhost:5000
    You should see output like:
@@ -70,7 +70,7 @@ Open your browser and visit:
   http://localhost:5000/directions?start=Portland,OR&end=Seattle,WA
 
 
-METHOD 2: POWERSHELL (all endpoints)
+METHOD 2: POWERSHELL / CURL (all endpoints)
 ------------------------------------
 
 1. TEST REGISTRATION:
@@ -85,7 +85,58 @@ METHOD 2: POWERSHELL (all endpoints)
    - Username: guardian, Password: guardian123
 
 3. TEST PUSH NOTIFICATION (requires authentication):
-   Invoke-WebRequest -Uri http://localhost:5000/api/push -Method POST -Headers @{Authorization="Bearer $token"} -ContentType "application/json" -Body '{"user_id":"123","title":"Alert","message":"Test notification"}'
+(Option way) Invoke-WebRequest -Uri http://localhost:5000/api/push -Method POST -Headers @{Authorization="Bearer $token"} -ContentType "application/json" -Body '{"user_id":"123","title":"Alert","message":"Test notification"}'
+
+   a) Send a push notification:
+      
+      curl -X POST http://127.0.0.1:5000/api/push \
+           -H "Content-Type: application/json" \
+           -H "Authorization: Bearer $token" \
+           -d '{"user_id":"123","title":"Alert","message":"Test notification"}'
+   
+      Response example:
+      {
+        "message": "Notification stored successfully",
+        "notification": {
+          "message": "Test notification",
+          "timestamp": "2025-11-08T01:37:25.905071",
+          "title": "Alert",
+          "user": "testuser"
+        },
+        "status": "success"
+      }
+   
+      b) Get current notification settings for the user:
+   
+      curl -X GET http://127.0.0.1:5000/api/notifications/settings \
+           -H "Authorization: Bearer $token"
+   
+      Response example:
+      {
+        "settings": {
+          "enabled_types": []
+        },
+        "status": "success",
+        "user": "testuser"
+      }
+   
+      c) Update notification settings:
+   
+      curl -X PUT http://127.0.0.1:5000/api/notifications/settings \
+           -H "Content-Type: application/json" \
+           -H "Authorization: Bearer $token" \
+           -d '{"enabled_types":["alerts","reminders"]}'
+   
+      Response example:
+      {
+        "message": "Notification settings updated",
+        "settings": {
+          "enabled_types": ["alerts","reminders"]
+        },
+        "status": "success",
+        "user": "testuser"
+      }
+
 
 4. TEST MAPBOX ENDPOINTS:
    
@@ -114,6 +165,8 @@ AUTHENTICATION ENDPOINTS:
 
 PROTECTED ENDPOINTS (requires JWT token):
 - POST /api/push           - Send push notification
+- GET  /api/notifications/settings - Get user's notification settings
+- PUT  /api/notifications/settings - Update user's notification settings
 
 
 TROUBLESHOOTING
