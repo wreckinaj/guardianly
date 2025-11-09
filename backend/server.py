@@ -31,6 +31,10 @@ mock_data = {
     "message": "This is a mock push notification."
 }
 
+mock_notification_settings = {
+    "123": {"enabled_types": ["alerts", "reminders", "promotions"]},
+    "456": {"enabled_types": ["alerts", "reminders"]}
+}
 
 # Token verification decorator
 def token_required(f):
@@ -66,6 +70,9 @@ def home():
             'login': '/api/login (POST)',
             'register': '/api/register (POST)',
             'push_notification': '/api/push (POST, requires auth)',
+            'get_notifications': '/api/notifications (GET, requires auth)',
+            'get_notification_settings': '/api/notifications/settings (GET, requires auth)',
+            'update_notification_settings': '/api/notifications/settings (PUT, requires auth)',
             'geocoding': '/geocode?place=Corvallis OR',
             'reverse_geocoding': '/reverse?lng=-123.262&lat=44.565',
             'directions': '/directions?start=Corvallis,OR&end=Albany,OR'
@@ -142,16 +149,71 @@ def register():
     }), 201
 
 
+# Store notifications in memory (mock database)
+notifications = []
+
+# Sends a notification
 @app.route('/api/push', methods=['POST'])
 @token_required
 def push_endpoint(current_user):
     """Send push notification (requires authentication)"""
     data = request.get_json()
-    print(f"Push notification from {current_user}:", data)
+    if not data or not data.get("title") or not data.get("message"):
+        return jsonify({"error": "Title and message are required"}), 400
+
+    note = {
+        "user": current_user,
+        "title": data["title"],
+        "message": data["message"],
+        "timestamp": datetime.datetime.utcnow().isoformat()
+    }
+    notifications.append(note)
+    print(f"[Notification] From {current_user}: {note}")
+
     return jsonify({
         "status": "success",
-        "message": "Notification pushed",
-        "user": current_user
+        "message": "Notification stored successfully",
+        "notification": note
+    }), 201
+
+# Retrieve all notifications
+@app.route('/api/notifications', methods=['GET'])
+@token_required
+def get_notifications(current_user):
+    """Retrieve all notifications for the authenticated user"""
+    user_notes = [n for n in notifications if n["user"] == current_user]
+    return jsonify({
+        "status": "success",
+        "count": len(user_notes),
+        "notifications": user_notes
+    }), 200
+
+# Get notification settings
+@app.route('/api/notifications/settings', methods=['GET'])
+@token_required
+def get_notification_settings(current_user):
+    settings = mock_notification_settings.get(current_user, {"enabled_types": []})
+    return jsonify({
+        "status": "success",
+        "user": current_user,
+        "settings": settings
+    }), 200
+
+# Update notification settings
+@app.route('/api/notifications/settings', methods=['PUT'])
+@token_required
+def update_notification_settings(current_user):
+    data = request.get_json()
+    enabled_types = data.get("enabled_types", [])
+    
+    # Save or update settings
+    mock_notification_settings[current_user] = {"enabled_types": enabled_types}
+    
+    return jsonify({
+        "status": "success",
+        "message": "Notification settings updated",
+        "user": current_user,
+        "settings": mock_notification_settings[current_user]
     }), 200
 
 
