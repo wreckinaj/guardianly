@@ -1,0 +1,5 @@
+HAZARD: Road Closure.
+Context: Check Mapbox API for 'road-closure' impact.
+Nearby Resources: Nearest police station.
+Recomm: Suggest detour route (Mapbox Directions API).
+Action: Confirm new route is 100% clear.
