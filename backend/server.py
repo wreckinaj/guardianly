@@ -315,25 +315,36 @@ def directions():
         })
     except requests.exceptions.RequestException as e:
         return jsonify({'error': str(e)}), 500
+    
+# Canonical hazard registry (internal keys → human labels)
+HAZARDS = {
+    "road_closure": "Road Closure",
+    "severe_weather_rain": "Severe Weather (Heavy Rain)",
+}
 
-def get_retrieved_context(hazard_type, user_lat, user_lng):
-    # --- Simulate RAG Retrieval from the mock playbook ---
-    if hazard_type == "Road Closure":
-        # Simulate fetching the playbook entry
-        playbook_text = "Playbook: Check Mapbox for 'road-closure' impact. Suggest detour route. Find nearest police station."
-        
-        # Simulate fetching real-time geospatial data using existing Mapbox logic
-        # For prototype: Hardcode a safer route suggestion using the Directions endpoint logic
-        # You can call the existing 'directions' route logic here with mock start/end points.
-        geospatial_data = f"Mapbox Context: Safer route found avoiding hazard (start={user_lat},{user_lng}, end=Albany,OR)"
-        
+def get_retrieved_context(hazard_key, user_lat, user_lng):
+    if hazard_key == "road_closure":
+        playbook_text = (
+            "Playbook: Check Mapbox for 'road-closure' impact. "
+            "Suggest detour route. Find nearest police station."
+        )
+        geospatial_data = (
+            f"Mapbox Context: Safer route found avoiding hazard "
+            f"(start={user_lat},{user_lng}, end=Albany,OR)"
+        )
         return f"{playbook_text} | {geospatial_data}"
-        
-    elif hazard_type == "Severe Weather (Heavy Rain)":
-        playbook_text = "Playbook: Suggest rescheduling trip or safe parking spot. Find nearest covered shelter."
-        geospatial_data = f"Mapbox Context: No safe route detour possible. Nearest shelter is 0.5 miles away."
+
+    elif hazard_key == "severe_weather_rain":
+        playbook_text = (
+            "Playbook: Suggest rescheduling trip or safe parking spot. "
+            "Find nearest covered shelter."
+        )
+        geospatial_data = (
+            "Mapbox Context: No safe route detour possible. "
+            "Nearest shelter is 0.5 miles away."
+        )
         return f"{playbook_text} | {geospatial_data}"
-        
+
     return "Default Context: Advise caution."
 
 @app.route('/api/generate_prompt', methods=['POST'])
@@ -341,39 +352,63 @@ def get_retrieved_context(hazard_type, user_lat, user_lng):
 def generate_prompt_endpoint(current_user):
     """Generates an LLM prompt for a safety alert using RAG context."""
     data = request.get_json()
-    hazard_type = data.get('hazard')
+
+    # Normalize hazard type
+    raw_hazard = data.get('hazard', '')
+    hazard_key = raw_hazard.strip().lower().replace(" ", "_")
+
+    if hazard_key not in HAZARDS:
+        return jsonify({
+            "error": "Invalid hazard type",
+            "allowed": list(HAZARDS.values())
+        }), 400
+
     user_lat = data.get('user_lat')
     user_lng = data.get('user_lng')
-    
-    if not hazard_type:
-        return jsonify({"error": "Hazard type is required"}), 400
-        
-    # --- RAG Step 1: Retrieval ---
-    retrieved_context = get_retrieved_context(hazard_type, user_lat, user_lng)
-    
-    # --- RAG Step 2: Generation/Prompt Assembly ---
-    # Define the Metaprompt (System Prompt - gives the AI its instructions)
+
+    if user_lat is None or user_lng is None:
+        return jsonify({"error": "user_lat and user_lng are required"}), 400
+
+    try:
+        user_lat = float(user_lat)
+        user_lng = float(user_lng)
+    except (TypeError, ValueError):
+        return jsonify({"error": "user_lat and user_lng must be valid numbers"}), 400
+
+    if not (-90 <= user_lat <= 90):
+        return jsonify({"error": "user_lat must be between -90 and 90"}), 400
+
+    if not (-180 <= user_lng <= 180):
+        return jsonify({"error": "user_lng must be between -180 and 180"}), 400
+
+    # --- RAG Retrieval ---
+    retrieved_context = get_retrieved_context(hazard_key, user_lat, user_lng)
+
+    # --- Prompt Generation ---
+    hazard_display = HAZARDS[hazard_key]
+
     metaprompt = (
-        "You are the Guardianly AI Agent. Your goal is to give safety-focused, actionable recommendations."
-        "Generate a 3-part response: 1. Primary Recommendation (Route/Reschedule), 2. Action Steps, 3. Nearby Resource."
+        "You are the Guardianly AI Agent. Your goal is to give safety-focused, actionable recommendations. "
+        "Generate a 3-part response: 1. Primary Recommendation, 2. Action Steps, 3. Nearby Resource. "
         "Base your response ONLY on the provided Safety Context. Be concise."
     )
-    
-    # Assemble the full LLM prompt
-    user_query = f"The user is at {user_lat}, {user_lng} and received a '{hazard_type}' alert."
+
+    user_query = (
+        f"The user is at {user_lat}, {user_lng} and "
+        f"received a '{hazard_display}' alert."
+    )
+
     final_prompt = (
         f"METAPROMPT: {metaprompt}\n"
         f"SAFETY CONTEXT: {retrieved_context}\n"
         f"USER QUERY: {user_query}"
     )
-    
-    # In a real app, you would call the LLM API here (e.g., requests.post('openai/gemini'))
-    
+
     return jsonify({
         "status": "prototype_success",
-        "hazard": hazard_type,
+        "hazard": hazard_display,
         "retrieved_context": retrieved_context,
-        "final_prompt_to_llm": final_prompt 
+        "final_prompt_to_llm": final_prompt
     }), 200
 
 # Listener
