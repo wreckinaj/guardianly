@@ -24,7 +24,10 @@ SETUP INSTRUCTIONS
 2. CONFIGURE ENVIRONMENT VARIABLES
    Set your Mapbox access token and secret key:
    
-   $env:MAPBOX_ACCESS_TOKEN="pk.eyJ1Ijoic2hvb2tkIiwiYSI6ImNtaG9mNXE3ajBhbGYycXBzYmpsN2ppanEifQ.Zw3YIGnVLC9K36olfWBI6A"
+   NOTE: SECRET_KEY is for JWT token authentication (not related to Mapbox).
+   Generate a secure key with: python -c "import secrets; print(secrets.token_hex(32))"
+   
+   $env:MAPBOX_ACCESS_TOKEN="YOUR_MAPBOX_TOKEN_HERE"
    $env:SECRET_KEY="your_secret_key_here"
 
    Or create a .env file (copy from .env.example):
@@ -38,16 +41,21 @@ RUNNING THE SERVER
 
 1. Navigate to the backend directory:
    
-   cd C:\Users\15172\Documents\Guardianly\guardianly\backend
+   From the project root:
+   cd backend
 
 2. Run the server:
    
    python server.py or python3 server.py
 
-3. The server will start on http://localhost:5000
+3. The server will start (default port 5000):
    You should see output like:
    * Running on http://127.0.0.1:5000
    * Debug mode: on
+   
+   NOTE: Check the terminal output for the actual port number (the number after 
+   the IP address). If port 5000 is already in use, Flask may use a different 
+   port (e.g., 5005). Use the port shown in your terminal output.
 
 
 TESTING THE API

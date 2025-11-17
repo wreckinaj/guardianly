@@ -238,6 +238,11 @@ def geocode():
             'results': data.get('features', [])
         })
     except requests.exceptions.RequestException as e:
+        # Handle exceptions from the requests library, such as:
+        # - Connection errors (network issues)
+        # - Timeouts (API not responding)
+        # - HTTP errors (401 unauthorized, 404 not found, etc.)
+        # - Invalid responses from the Mapbox geocoding API
         return jsonify({'error': str(e)}), 500
 
 
@@ -262,7 +267,26 @@ def reverse_geocode():
             'results': data.get('features', [])
         })
     except requests.exceptions.RequestException as e:
+        # Handle exceptions from the requests library, such as:
+        # - Connection errors (network issues)
+        # - Timeouts (API not responding)
+        # - HTTP errors (401 unauthorized, 404 not found, etc.)
+        # - Invalid responses from the Mapbox geocoding API
         return jsonify({'error': str(e)}), 500
+
+
+def is_place_name(location):
+    """Helper function to determine if a string is a place name or coordinates.
+    Returns True if location is a place name (e.g., 'Portland,OR'),
+    False if it's coordinates (e.g., '-122.6765,45.5231')
+    """
+    if ',' not in location:
+        return True
+    
+    # Remove special characters used in coordinates
+    cleaned = location.replace(',', '').replace('.', '').replace('-', '')
+    # If all remaining characters are digits, it's likely coordinates
+    return not cleaned.isdigit()
 
 
 @app.route('/directions')
@@ -273,8 +297,8 @@ def directions():
     profile = request.args.get('profile', 'driving')  # driving, walking, cycling
     
     try:
-        # Geocode start location if it's not coordinates
-        if ',' in start and not start.replace(',', '').replace('.', '').replace('-', '').isdigit():
+        # Geocode start location if it's a place name (not coordinates)
+        if is_place_name(start):
             geocode_url = f'https://api.mapbox.com/geocoding/v5/mapbox.places/{start}.json'
             geocode_params = {'access_token': MAPBOX_ACCESS_TOKEN, 'limit': 1}
             start_response = requests.get(geocode_url, params=geocode_params)
@@ -284,8 +308,8 @@ def directions():
         else:
             start_coords_str = start
         
-        # Geocode end location if it's not coordinates
-        if ',' in end and not end.replace(',', '').replace('.', '').replace('-', '').isdigit():
+        # Geocode end location if it's a place name (not coordinates)
+        if is_place_name(end):
             geocode_url = f'https://api.mapbox.com/geocoding/v5/mapbox.places/{end}.json'
             geocode_params = {'access_token': MAPBOX_ACCESS_TOKEN, 'limit': 1}
             end_response = requests.get(geocode_url, params=geocode_params)
@@ -314,6 +338,12 @@ def directions():
             'routes': data.get('routes', [])
         })
     except requests.exceptions.RequestException as e:
+        # Handle exceptions from the requests library, such as:
+        # - Connection errors (network issues)
+        # - Timeouts (API not responding)
+        # - HTTP errors (401 unauthorized, 404 not found, etc.)
+        # - Invalid responses from the Mapbox directions API
+        # - Invalid location parameters (geocoding failures)
         return jsonify({'error': str(e)}), 500
 
 
