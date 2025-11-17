@@ -316,6 +316,65 @@ def directions():
     except requests.exceptions.RequestException as e:
         return jsonify({'error': str(e)}), 500
 
+def get_retrieved_context(hazard_type, user_lat, user_lng):
+    # --- Simulate RAG Retrieval from the mock playbook ---
+    if hazard_type == "Road Closure":
+        # Simulate fetching the playbook entry
+        playbook_text = "Playbook: Check Mapbox for 'road-closure' impact. Suggest detour route. Find nearest police station."
+        
+        # Simulate fetching real-time geospatial data using existing Mapbox logic
+        # For prototype: Hardcode a safer route suggestion using the Directions endpoint logic
+        # You can call the existing 'directions' route logic here with mock start/end points.
+        geospatial_data = f"Mapbox Context: Safer route found avoiding hazard (start={user_lat},{user_lng}, end=Albany,OR)"
+        
+        return f"{playbook_text} | {geospatial_data}"
+        
+    elif hazard_type == "Severe Weather (Heavy Rain)":
+        playbook_text = "Playbook: Suggest rescheduling trip or safe parking spot. Find nearest covered shelter."
+        geospatial_data = f"Mapbox Context: No safe route detour possible. Nearest shelter is 0.5 miles away."
+        return f"{playbook_text} | {geospatial_data}"
+        
+    return "Default Context: Advise caution."
+
+@app.route('/api/generate_prompt', methods=['POST'])
+@token_required
+def generate_prompt_endpoint(current_user):
+    """Generates an LLM prompt for a safety alert using RAG context."""
+    data = request.get_json()
+    hazard_type = data.get('hazard')
+    user_lat = data.get('user_lat')
+    user_lng = data.get('user_lng')
+    
+    if not hazard_type:
+        return jsonify({"error": "Hazard type is required"}), 400
+        
+    # --- RAG Step 1: Retrieval ---
+    retrieved_context = get_retrieved_context(hazard_type, user_lat, user_lng)
+    
+    # --- RAG Step 2: Generation/Prompt Assembly ---
+    # Define the Metaprompt (System Prompt - gives the AI its instructions)
+    metaprompt = (
+        "You are the Guardianly AI Agent. Your goal is to give safety-focused, actionable recommendations."
+        "Generate a 3-part response: 1. Primary Recommendation (Route/Reschedule), 2. Action Steps, 3. Nearby Resource."
+        "Base your response ONLY on the provided Safety Context. Be concise."
+    )
+    
+    # Assemble the full LLM prompt
+    user_query = f"The user is at {user_lat}, {user_lng} and received a '{hazard_type}' alert."
+    final_prompt = (
+        f"METAPROMPT: {metaprompt}\n"
+        f"SAFETY CONTEXT: {retrieved_context}\n"
+        f"USER QUERY: {user_query}"
+    )
+    
+    # In a real app, you would call the LLM API here (e.g., requests.post('openai/gemini'))
+    
+    return jsonify({
+        "status": "prototype_success",
+        "hazard": hazard_type,
+        "retrieved_context": retrieved_context,
+        "final_prompt_to_llm": final_prompt 
+    }), 200
 
 # Listener
 if __name__ == "__main__":

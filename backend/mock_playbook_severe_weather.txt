@@ -1,0 +1,4 @@
+HAZARD: Severe Weather (Heavy Rain).
+Context: Route detours unlikely.
+Recomm: Suggest rescheduling trip or safe parking spot.
+Action: Find nearest covered shelter/parking lot (Mapbox POI search).
