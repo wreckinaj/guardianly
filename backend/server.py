@@ -4,6 +4,8 @@ import os
 import jwt
 import datetime
 from functools import wraps
+from marshmallow import ValidationError
+from schemas import GeneratePromptRequestSchema, AlertRecommendationSchema
 
 app = Flask(__name__)
 
@@ -350,66 +352,95 @@ def get_retrieved_context(hazard_key, user_lat, user_lng):
 @app.route('/api/generate_prompt', methods=['POST'])
 @token_required
 def generate_prompt_endpoint(current_user):
-    """Generates an LLM prompt for a safety alert using RAG context."""
-    data = request.get_json()
+    """
+    Generates a structured safety recommendation using RAG context.
+    
+    1. Validates input using GeneratePromptRequestSchema.
+    2. Retrieves contextual data (RAG).
+    3. Mocks/Simulates a structured LLM response.
+    4. Serializes the structured output using AlertRecommendationSchema.
+    """
+    # 1. Input Validation (Using Marshmallow Schema)
+    try:
+        # Use request.get_json() to load raw data, then validate with the schema
+        data = GeneratePromptRequestSchema().load(request.get_json())
+    except ValidationError as err:
+        return jsonify({"error": "Invalid input data", "messages": err.messages}), 400
 
-    # Normalize hazard type
-    raw_hazard = data.get('hazard', '')
+    # Extract validated data
+    raw_hazard = data['hazard']
+    user_lat = data['user_lat']
+    user_lng = data['user_lng']
+
+    # 2. Hazard and System Validation
+    # HAZARDS dictionary is defined in the original server.py
+    HAZARDS = {
+        "road_closure": "Road Closure",
+        "severe_weather_rain": "Severe Weather (Heavy Rain)",
+    }
+    
     hazard_key = raw_hazard.strip().lower().replace(" ", "_")
 
     if hazard_key not in HAZARDS:
         return jsonify({
-            "error": "Invalid hazard type",
+            "error": f"Invalid hazard type provided: '{raw_hazard}'",
             "allowed": list(HAZARDS.values())
         }), 400
 
-    user_lat = data.get('user_lat')
-    user_lng = data.get('user_lng')
-
-    if user_lat is None or user_lng is None:
-        return jsonify({"error": "user_lat and user_lng are required"}), 400
-
-    try:
-        user_lat = float(user_lat)
-        user_lng = float(user_lng)
-    except (TypeError, ValueError):
-        return jsonify({"error": "user_lat and user_lng must be valid numbers"}), 400
-
-    if not (-90 <= user_lat <= 90):
-        return jsonify({"error": "user_lat must be between -90 and 90"}), 400
-
-    if not (-180 <= user_lng <= 180):
-        return jsonify({"error": "user_lng must be between -180 and 180"}), 400
-
-    # --- RAG Retrieval ---
-    retrieved_context = get_retrieved_context(hazard_key, user_lat, user_lng)
-
-    # --- Prompt Generation ---
     hazard_display = HAZARDS[hazard_key]
 
-    metaprompt = (
-        "You are the Guardianly AI Agent. Your goal is to give safety-focused, actionable recommendations. "
-        "Generate a 3-part response: 1. Primary Recommendation, 2. Action Steps, 3. Nearby Resource. "
-        "Base your response ONLY on the provided Safety Context. Be concise."
-    )
+    # 3. RAG Retrieval (Existing Logic)
+    # The actual implementation of get_retrieved_context is already present in server.py
+    retrieved_context = get_retrieved_context(hazard_key, user_lat, user_lng)
 
-    user_query = (
-        f"The user is at {user_lat}, {user_lng} and "
-        f"received a '{hazard_display}' alert."
-    )
+    # 4. Mock LLM Structured Response Generation
+    # This block simulates the final output of the LLM based on the RAG context.
+    if hazard_key == "road_closure":
+        mock_llm_response = {
+            "severity": "High",
+            "message": "Immediate road closure detected. A guaranteed, safe detour route is calculated.",
+            "actions": [
+                "Immediately divert to the new Mapbox suggested route.",
+                "Verify the entire route is clear after starting the detour.",
+                f"Be aware of the nearest police station for assistance, as noted in context: {retrieved_context.split('|')[-1].strip()}"
+            ],
+            "source": "Guardianly AI Agent"
+        }
+    elif hazard_key == "severe_weather_rain":
+        mock_llm_response = {
+            "severity": "Moderate",
+            "message": "Severe rain is making travel hazardous. Please find a safe covered shelter to pause your trip.",
+            "actions": [
+                "Find and park at the nearest covered shelter (0.5 miles away).",
+                "Wait for the weather alert to pass.",
+                "If waiting is not possible, significantly reduce your speed and use hazard lights."
+            ],
+            "source": "Guardianly AI Agent"
+        }
+    else:
+         mock_llm_response = {
+            "severity": "Low",
+            "message": "Default caution alert triggered. No critical hazard detected.",
+            "actions": ["Proceed with caution.", "Check local news for any further updates."],
+            "source": "Guardianly AI Agent"
+        }
 
-    final_prompt = (
-        f"METAPROMPT: {metaprompt}\n"
-        f"SAFETY CONTEXT: {retrieved_context}\n"
-        f"USER QUERY: {user_query}"
-    )
+    # 5. Output Serialization (Using AlertRecommendationSchema)
+    try:
+        # Serialize the Python dictionary (mock_llm_response) into a clean JSON output
+        # This step also validates that the mock data adheres to the AlertRecommendationSchema
+        final_recommendation = AlertRecommendationSchema().dump(mock_llm_response)
+        
+        return jsonify({
+            "status": "success",
+            "hazard": hazard_display,
+            "retrieved_context": retrieved_context,
+            "recommendation": final_recommendation
+        }), 200
 
-    return jsonify({
-        "status": "prototype_success",
-        "hazard": hazard_display,
-        "retrieved_context": retrieved_context,
-        "final_prompt_to_llm": final_prompt
-    }), 200
+    except ValidationError as err:
+        # This catches errors if the mock_llm_response does not match the schema
+        return jsonify({"error": "Failed to serialize recommendation (Internal Error)", "messages": err.messages}), 500
 
 # Listener
 if __name__ == "__main__":

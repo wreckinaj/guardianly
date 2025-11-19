@@ -7,6 +7,8 @@ import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from server import app as flask_app
+# NOTE: To run this file successfully, you must ensure 'schemas.py' exists 
+# and Flask/Marshmallow/PyJWT are installed as per the README.
 
 @pytest.fixture
 def client():
@@ -30,17 +32,17 @@ def auth_token(client):
     return data['token']
 
 def test_generate_prompt_mapbox_mock(client, auth_token):
-    # 1. Mock Mapbox Response (Optional: Logic currently hardcoded in server.py)
-    # Since get_retrieved_context in server.py uses simulated strings, 
-    # patching isn't strictly needed yet, but here is how you set up the request.
-
+    """
+    Tests the updated /api/generate_prompt endpoint for the 'Road Closure' hazard.
+    The test now expects a structured JSON object in the response.
+    """
     payload = {
         "hazard": "Road Closure",
         "user_lat": 44.95,
         "user_lng": -123.03
     }
 
-    # 2. Make the request with the Authorization header
+    # 1. Make the request with the Authorization header
     response = client.post(
         "/api/generate_prompt",
         data=json.dumps(payload),
@@ -48,14 +50,47 @@ def test_generate_prompt_mapbox_mock(client, auth_token):
         headers={"Authorization": f"Bearer {auth_token}"}
     )
 
-    # 3. Assertions
+    # 2. Assertions
     assert response.status_code == 200
     data = response.get_json()
 
-    # Check for the simulated prototype success keys
-    assert data["status"] == "prototype_success"
+    # Assertions for the NEW response structure
+    assert data["status"] == "success" # No longer "prototype_success"
+    assert data["hazard"] == "Road Closure"
     assert "retrieved_context" in data
-    assert "final_prompt_to_llm" in data
-    
+    assert "recommendation" in data # New key for the structured object
+
     # Verify the content reflects the hazard type
     assert "road-closure" in data["retrieved_context"]
+    
+    # Assertions for the structured recommendation object
+    recommendation = data["recommendation"]
+    assert isinstance(recommendation, dict)
+    assert recommendation["severity"] == "High"
+    assert "message" in recommendation
+    assert isinstance(recommendation["actions"], list)
+    assert recommendation["source"] == "Guardianly AI Agent"
+
+
+def test_generate_prompt_validation_error(client, auth_token):
+    """
+    Tests the validation logic for required fields.
+    """
+    invalid_payload = {
+        # 'hazard' is missing
+        "user_lat": 44.95,
+        "user_lng": -123.03
+    }
+    
+    response = client.post(
+        "/api/generate_prompt",
+        data=json.dumps(invalid_payload),
+        content_type="application/json",
+        headers={"Authorization": f"Bearer {auth_token}"}
+    )
+    
+    # Expect a 400 Bad Request due to ValidationError
+    assert response.status_code == 400
+    data = response.get_json()
+    assert "Invalid input data" in data["error"]
+    assert "hazard" in data["messages"] # Checks that the 'hazard' field caused the error
