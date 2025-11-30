@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 class MyTextField extends StatelessWidget {
   // used to access user input
-  final controller;
+  final TextEditingController controller;
   // Hint user what should be inputted
   final String hintText;
   // hide characters when inputting sensitive info

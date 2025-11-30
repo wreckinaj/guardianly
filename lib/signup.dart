@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '/components/textfield.dart';
-import '/components/logoname.dart';
+import '/Components/textfield.dart';
+import '/Components/logoname.dart';
 
 
 class SignUpPage extends StatelessWidget {

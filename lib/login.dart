@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import '/components/textfield.dart';
-import '/components/logoname.dart';
+import '/Components/textfield.dart';
+import '/Components/logoname.dart';
 // Followed tutorial on youtube: https://youtu.be/Dh-cTQJgM-Q?si=vpDDOYUqS0LrhRcU
 
 
