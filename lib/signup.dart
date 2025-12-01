@@ -21,6 +21,7 @@ class SignUpPage extends StatelessWidget {
       backgroundColor: Colors.white,
       body: SafeArea(
         child: Center(
+          child: SingleChildScrollView(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -130,7 +131,7 @@ class SignUpPage extends StatelessWidget {
           ],
         ),
       ),
-      ),
+      ),),
     );
   }
 }
