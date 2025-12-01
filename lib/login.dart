@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '/Components/textfield.dart';
 import '/Components/logoname.dart';
+import '/services/api_service.dart';
+import '/confirmation_page.dart';
 // Followed tutorial on youtube: https://youtu.be/Dh-cTQJgM-Q?si=vpDDOYUqS0LrhRcU
 
 
@@ -15,15 +17,63 @@ class LoginPage extends StatelessWidget {
   final passwordController = TextEditingController();
 
   //login user in method
-  void loginUser() {}
+  void loginUser(BuildContext context) async {
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    // Call API
+    final result = await ApiService.login(
+      usernameController.text,
+      passwordController.text,
+    );
+
+    // Close loading indicator
+    if (context.mounted) Navigator.pop(context);
+
+    // Handle result
+    if (result['success']) {
+      // Login successful
+      final userData = result['data'];
+      if (context.mounted) {
+        // Navigate to confirmation page
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ConfirmationPage(
+              message: 'Login Successful!',
+              userName: userData['user']['username'],
+              isSuccess: true,
+            ),
+          ),
+        );
+      }
+    } else {
+      // Login failed
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['error']),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: Center(
-          child: Column(
+        child: SingleChildScrollView(
+          child: Center(
+            child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -83,7 +133,7 @@ class LoginPage extends StatelessWidget {
 
                   // Login Button
                   GestureDetector(
-                    onTap: loginUser,
+                    onTap: () => loginUser(context),
                     child: Container(
                       padding: const EdgeInsets.all(20),
                       margin: const EdgeInsets.symmetric(horizontal: 70),
@@ -137,7 +187,8 @@ class LoginPage extends StatelessWidget {
             ),
           ],
         ),
-      ),
+          ),
+        ),
       ),
     );
   }

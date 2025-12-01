@@ -84,21 +84,37 @@ def home():
 
 @app.route('/api/login', methods=['POST'])
 def login():
-    """User login endpoint"""
+    """User login endpoint - accepts username or email"""
     data = request.get_json()
     
     if not data or not data.get('username') or not data.get('password'):
-        return jsonify({'error': 'Username and password required'}), 400
+        return jsonify({'error': 'Username/email and password required'}), 400
     
-    username = data.get('username')
+    username_or_email = data.get('username')
     password = data.get('password')
     
-    # Check if user exists and password matches
-    if username in mock_users and mock_users[username]['password'] == password:
+    # Find user by username or email
+    found_user = None
+    found_username = None
+    
+    # Check if it's a direct username match
+    if username_or_email in mock_users:
+        if mock_users[username_or_email]['password'] == password:
+            found_user = mock_users[username_or_email]
+            found_username = username_or_email
+    else:
+        # Check if it's an email match
+        for uname, user_data in mock_users.items():
+            if user_data['email'] == username_or_email and user_data['password'] == password:
+                found_user = user_data
+                found_username = uname
+                break
+    
+    if found_user:
         # Generate JWT token
         token = jwt.encode({
-            'username': username,
-            'user_id': mock_users[username]['user_id'],
+            'username': found_username,
+            'user_id': found_user['user_id'],
             'exp': datetime.datetime.utcnow() + datetime.timedelta(hours=24)
         }, SECRET_KEY, algorithm="HS256")
         
@@ -107,13 +123,13 @@ def login():
             'message': 'Login successful',
             'token': token,
             'user': {
-                'username': username,
-                'user_id': mock_users[username]['user_id'],
-                'email': mock_users[username]['email']
+                'username': found_username,
+                'user_id': found_user['user_id'],
+                'email': found_user['email']
             }
         }), 200
     
-    return jsonify({'error': 'Invalid username or password'}), 401
+    return jsonify({'error': 'Invalid username/email or password'}), 401
 
 
 @app.route('/api/register', methods=['POST'])
