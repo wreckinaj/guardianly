@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "800581983312",
+    "project_id": "guardianly-auth",
+    "storage_bucket": "guardianly-auth.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:800581983312:android:c6647cbe4850413e490555",
+        "android_client_info": {
+          "package_name": "com.example.guardianly"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDv5Az3GHAi6Ed6NvM5Wa3vKS_8kV3dE8c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

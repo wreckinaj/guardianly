@@ -7,8 +7,14 @@
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:guardianly/main.dart';
+import 'package:firebase_core/firebase_core.dart';
+import './mock.dart';
 
 void main() {
+  setupFirebaseAuthMocks();
+  setUpAll(() async {
+    await Firebase.initializeApp();
+  });
   testWidgets('App builds without crashing', (WidgetTester tester) async {
     await tester.pumpWidget(const MyApp());
     expect(find.byType(MyApp), findsOneWidget); // simple check
