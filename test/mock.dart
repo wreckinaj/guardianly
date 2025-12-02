@@ -1,38 +1,34 @@
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:firebase_core_platform_interface/firebase_core_platform_interface.dart';
 
-// This function intercepts the calls to native Firebase and returns success
+class MockFirebasePlatform extends FirebasePlatform {
+  @override
+  Future<FirebaseAppPlatform> initializeApp({
+    String? name,
+    FirebaseOptions? options,
+  }) async {
+    // The constructor now expects positional arguments: name, options
+    return FirebaseAppPlatform(
+      name ?? '[DEFAULT]',
+      options ?? const FirebaseOptions(
+        apiKey: 'mock_api_key',
+        appId: 'mock_app_id',
+        messagingSenderId: 'mock_sender_id',
+        projectId: 'mock_project_id',
+      ),
+    );
+  }
+
+  // The 'apps' getter must return a List directly, not a Future
+  @override
+  List<FirebaseAppPlatform> get apps => [];
+
+  // 'initializeCore' is no longer required to be overridden in newer versions
+}
+
 void setupFirebaseAuthMocks() {
   TestWidgetsFlutterBinding.ensureInitialized();
-
-  // Mock the channel for Firebase Core
-  const MethodChannel channel = MethodChannel('plugins.flutter.io/firebase_core');
-
-  TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
-    channel,
-    (MethodCall methodCall) async {
-      if (methodCall.method == 'Firebase#initializeCore') {
-        return [
-          {
-            'name': '[DEFAULT]',
-            'options': {
-              'apiKey': '123',
-              'appId': '123',
-              'messagingSenderId': '123',
-              'projectId': '123',
-            },
-            'pluginConstants': {},
-          }
-        ];
-      }
-      if (methodCall.method == 'Firebase#initializeApp') {
-        return {
-          'name': methodCall.arguments['appName'],
-          'options': methodCall.arguments['options'],
-          'pluginConstants': {},
-        };
-      }
-      return null;
-    },
-  );
+  
+  // This replaces the default Pigeon implementation with our Mock
+  FirebasePlatform.instance = MockFirebasePlatform();
 }
