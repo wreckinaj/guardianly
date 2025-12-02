@@ -82,14 +82,14 @@ class SignUpPage extends StatelessWidget {
     return Scaffold(
       backgroundColor: Colors.white,
       body: SafeArea(
-        child: SingleChildScrollView(
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.start,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const LogoName(),
-                const SizedBox(height:50),
+        child: Center(
+          child: SingleChildScrollView(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const LogoName(),
+              const SizedBox(height:50),
 
 
               Container(
@@ -201,9 +201,8 @@ class SignUpPage extends StatelessWidget {
             ),
           ],
         ),
-          ),
-        ),
       ),
+      ),),
     );
   }
 }
