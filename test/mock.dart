@@ -1,18 +1,16 @@
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+// This function intercepts the calls to native Firebase and returns success
 void setupFirebaseAuthMocks() {
-  // 1. Ensure the testing binding is initialized
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  // 2. Define the channel used by Firebase Core
+  // Mock the channel for Firebase Core
   const MethodChannel channel = MethodChannel('plugins.flutter.io/firebase_core');
 
-  // 3. Mock the method call handler
   TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
     channel,
     (MethodCall methodCall) async {
-      // Mock 'initializeCore': Returns a list of initialized apps (initially empty or default)
       if (methodCall.method == 'Firebase#initializeCore') {
         return [
           {
@@ -27,8 +25,6 @@ void setupFirebaseAuthMocks() {
           }
         ];
       }
-
-      // Mock 'initializeApp': Returns success with dummy options
       if (methodCall.method == 'Firebase#initializeApp') {
         return {
           'name': methodCall.arguments['appName'],
@@ -36,7 +32,6 @@ void setupFirebaseAuthMocks() {
           'pluginConstants': {},
         };
       }
-
       return null;
     },
   );
