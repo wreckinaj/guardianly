@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import '/Components/textfield.dart';
 import '/Components/logoname.dart';
+import '/services/api_service.dart';
+import '/confirmation_page.dart';
 
 
 class SignUpPage extends StatelessWidget {
@@ -9,11 +11,71 @@ class SignUpPage extends StatelessWidget {
 
   //text editing controllers
   final usernameController = TextEditingController();
+  final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
 
   //signup user in method
-  void signUpUser() {}
+  void signUpUser(BuildContext context) async {
+    // Validate passwords match
+    if (passwordController.text != confirmPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Passwords do not match!'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(),
+      ),
+    );
+
+    // Call API
+    final result = await ApiService.register(
+      usernameController.text,
+      passwordController.text,
+      emailController.text,
+    );
+
+    // Close loading indicator
+    if (context.mounted) Navigator.pop(context);
+
+    // Handle result
+    if (result['success']) {
+      // Registration successful
+      final userData = result['data'];
+      if (context.mounted) {
+        // Navigate to confirmation page
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ConfirmationPage(
+              message: 'Registration Successful!',
+              userName: userData['user']['username'],
+              isSuccess: true,
+            ),
+          ),
+        );
+      }
+    } else {
+      // Registration failed
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(result['error']),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,7 +109,16 @@ class SignUpPage extends StatelessWidget {
                 // username text field
                   MyTextField(
                     controller: usernameController,
-                    hintText: 'Enter an Email',
+                    hintText: 'Username',
+                    obscureText: false,
+                  ),
+
+                  const SizedBox(height:20),
+
+                  // email text field
+                  MyTextField(
+                    controller: emailController,
+                    hintText: 'Email',
                     obscureText: false,
                   ),
 
@@ -73,9 +144,9 @@ class SignUpPage extends StatelessWidget {
 
                   const SizedBox(height:50),
 
-                  // Login Button
+                  // Sign Up Button
                   GestureDetector(
-                    onTap: signUpUser,
+                    onTap: () => signUpUser(context),
                     child: Container(
                       padding: const EdgeInsets.all(20),
                       margin: const EdgeInsets.symmetric(horizontal: 70),
