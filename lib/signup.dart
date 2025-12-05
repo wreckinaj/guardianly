@@ -8,6 +8,7 @@ class SignUpPage extends StatelessWidget {
   SignUpPage({super.key});
 
   final usernameController = TextEditingController();
+  final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
 
@@ -32,7 +33,7 @@ class SignUpPage extends StatelessWidget {
       // 3. Create User in Firebase Auth
       UserCredential userCredential = 
           await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: usernameController.text.trim(),
+        email: emailController.text.trim(),
         password: passwordController.text.trim(),
       );
 
@@ -41,7 +42,8 @@ class SignUpPage extends StatelessWidget {
           .collection('users')
           .doc(userCredential.user!.uid)
           .set({
-        'email': usernameController.text.trim(),
+        'username': usernameController.text.trim(),
+        'email': emailController.text.trim(),
         'created_at': FieldValue.serverTimestamp(),
         'preferences': {
           'notifications_enabled': true,
@@ -122,7 +124,13 @@ class SignUpPage extends StatelessWidget {
                     children: [
                       MyTextField(
                         controller: usernameController,
-                        hintText: 'Enter an Email',
+                        hintText: 'Username',
+                        obscureText: false,
+                      ),
+                      const SizedBox(height: 20),
+                      MyTextField(
+                        controller: emailController,
+                        hintText: 'Email',
                         obscureText: false,
                       ),
                       const SizedBox(height: 20),

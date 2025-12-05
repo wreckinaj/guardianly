@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart'; // Add this
+import 'package:firebase_auth/firebase_auth.dart';
 import '/Components/textfield.dart';
 import '/Components/logoname.dart';
 
