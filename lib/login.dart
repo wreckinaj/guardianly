@@ -1,66 +1,38 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '/Components/textfield.dart';
 import '/Components/logoname.dart';
-import '/services/api_service.dart';
-import '/confirmation_page.dart';
-// Followed tutorial on youtube: https://youtu.be/Dh-cTQJgM-Q?si=vpDDOYUqS0LrhRcU
-
-
-
 
 class LoginPage extends StatelessWidget {
   LoginPage({super.key});
 
-
-  //text editing controllers
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
 
-  //login user in method
+  // Updated loginUser method
   void loginUser(BuildContext context) async {
-    // Show loading indicator
     showDialog(
       context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(),
-      ),
+      builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
-    // Call API
-    final result = await ApiService.login(
-      usernameController.text,
-      passwordController.text,
-    );
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: usernameController.text.trim(),
+        password: passwordController.text.trim(),
+      );
 
-    // Close loading indicator
-    if (context.mounted) Navigator.pop(context);
-
-    // Handle result
-    if (result['success']) {
-      // Login successful
-      final userData = result['data'];
       if (context.mounted) {
-        // Navigate to confirmation page
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ConfirmationPage(
-              message: 'Login Successful!',
-              userName: userData['user']['username'],
-              isSuccess: true,
-            ),
-          ),
-        );
+        Navigator.pop(context); // Pop loading
+        // Navigate to your main app screen here (e.g., '/home')
+        // Navigator.pushReplacementNamed(context, '/home');
       }
-    } else {
-      // Login failed
+    } on FirebaseAuthException catch (e) {
       if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(result['error']),
-            backgroundColor: Colors.red,
-          ),
+        Navigator.pop(context);
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(title: Text(e.message ?? 'Login Failed')),
         );
       }
     }
