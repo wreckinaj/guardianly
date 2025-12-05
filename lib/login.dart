@@ -1,21 +1,42 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import '/Components/textfield.dart';
 import '/Components/logoname.dart';
-// Followed tutorial on youtube: https://youtu.be/Dh-cTQJgM-Q?si=vpDDOYUqS0LrhRcU
-
-
-
 
 class LoginPage extends StatelessWidget {
   LoginPage({super.key});
 
-
-  //text editing controllers
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
 
-  //login user in method
-  void loginUser() {}
+  // Updated loginUser method
+  void loginUser(BuildContext context) async {
+    showDialog(
+      context: context,
+      builder: (context) => const Center(child: CircularProgressIndicator()),
+    );
+
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: usernameController.text.trim(),
+        password: passwordController.text.trim(),
+      );
+
+      if (context.mounted) {
+        Navigator.pop(context); // Pop loading
+        // Navigate to your main app screen here (e.g., '/home')
+        // Navigator.pushReplacementNamed(context, '/home');
+      }
+    } on FirebaseAuthException catch (e) {
+      if (context.mounted) {
+        Navigator.pop(context);
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(title: Text(e.message ?? 'Login Failed')),
+        );
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -84,7 +105,7 @@ class LoginPage extends StatelessWidget {
 
                   // Login Button
                   GestureDetector(
-                    onTap: loginUser,
+                    onTap: () => loginUser(context),
                     child: Container(
                       padding: const EdgeInsets.all(20),
                       margin: const EdgeInsets.symmetric(horizontal: 70),
