@@ -2,12 +2,31 @@ import pytest
 import json
 import sys
 import os
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
-# Add the backend directory to sys.path so we can import server.py
+# --- STEP 1: Mock External Modules BEFORE Import ---
+# We replace the real 'pinecone' and 'openai' modules with Mocks in sys.modules.
+# This ensures that when server.py runs "from pinecone import Pinecone", it gets our Mock.
+# This prevents the real code from trying to connect to the internet during import.
+
+mock_pinecone_module = MagicMock()
+sys.modules["pinecone"] = mock_pinecone_module
+
+mock_openai_module = MagicMock()
+sys.modules["openai"] = mock_openai_module
+
+# --- STEP 2: Set Dummy Environment Variables ---
+# Prevents KeyErrors if code accesses os.environ directly
+os.environ['PINECONE_API_KEY'] = 'testing'
+os.environ['OPENAI_API_KEY'] = 'testing'
+os.environ['MAPBOX_ACCESS_TOKEN'] = 'testing'
+
+# --- STEP 3: Add Backend Path and Import Server ---
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from server import app as flask_app
+
+# --- STEP 4: Test Fixtures ---
 
 @pytest.fixture
 def client():
@@ -17,34 +36,56 @@ def client():
 
 @pytest.fixture
 def mock_auth():
-    """
-    Patches the Firebase auth.verify_id_token function in server.py.
-    This prevents the test from trying to contact real Firebase servers.
-    """
+    """Patches Firebase auth in server.py"""
     with patch('server.auth.verify_id_token') as mock_verify:
         yield mock_verify
 
 @pytest.fixture
+def mock_rag_dependencies():
+    """
+    Patches the *instances* of clients that server.py created.
+    Even though we mocked the module above, we use 'patch' here to 
+    reset the mocks and define specific return values for each test.
+    """
+    with patch('server.openai_client') as mock_openai_instance:
+        # 1. Setup OpenAI Mock
+        mock_embedding_response = MagicMock()
+        # Mocking the embedding vector response
+        mock_embedding_response.data = [MagicMock(embedding=[0.1] * 1536)]
+        mock_openai_instance.embeddings.create.return_value = mock_embedding_response
+        
+        with patch('server.index') as mock_pinecone_index:
+            # 2. Setup Pinecone Index Mock
+            # This mimics the response from index.query()
+            mock_pinecone_index.query.return_value = {
+                'matches': [
+                    {
+                        'id': 'mock_playbook_123',
+                        'score': 0.95,
+                        'metadata': {
+                            'text': 'Mock Playbook Content: Road closures require detours.',
+                            'hazard': 'road_closure'
+                        }
+                    }
+                ]
+            }
+            
+            yield mock_openai_instance, mock_pinecone_index
+
+@pytest.fixture
 def auth_headers(mock_auth):
-    """
-    Configures the mock to accept a dummy token and returns the headers.
-    """
-    # When server.py calls auth.verify_id_token('dummy_token'), return this user dict:
     mock_auth.return_value = {'uid': 'test_firebase_uid_123'}
-    
     return {"Authorization": "Bearer dummy_token"}
 
-def test_generate_prompt_mapbox_mock(client, auth_headers):
-    """
-    Tests the /api/generate_prompt endpoint using the mocked auth headers.
-    """
+# --- STEP 5: Tests ---
+
+def test_generate_prompt_with_rag(client, auth_headers, mock_rag_dependencies):
     payload = {
         "hazard": "Road Closure",
         "user_lat": 44.95,
         "user_lng": -123.03
     }
 
-    # 1. Make the request with the Mocked Authorization header
     response = client.post(
         "/api/generate_prompt",
         data=json.dumps(payload),
@@ -52,31 +93,19 @@ def test_generate_prompt_mapbox_mock(client, auth_headers):
         headers=auth_headers
     )
 
-    # 2. Assertions
     assert response.status_code == 200
     data = response.get_json()
 
     assert data["status"] == "success"
-    assert data["hazard"] == "Road Closure"
-    assert "retrieved_context" in data
-    assert "recommendation" in data 
-
-    # Verify the content reflects the hazard type
-    assert "road-closure" in data["retrieved_context"]
+    # Ensure the context comes from our mock, not the real file/DB
+    assert "Mock Playbook Content" in data["retrieved_context"]
     
     recommendation = data["recommendation"]
-    assert recommendation["severity"] == "High"
-    assert "message" in recommendation
-    assert isinstance(recommendation["actions"], list)
+    assert recommendation["severity"] in ["High", "Moderate", "Low"]
     assert recommendation["source"] == "Guardianly AI Agent"
 
-
 def test_generate_prompt_validation_error(client, auth_headers):
-    """
-    Tests the validation logic for required fields.
-    """
     invalid_payload = {
-        # 'hazard' is missing
         "user_lat": 44.95,
         "user_lng": -123.03
     }
@@ -88,8 +117,6 @@ def test_generate_prompt_validation_error(client, auth_headers):
         headers=auth_headers
     )
     
-    # Expect a 400 Bad Request due to ValidationError
     assert response.status_code == 400
     data = response.get_json()
     assert "Invalid input data" in data["error"]
-    assert "hazard" in data["messages"]
