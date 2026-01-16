@@ -37,10 +37,10 @@ class MyApp extends StatelessWidget {
         '/signup': (context) => SignUpPage(),
         '/login': (context) => LoginPage(),
         '/home': (context) => const Home(),
-        '/profile': (context) => Profile(),
-        '/alert': (context) => Alert(),
-        '/settings': (context) => Settings(),
-        '/saved': (context) => SavedAlerts(),
+        '/profile': (context) => const Profile(),
+        '/alert': (context) => const Alert(),
+        '/settings': (context) => const Settings(),
+        '/saved': (context) => const SavedAlerts(),
       }
     );
   }

@@ -18,10 +18,10 @@ class Profile extends StatelessWidget {
             const SizedBox(height: 30),
 
             // Placeholder for username
-            ProfileInfoRow(label: "Username", value: "JohnDoe"),
+            const ProfileInfoRow(label: "Username", value: "JohnDoe"),
 
             // Placeholder for password (blurred)
-            ProfileInfoRow(label: "Password", value: "••••••••"),
+            const ProfileInfoRow(label: "Password", value: "••••••••"),
 
             const Padding(
               padding: EdgeInsets.symmetric(horizontal:20),
@@ -154,7 +154,7 @@ void _showDeleteAccountDialog(BuildContext context) {
           style: TextButton.styleFrom(
               foregroundColor: const Color.fromARGB(255, 109, 106, 106),
           ),
-          child: Text("Cancel"),
+          child: const Text("Cancel"),
           onPressed: () {
              Navigator.of(context).pop();
           },
