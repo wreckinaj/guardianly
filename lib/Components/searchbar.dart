@@ -92,7 +92,9 @@ class _SearchBarAppState extends State<SearchBarApp> {
         const SizedBox(width: 20),
 
         ElevatedButton(
-          onPressed: (){},
+          onPressed: (){
+            Navigator.pushNamed(context, '/alert');
+          },
           style: ElevatedButton.styleFrom(
             backgroundColor: const Color.fromARGB(255, 255, 234, 236),
             side: const BorderSide(color: Colors.red),

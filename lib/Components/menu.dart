@@ -7,7 +7,6 @@ class Menu extends StatelessWidget implements PreferredSizeWidget {
   const Menu({super.key});
 
 
-
   // definition of the dialog
   void _showDialog(BuildContext context) {
     showDialog(
@@ -73,7 +72,16 @@ class Menu extends StatelessWidget implements PreferredSizeWidget {
             color: Colors.white,
             offset: const Offset(0, 50),
             onSelected:(value) {
-              if (value == 4) {
+              if (value == 1) {
+                Navigator.pushNamed(context, '/profile');
+              }
+              else if (value == 2) {
+                Navigator.pushNamed(context, '/saved'); 
+              }
+              else if (value == 3) {
+                Navigator.pushNamed(context, '/settings');
+              }
+              else if (value == 4) {
                 _showDialog(context); 
               }
             },
