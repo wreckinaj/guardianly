@@ -43,7 +43,7 @@ dependencies:
 
 
   #Fonts
-  google_fonts: ^7.0.1
+  google_fonts: ^7.0.2
 
   # SVG support
   flutter_svg: ^2.1.1
