@@ -6,20 +6,45 @@ import 'signup.dart';
 import 'home.dart';
 
 
-void main() async {
+Future<void> main() async {
   // Ensure widgets are bound before async calls
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  try {
+    // Initialize Firebase
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    // NEW: confirm success in console
+    debugPrint('Firebase.initializeApp() succeeded');
+  } catch (e, st) {
+    // Log init failure so platform channel errors are visible in console.
+    // DO NOT rethrow here — allow app to start for debugging UI and native logs.
+    print('Firebase.initializeApp() failed: $e');
+    print(st);
+    debugPrint('Continuing app start despite Firebase init failure (for debugging).');
+    // Optionally set a boolean to show Firebase-disabled UI; omitted for brevity.
+  }
 
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    // This runs after the first frame; when this prints, syncing is complete and UI is visible
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      // Use debugPrint so it's visible in flutter run output
+      debugPrint('>>> SYNC COMPLETE: First frame rendered on device');
+    });
+  }
 
   // This widget is the root of your application.
   @override
@@ -37,4 +62,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-  

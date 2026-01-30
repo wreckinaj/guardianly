@@ -23,17 +23,18 @@ class _HomeState extends State<Home> {
         children: [
           const SearchBarApp(),
           const SizedBox(height: 16),
+          // Increased padding to make the map widget smaller relative to the screen
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 3.0),
+              padding: const EdgeInsets.fromLTRB(24.0, 0.0, 24.0, 32.0),
               child: Stack(
                 children: [
                   // Mapbox map
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(16),
                     child: FlutterMap(
                       mapController: mapController,
-                      options: MapOptions(
+                      options: const MapOptions(
                         initialCenter: LatLng(40.7128, -74.0060),
                         initialZoom: 12.0,
                       ),
@@ -62,7 +63,7 @@ class _HomeState extends State<Home> {
                         ),
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 8),
-                        elevation: 2,
+                        elevation: 4,
                       ),
                       child: const Text(
                         'Key',
