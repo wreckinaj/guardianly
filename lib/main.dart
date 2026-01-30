@@ -4,6 +4,10 @@ import 'firebase_options.dart';
 import 'login.dart';
 import 'signup.dart';
 import 'home.dart';
+import 'profile.dart';
+import 'alertlist.dart';
+import 'settings.dart';
+import 'saved.dart';
 
 
 Future<void> main() async {
@@ -58,6 +62,10 @@ class _MyAppState extends State<MyApp> {
         '/signup': (context) => SignUpPage(),
         '/login': (context) => LoginPage(),
         '/home': (context) => const Home(),
+        '/profile': (context) => const Profile(),
+        '/alert': (context) => const Alert(),
+        '/settings': (context) => const Settings(),
+        '/saved': (context) => const SavedAlerts(),
       }
     );
   }
