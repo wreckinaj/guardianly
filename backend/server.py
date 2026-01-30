@@ -7,8 +7,15 @@ from marshmallow import ValidationError
 import firebase_admin
 from firebase_admin import credentials, auth
 from schemas import GeneratePromptRequestSchema, AlertRecommendationSchema
+from pinecone import Pinecone
+from openai import OpenAI
 
 app = Flask(__name__)
+
+# Initialize Clients
+pc = Pinecone(api_key=os.environ.get('PINECONE_API_KEY'))
+openai_client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
+index = pc.Index("guardianly-playbooks")
 
 # --- Configuration ---
 MAPBOX_ACCESS_TOKEN = os.environ.get('MAPBOX_ACCESS_TOKEN', 'your_mapbox_token_here')
@@ -248,29 +255,31 @@ def directions():
 # --- Prompt Generation / RAG Logic ---
 
 def get_retrieved_context(hazard_key, user_lat, user_lng):
-    if hazard_key == "road_closure":
-        playbook_text = (
-            "Playbook: Check Mapbox for 'road-closure' impact. "
-            "Suggest detour route. Find nearest police station."
-        )
-        geospatial_data = (
-            f"Mapbox Context: Safer route found avoiding hazard "
-            f"(start={user_lat},{user_lng}, end=Albany,OR)"
-        )
-        return f"{playbook_text} | {geospatial_data}"
+    """
+    Real RAG: Embeds the hazard query and retrieves relevant playbook sections.
+    """
+    # 1. Create a query vector based on the hazard
+    query_text = f"Procedures for {hazard_key} hazard near {user_lat}, {user_lng}"
+    
+    response = openai_client.embeddings.create(
+        input=query_text,
+        model="text-embedding-3-small"
+    )
+    query_vector = response.data[0].embedding
 
-    elif hazard_key == "severe_weather_rain":
-        playbook_text = (
-            "Playbook: Suggest rescheduling trip or safe parking spot. "
-            "Find nearest covered shelter."
-        )
-        geospatial_data = (
-            "Mapbox Context: No safe route detour possible. "
-            "Nearest shelter is 0.5 miles away."
-        )
-        return f"{playbook_text} | {geospatial_data}"
+    # 2. Query Pinecone
+    search_results = index.query(
+        vector=query_vector,
+        top_k=2,
+        include_metadata=True
+    )
 
-    return "Default Context: Advise caution."
+    # 3. Format the results into a string for the LLM
+    context_parts = []
+    for match in search_results['matches']:
+        context_parts.append(match['metadata']['text'])
+    
+    return "\n---\n".join(context_parts) if context_parts else "No specific playbook found."
 
 @app.route('/api/generate_prompt', methods=['POST'])
 @token_required
