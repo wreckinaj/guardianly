@@ -8,6 +8,10 @@ import 'profile.dart';
 import 'alertlist.dart';
 import 'settings.dart';
 import 'saved.dart';
+import 'alertdetails.dart';
+import 'forgot_pw.dart';
+import 'reset_pw.dart';
+
 
 
 Future<void> main() async {
@@ -53,12 +57,15 @@ class _MyAppState extends State<MyApp> {
       home: const Home(),
       routes:{
         '/signup': (context) => SignUpPage(),
+        '/forgot_pw': (context) => ForgotPW(),
+        '/reset_pw': (context) => ResetPW(),
         '/login': (context) => LoginPage(),
         '/home': (context) => const Home(),
         '/profile': (context) => const Profile(),
         '/alert': (context) => const Alert(),
         '/settings': (context) => const Settings(),
         '/saved': (context) => const SavedAlerts(),
+        '/alertdetails': (context) => const AlertDetails(),
       }
     );
   }
