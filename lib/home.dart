@@ -1,9 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import '/Components/searchbar.dart';
 import '/Components/menu.dart';
 
-class Home extends StatelessWidget {
+class Home extends StatefulWidget {
   const Home({super.key});
+
+  @override
+  State<Home> createState() => _HomeState();
+}
+
+class _HomeState extends State<Home> {
+  final MapController mapController = MapController();
 
   @override
   Widget build(BuildContext context) {
@@ -12,32 +21,33 @@ class Home extends StatelessWidget {
       appBar: const Menu(),
       body: Column(
         children: [
-          // Search bar at the top
           const SearchBarApp(),
-
-          const SizedBox(height: 16), // some spacing
-
-          // Mock map placeholder with bottom-left Key button
+          const SizedBox(height: 16),
+          // Increased padding to make the map widget smaller relative to the screen
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 3.0),
+              padding: const EdgeInsets.fromLTRB(24.0, 0.0, 24.0, 32.0),
               child: Stack(
                 children: [
-                  // mock map
-                  const DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: Color.fromARGB(255, 219, 239, 255),
-                      borderRadius: BorderRadius.all(Radius.circular(12)),
-                    ),
-                    child: Center(
-                      child: Text(
-                        'Map Placeholder',
-                        style: TextStyle(
-                          color: Color.fromARGB(255, 110, 110, 110),
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
+                  // Mapbox map
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: FlutterMap(
+                      mapController: mapController,
+                      options: const MapOptions(
+                        initialCenter: LatLng(40.7128, -74.0060),
+                        initialZoom: 12.0,
                       ),
+                      children: [
+                        TileLayer(
+                          urlTemplate:
+                              'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token={accessToken}',
+                          additionalOptions: const {
+                            'accessToken':
+                                'pk.eyJ1Ijoic2hvb2tkIiwiYSI6ImNtaG9mNXE3ajBhbGYycXBzYmpsN2ppanEifQ.Zw3YIGnVLC9K36olfWBI6A',
+                          },
+                        ),
+                      ],
                     ),
                   ),
                   Positioned(
@@ -53,7 +63,7 @@ class Home extends StatelessWidget {
                         ),
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 8),
-                        elevation: 2,
+                        elevation: 4,
                       ),
                       child: const Text(
                         'Key',

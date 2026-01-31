@@ -10,29 +10,47 @@ import 'settings.dart';
 import 'saved.dart';
 
 
-void main() async {
+Future<void> main() async {
   // Ensure widgets are bound before async calls
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  try {
+    // Initialize Firebase
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    debugPrint('Firebase.initializeApp() succeeded');
+  } catch (e, st) {
+    // Fixed: Using debugPrint instead of print to satisfy linter
+    debugPrint('Firebase.initializeApp() failed: $e');
+    debugPrint(st.toString());
+    debugPrint('Continuing app start despite Firebase init failure (for debugging).');
+  }
 
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
+class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+    // This runs after the first frame; when this prints, syncing is complete and UI is visible
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      debugPrint('>>> SYNC COMPLETE: First frame rendered on device');
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       home: const Home(),
-
-
       routes:{
         '/signup': (context) => SignUpPage(),
         '/login': (context) => LoginPage(),
@@ -45,4 +63,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-  
