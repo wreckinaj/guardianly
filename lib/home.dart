@@ -1,8 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:geolocator/geolocator.dart';
 import '/Components/searchbar.dart';
 import '/Components/menu.dart';
+
+// A simple class to represent an Alert localized for now
+class LocalAlert {
+  final LatLng position;
+  final String title;
+  final String description;
+
+  LocalAlert({
+    required this.position,
+    required this.title,
+    required this.description,
+  });
+}
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -13,6 +27,103 @@ class Home extends StatefulWidget {
 
 class _HomeState extends State<Home> {
   final MapController mapController = MapController();
+  LatLng? _currentP;
+
+  // Localized mock data for alerts - Updated to Corvallis, OR
+  final List<LocalAlert> _mockAlerts = [
+    LocalAlert(
+      position: const LatLng(44.568, -123.270), // Example: Near OSU campus
+      title: "Suspicious Activity",
+      description: "Reports of suspicious behavior near the park entrance.",
+    ),
+    LocalAlert(
+      position: const LatLng(44.560, -123.250), // Near Corvallis downtown
+      title: "Construction Hazard",
+      description: "Falling debris reported near the construction site.",
+    ),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _getLocation();
+  }
+
+  Future<void> _getLocation() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) return;
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) return;
+    }
+
+    if (permission == LocationPermission.deniedForever) return;
+
+    Position position = await Geolocator.getCurrentPosition();
+    setState(() {
+      _currentP = LatLng(position.latitude, position.longitude);
+      
+      // Optionally add a mock alert right where the user is for testing
+      _mockAlerts.add(LocalAlert(
+        position: LatLng(position.latitude + 0.002, position.longitude + 0.002),
+        title: "Recent Report",
+        description: "An alert was recently reported near your location.",
+      ));
+    });
+
+    if (_currentP != null) {
+      mapController.move(_currentP!, 15.0);
+    }
+  }
+
+  void _showAlertDetails(LocalAlert alert) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) {
+        return Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  const Icon(Icons.local_fire_department, color: Colors.red, size: 28),
+                  const SizedBox(width: 10),
+                  Text(
+                    alert.title,
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 15),
+              Text(
+                alert.description,
+                style: const TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
+                  child: const Text("Dismiss", style: TextStyle(color: Colors.white)),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,20 +134,18 @@ class _HomeState extends State<Home> {
         children: [
           const SearchBarApp(),
           const SizedBox(height: 16),
-          // Increased padding to make the map widget smaller relative to the screen
           Expanded(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(24.0, 0.0, 24.0, 32.0),
               child: Stack(
                 children: [
-                  // Mapbox map
                   ClipRRect(
                     borderRadius: BorderRadius.circular(16),
                     child: FlutterMap(
                       mapController: mapController,
-                      options: const MapOptions(
-                        initialCenter: LatLng(40.7128, -74.0060),
-                        initialZoom: 12.0,
+                      options: MapOptions(
+                        initialCenter: _currentP ?? const LatLng(44.5646, -123.2620), // Default to Corvallis
+                        initialZoom: 14.0,
                       ),
                       children: [
                         TileLayer(
@@ -46,6 +155,40 @@ class _HomeState extends State<Home> {
                             'accessToken':
                                 'pk.eyJ1Ijoic2hvb2tkIiwiYSI6ImNtaG9mNXE3ajBhbGYycXBzYmpsN2ppanEifQ.Zw3YIGnVLC9K36olfWBI6A',
                           },
+                        ),
+                        // Marker Layer for User Location
+                        if (_currentP != null)
+                          MarkerLayer(
+                            markers: [
+                              Marker(
+                                point: _currentP!,
+                                width: 40,
+                                height: 40,
+                                child: const Icon(
+                                  Icons.person_pin_circle,
+                                  color: Colors.blue,
+                                  size: 40,
+                                ),
+                              ),
+                            ],
+                          ),
+                        // Marker Layer for Danger/Alert points
+                        MarkerLayer(
+                          markers: _mockAlerts.map((alert) {
+                            return Marker(
+                              point: alert.position,
+                              width: 40,
+                              height: 40,
+                              child: GestureDetector(
+                                onTap: () => _showAlertDetails(alert),
+                                child: const Icon(
+                                  Icons.local_fire_department,
+                                  color: Colors.red,
+                                  size: 40,
+                                ),
+                              ),
+                            );
+                          }).toList(),
                         ),
                       ],
                     ),
@@ -69,6 +212,16 @@ class _HomeState extends State<Home> {
                         'Key',
                         style: TextStyle(fontWeight: FontWeight.bold),
                       ),
+                    ),
+                  ),
+                  Positioned(
+                    bottom: 16,
+                    right: 16,
+                    child: FloatingActionButton(
+                      mini: true,
+                      onPressed: _getLocation,
+                      backgroundColor: Colors.white,
+                      child: const Icon(Icons.my_location, color: Colors.blue),
                     ),
                   ),
                 ],
