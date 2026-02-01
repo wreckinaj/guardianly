@@ -26,7 +26,6 @@ class AlertDetailsState extends State<AlertDetails> {
 
           Expanded(
             child: Padding(
-           
               padding: const EdgeInsets.fromLTRB(24.0, 0.0, 24.0, 32.0),
               child: Stack(
                 children: [
@@ -200,7 +199,7 @@ class AlertDetailsState extends State<AlertDetails> {
                                   const SizedBox(height: 16),
 
                                   // Tags
-                                  Wrap(
+                                  const Wrap(
                                     spacing: 12,
                                     runSpacing: 8,
                                     children: [
@@ -266,10 +265,10 @@ class AlertDetailsState extends State<AlertDetails> {
                                   Container(
                                     padding: const EdgeInsets.all(14),
                                     decoration: BoxDecoration(
-                                      color: Colors.red.withOpacity(0.05),
+                                      color: const Color(0x0DFF0000),
                                       borderRadius: BorderRadius.circular(12),
                                       border: Border.all(
-                                        color: Colors.red.withOpacity(0.2),
+                                        color: const Color(0x33FF0000)
                                       ),
                                     ),
                                     child: Column(
@@ -369,7 +368,7 @@ class Tag extends StatelessWidget {
       ),
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
+        color: color.withAlpha(26),
         borderRadius: BorderRadius.circular(24),
         border: Border.all(color: color),
       ),

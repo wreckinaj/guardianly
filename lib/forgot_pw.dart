@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '/Components/textfield.dart';
-import '/Components/logoname.dart';
 
 class ForgotPW extends StatefulWidget {
   const ForgotPW({super.key});
@@ -29,39 +28,37 @@ class ForgotPWState extends State<ForgotPW> {
         email: emailController.text.trim(),
       );
       
-      if (context.mounted) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Reset Link Sent'),
-            content: const Text('Check your email for password reset instructions.'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        );
-      }
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Reset Link Sent'),
+          content: const Text('Check your email for password reset instructions.'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
     } on FirebaseAuthException catch (e) {
-      if (context.mounted) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Error'),
-            content: Text(e.message ?? 'Failed to send reset link'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        );
-      }
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Error'),
+          content: Text(e.message ?? 'Failed to send reset link'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
     } finally {
-      if (context.mounted) {
+      if (mounted) {
         setState(() => isLoading = false);
       }
     }
@@ -113,13 +110,13 @@ class ForgotPWState extends State<ForgotPW> {
                 const SizedBox(height: 10),
 
                 // Subtitle outside the box
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 40),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 40),
                   child: Text(
                     "Provide your account's email for which you want to reset your password",
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Colors.grey[600],
+                      color: Color(0xFF666666), // Using hex instead of withOpacity
                       fontSize: 16,
                       fontWeight: FontWeight.w400,
                     ),
@@ -139,11 +136,11 @@ class ForgotPWState extends State<ForgotPW> {
                     ),
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.1),
+                      const BoxShadow(
+                        color: Color(0x1A000000), // Grey with 10% opacity
                         blurRadius: 10,
                         spreadRadius: 2,
-                        offset: const Offset(0, 4),
+                        offset: Offset(0, 4),
                       ),
                     ],
                   ),
@@ -189,7 +186,7 @@ class ForgotPWState extends State<ForgotPW> {
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                disabledBackgroundColor: Colors.red.withOpacity(0.5),
+                                disabledBackgroundColor: const Color(0x80FF0000), // Red with 50% opacity
                               ),
                               child: isLoading
                                   ? const SizedBox(

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '/Components/textfield.dart';
-import '/Components/logoname.dart';
 
 class ResetPW extends StatefulWidget {
   final String? email;
@@ -46,46 +45,44 @@ class ResetPWState extends State<ResetPW> {
         await user.updatePassword(newPasswordController.text.trim());
       }
       
-      if (context.mounted) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Password Updated'),
-            content: const Text('Your password has been successfully updated.'),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context); // Close the dialog
-                  Navigator.pushNamedAndRemoveUntil(
-                    context, 
-                    '/login', 
-                    (route) => false, // Remove all routes
-                  );
-                },
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        );
-      }
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Password Updated'),
+          content: const Text('Your password has been successfully updated.'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Close the dialog
+                Navigator.pushNamedAndRemoveUntil(
+                  context, 
+                  '/login', 
+                  (route) => false, // Remove all routes
+                );
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
     } on FirebaseAuthException catch (e) {
-      if (context.mounted) {
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Error'),
-            content: Text(e.message ?? 'Failed to update password'),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('OK'),
-              ),
-            ],
-          ),
-        );
-      }
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Error'),
+          content: Text(e.message ?? 'Failed to update password'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
     } finally {
-      if (context.mounted) {
+      if (mounted) {
         setState(() => isLoading = false);
       }
     }
@@ -137,13 +134,13 @@ class ResetPWState extends State<ResetPW> {
                 const SizedBox(height: 10),
 
                 // Subtitle outside the box
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 40),
+                const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 40),
                   child: Text(
                     "Please enter a new password for your account",
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Colors.grey[600],
+                      color: Color(0xFF666666),
                       fontSize: 16,
                       fontWeight: FontWeight.w400,
                     ),
@@ -163,11 +160,11 @@ class ResetPWState extends State<ResetPW> {
                     ),
                     borderRadius: BorderRadius.circular(20),
                     boxShadow: [
-                      BoxShadow(
-                        color: Colors.grey.withOpacity(0.1),
+                      const BoxShadow(
+                        color: Color(0x1A000000),
                         blurRadius: 10,
                         spreadRadius: 2,
-                        offset: const Offset(0, 4),
+                        offset: Offset(0, 4),
                       ),
                     ],
                   ),
@@ -227,7 +224,7 @@ class ResetPWState extends State<ResetPW> {
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(12),
                                 ),
-                                disabledBackgroundColor: Colors.red.withOpacity(0.5),
+                                disabledBackgroundColor: const Color(0x80FF0000),
                               ),
                               child: isLoading
                                   ? const SizedBox(

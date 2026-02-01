@@ -54,11 +54,11 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: const Home(),
+      home: LoginPage(),
       routes:{
         '/signup': (context) => SignUpPage(),
-        '/forgot_pw': (context) => ForgotPW(),
-        '/reset_pw': (context) => ResetPW(),
+        '/forgot_pw': (context) => const ForgotPW(),
+        '/reset_pw': (context) => const ResetPW(),
         '/login': (context) => LoginPage(),
         '/home': (context) => const Home(),
         '/profile': (context) => const Profile(),
