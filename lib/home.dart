@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '/Components/searchbar.dart';
 import '/Components/menu.dart';
+import 'alertdetails.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -54,7 +55,13 @@ class _HomeState extends State<Home> {
                     bottom: 16,
                     left: 16,
                     child: ElevatedButton(
-                      onPressed: () {},
+                      onPressed: () {
+                        // Navigate to AlertDetails screen
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => const AlertDetails()),
+                        );
+                      },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.white,
                         foregroundColor: Colors.red,
@@ -63,7 +70,7 @@ class _HomeState extends State<Home> {
                         ),
                         padding: const EdgeInsets.symmetric(
                             horizontal: 12, vertical: 8),
-                        elevation: 4,
+                        elevation: 2,
                       ),
                       child: const Text(
                         'Key',
