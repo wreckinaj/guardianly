@@ -44,19 +44,36 @@ def mock_auth():
 def mock_rag_dependencies():
     """
     Patches the *instances* of clients that server.py created.
-    Even though we mocked the module above, we use 'patch' here to 
-    reset the mocks and define specific return values for each test.
+    Now includes mocks for both Embeddings (RAG) and Chat Completions (Generation).
     """
     with patch('server.openai_client') as mock_openai_instance:
-        # 1. Setup OpenAI Mock
+        # 1. Setup OpenAI Embeddings Mock (for RAG retrieval)
         mock_embedding_response = MagicMock()
-        # Mocking the embedding vector response
         mock_embedding_response.data = [MagicMock(embedding=[0.1] * 1536)]
         mock_openai_instance.embeddings.create.return_value = mock_embedding_response
         
+        # 2. Setup OpenAI Chat Completion Mock (for Generation)
+        # We need to simulate the nested structure: response.choices[0].message.content
+        mock_chat_completion = MagicMock()
+        mock_chat_message = MagicMock()
+        
+        # This string must match the JSON structure your server expects
+        mock_chat_message.content = json.dumps({
+            "severity": "High",
+            "message": "AI generated safety alert.",
+            "actions": ["Take cover", "Avoid area"],
+            "source": "Guardianly AI Agent"
+        })
+        
+        # Build the chain: completion -> choices[0] -> message
+        mock_choice = MagicMock()
+        mock_choice.message = mock_chat_message
+        mock_chat_completion.choices = [mock_choice]
+        
+        mock_openai_instance.chat.completions.create.return_value = mock_chat_completion
+        
         with patch('server.index') as mock_pinecone_index:
-            # 2. Setup Pinecone Index Mock
-            # This mimics the response from index.query()
+            # 3. Setup Pinecone Index Mock
             mock_pinecone_index.query.return_value = {
                 'matches': [
                     {
