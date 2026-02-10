@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import '../models/safety_recommendation.dart';
+import 'package:flutter/foundation.dart';
 
 class ApiService {
   // Use 10.0.2.2 for Android Emulator, localhost for iOS Simulator
@@ -111,10 +112,10 @@ class ApiService {
           return SafetyRecommendation.fromJson(data['recommendation']);
         }
       } else {
-        print('Server Error: ${response.body}');
+        debugPrint('Server Error: ${response.body}');
       }
     } catch (e) {
-      print('Network Error: $e');
+      debugPrint('Network Error: $e');
     }
     return null;
   }

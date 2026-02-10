@@ -295,7 +295,7 @@ class _HomeState extends State<Home> {
                   if (_isLoading)
                     Container(
                       decoration: BoxDecoration(
-                        color: Colors.black.withOpacity(0.3),
+                        color: Colors.black.withValues(alpha: 0.3),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: const Center(
