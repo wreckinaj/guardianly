@@ -10,6 +10,10 @@ from firebase_admin import credentials, auth
 from schemas import GeneratePromptRequestSchema, AlertRecommendationSchema
 from pinecone import Pinecone
 from openai import OpenAI
+from dotenv import load_dotenv
+
+load_dotenv()
+
 
 app = Flask(__name__)
 
