@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import '/Components/searchbar.dart';
 import '/Components/menu.dart';
 import 'alertdetails.dart';
+import 'services/api_service.dart';
 
 // A simple class to represent an Alert localized for now
 class LocalAlert {
@@ -29,6 +30,7 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   final MapController mapController = MapController();
   LatLng? _currentP;
+  bool _isLoading = false;
 
   // Localized mock data for alerts - Updated to Corvallis, OR
   final List<LocalAlert> _mockAlerts = [
@@ -68,7 +70,7 @@ class _HomeState extends State<Home> {
     Position position = await Geolocator.getCurrentPosition();
     setState(() {
       _currentP = LatLng(position.latitude, position.longitude);
-      
+
       // Optionally add a mock alert right where the user is for testing
       _mockAlerts.add(LocalAlert(
         position: LatLng(position.latitude + 0.002, position.longitude + 0.002),
@@ -79,6 +81,95 @@ class _HomeState extends State<Home> {
 
     if (_currentP != null) {
       mapController.move(_currentP!, 15.0);
+    }
+  }
+
+  // --- NEW: AI Integration Function ---
+  void _getAIAdvice() async {
+    if (_currentP == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Waiting for location...")),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    // Call the backend service
+    final result = await ApiService.generateSafetyAlert(
+      hazardType: "General Safety Check", // You can make this dynamic later
+      lat: _currentP!.latitude,
+      lng: _currentP!.longitude,
+    );
+
+    setState(() => _isLoading = false);
+
+    if (!mounted) return;
+
+    if (result != null) {
+      // Show the AI Response
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Row(
+            children: [
+              Icon(
+                Icons.shield,
+                color: result.severity == 'High' ? Colors.red : Colors.orange,
+              ),
+              const SizedBox(width: 8),
+              Text("${result.severity} Alert"),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  result.message,
+                  style: const TextStyle(fontSize: 16),
+                ),
+                const SizedBox(height: 15),
+                const Text(
+                  "Recommended Actions:",
+                  style: TextStyle(fontWeight: FontWeight.bold),
+                ),
+                const SizedBox(height: 5),
+                ...result.actions.map((action) => Padding(
+                      padding: const EdgeInsets.only(bottom: 4.0),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text("• "),
+                          Expanded(child: Text(action)),
+                        ],
+                      ),
+                    )),
+                const SizedBox(height: 15),
+                Text(
+                  "Source: ${result.source}",
+                  style: const TextStyle(
+                      fontSize: 12,
+                      fontStyle: FontStyle.italic,
+                      color: Colors.grey),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("OK"),
+            ),
+          ],
+        ),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text("Could not connect to AI Safety System.")),
+      );
     }
   }
 
@@ -97,11 +188,13 @@ class _HomeState extends State<Home> {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.local_fire_department, color: Colors.red, size: 28),
+                  const Icon(Icons.local_fire_department,
+                      color: Colors.red, size: 28),
                   const SizedBox(width: 10),
                   Text(
                     alert.title,
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                    style: const TextStyle(
+                        fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
@@ -115,8 +208,10 @@ class _HomeState extends State<Home> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
-                  child: const Text("Dismiss", style: TextStyle(color: Colors.white)),
+                  style:
+                      ElevatedButton.styleFrom(backgroundColor: Colors.black),
+                  child: const Text("Dismiss",
+                      style: TextStyle(color: Colors.white)),
                 ),
               ),
             ],
@@ -145,7 +240,8 @@ class _HomeState extends State<Home> {
                     child: FlutterMap(
                       mapController: mapController,
                       options: MapOptions(
-                        initialCenter: _currentP ?? const LatLng(44.5646, -123.2620), // Default to Corvallis
+                        initialCenter: _currentP ??
+                            const LatLng(44.5646, -123.2620), // Default to Corvallis
                         initialZoom: 14.0,
                       ),
                       children: [
@@ -194,33 +290,73 @@ class _HomeState extends State<Home> {
                       ],
                     ),
                   ),
+
+                  // Loading Indicator Overlay
+                  if (_isLoading)
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Center(
+                        child:
+                            CircularProgressIndicator(color: Colors.white),
+                      ),
+                    ),
+
+                  // "Key" Button and "AI Check" Button (Bottom Left)
                   Positioned(
                     bottom: 16,
                     left: 16,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        // Navigate to AlertDetails screen
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const AlertDetails()),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.red,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // NEW: AI Safety Check Button
+                        ElevatedButton.icon(
+                          onPressed: _getAIAdvice,
+                          icon: const Icon(Icons.security, size: 18),
+                          label: const Text('AI Check'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.black,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                            elevation: 2,
+                          ),
                         ),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                        elevation: 2,
-                      ),
-                      child: const Text(
-                        'Key',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
+                        const SizedBox(height: 8),
+                        // Existing Key Button
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const AlertDetails()),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.red,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                            elevation: 2,
+                          ),
+                          child: const Text(
+                            'Key',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
+
+                  // My Location Button (Bottom Right)
                   Positioned(
                     bottom: 16,
                     right: 16,
@@ -228,7 +364,8 @@ class _HomeState extends State<Home> {
                       mini: true,
                       onPressed: _getLocation,
                       backgroundColor: Colors.white,
-                      child: const Icon(Icons.my_location, color: Colors.blue),
+                      child:
+                          const Icon(Icons.my_location, color: Colors.blue),
                     ),
                   ),
                 ],

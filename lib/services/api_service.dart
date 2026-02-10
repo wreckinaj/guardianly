@@ -1,9 +1,19 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:firebase_auth/firebase_auth.dart';
+import '../models/safety_recommendation.dart';
+import 'package:flutter/foundation.dart';
 
 class ApiService {
-  // Update this URL to match your backend server
-  static const String baseUrl = 'http://localhost:5000';
+  // Use 10.0.2.2 for Android Emulator, localhost for iOS Simulator
+  static const String baseUrl = 'http://10.0.2.2:5000'; 
+  // static const String baseUrl = 'http://localhost:5000'; // Use this for iOS
+
+  // Helper to get the current user's token
+  static Future<String?> _getAuthToken() async {
+    User? user = FirebaseAuth.instance.currentUser;
+    return await user?.getIdToken();
+  }
 
   // Login function
   static Future<Map<String, dynamic>> login(String username, String password) async {
@@ -70,5 +80,43 @@ class ApiService {
         'error': 'Network error: $e',
       };
     }
+  }
+
+  static Future<SafetyRecommendation?> generateSafetyAlert({
+    required String hazardType,
+    required double lat,
+    required double lng,
+  }) async {
+    try {
+      final token = await _getAuthToken();
+      if (token == null) {
+        throw Exception("User not authenticated");
+      }
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/generate_prompt'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token', // Pass the token here
+        },
+        body: jsonEncode({
+          'hazard': hazardType,
+          'user_lat': lat,
+          'user_lng': lng,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['status'] == 'success' || data['status'] == 'warning') {
+          return SafetyRecommendation.fromJson(data['recommendation']);
+        }
+      } else {
+        debugPrint('Server Error: ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('Network Error: $e');
+    }
+    return null;
   }
 }
