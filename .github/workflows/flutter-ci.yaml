@@ -26,8 +26,8 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          # Added firebase-admin to dependencies
-          pip install flask marshmallow requests PyJWT pytest firebase-admin
+          # Install ALL backend dependencies
+          pip install flask marshmallow requests PyJWT pytest firebase-admin python-dotenv pinecone-client openai
           
       - name: Run Pytest
         working-directory: ./backend
