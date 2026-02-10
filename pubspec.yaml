@@ -20,7 +20,7 @@ dependencies:
   cloud_firestore: ^5.4.4
 
   # Fonts
-  google_fonts: ^7.0.1
+  google_fonts: ^8.0.1
 
   # SVG support
   flutter_svg: ^2.1.1
