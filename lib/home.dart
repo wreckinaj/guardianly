@@ -5,8 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import '/Components/searchbar.dart';
 import '/Components/menu.dart';
 import 'alertdetails.dart';
-import 'services/api_service.dart'; // Ensure this file exists
-// import 'models/safety_recommendation.dart'; // Uncomment if model is in a separate file, otherwise ApiService handles the return type
+import 'services/api_service.dart';
 
 // A simple class to represent an Alert localized for now
 class LocalAlert {
@@ -151,7 +150,9 @@ class _HomeState extends State<Home> {
                 Text(
                   "Source: ${result.source}",
                   style: const TextStyle(
-                      fontSize: 12, fontStyle: FontStyle.italic, color: Colors.grey),
+                      fontSize: 12,
+                      fontStyle: FontStyle.italic,
+                      color: Colors.grey),
                 ),
               ],
             ),
@@ -166,7 +167,8 @@ class _HomeState extends State<Home> {
       );
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Could not connect to AI Safety System.")),
+        const SnackBar(
+            content: Text("Could not connect to AI Safety System.")),
       );
     }
   }
@@ -297,11 +299,12 @@ class _HomeState extends State<Home> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: const Center(
-                        child: CircularProgressIndicator(color: Colors.white),
+                        child:
+                            CircularProgressIndicator(color: Colors.white),
                       ),
                     ),
 
-                  // "Key" Button (Bottom Left)
+                  // "Key" Button and "AI Check" Button (Bottom Left)
                   Positioned(
                     bottom: 16,
                     left: 16,
@@ -361,7 +364,8 @@ class _HomeState extends State<Home> {
                       mini: true,
                       onPressed: _getLocation,
                       backgroundColor: Colors.white,
-                      child: const Icon(Icons.my_location, color: Colors.blue),
+                      child:
+                          const Icon(Icons.my_location, color: Colors.blue),
                     ),
                   ),
                 ],
