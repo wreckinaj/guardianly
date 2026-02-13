@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart'; 
 import 'firebase_options.dart';
 import 'login.dart';
 import 'signup.dart';
@@ -19,15 +18,6 @@ import 'fromto.dart';
 Future<void> main() async {
   // Ensure widgets are bound before async calls
   WidgetsFlutterBinding.ensureInitialized();
-
-  try {
-    // Load .env file
-    await dotenv.load(fileName: ".env");
-    debugPrint('.env file loaded successfully');
-  } catch (e) {
-    debugPrint('Error loading .env file: $e');
-    debugPrint('Continuing without .env file - map tokens may not work');
-  }
 
   try {
     // Initialize Firebase

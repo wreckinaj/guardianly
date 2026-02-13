@@ -46,5 +46,3 @@ app.*.map.json
 
 # enviorment variables
 .env
-*.env
-!.env.example
