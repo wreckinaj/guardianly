@@ -4,7 +4,6 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import '/Components/searchbar.dart';
 import '/Components/menu.dart';
-import '/Components/key.dart';
 import 'alertdetails.dart';
 import 'services/api_service.dart';
 
@@ -32,7 +31,7 @@ class HomeState extends State<Home> {
   final MapController mapController = MapController();
   bool showKeyBox = false;
   LatLng? _currentP;
-  bool _isLoading = false;
+  bool _isLoading = false; // This is now used
 
   // Localized mock data for alerts - Updated to Corvallis, OR
   final List<LocalAlert> _mockAlerts = [
@@ -86,7 +85,7 @@ class HomeState extends State<Home> {
     }
   }
 
-  // --- NEW: AI Integration Function ---
+  // AI Integration Function
   void _getAIAdvice() async {
     if (_currentP == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -292,22 +291,7 @@ class HomeState extends State<Home> {
                       ],
                     ),
                   ),
-                  const Positioned(
-                    bottom: 16,
-                    left: 16,
-                    child: MapKey(),
-                  ),
-                ],
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
                   
-
                   // Loading Indicator Overlay
                   if (_isLoading)
                     Container(
@@ -316,8 +300,7 @@ class HomeState extends State<Home> {
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: const Center(
-                        child:
-                            CircularProgressIndicator(color: Colors.white),
+                        child: CircularProgressIndicator(color: Colors.white),
                       ),
                     ),
 
@@ -328,7 +311,7 @@ class HomeState extends State<Home> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // NEW: AI Safety Check Button
+                        // AI Safety Check Button
                         ElevatedButton.icon(
                           onPressed: _getAIAdvice,
                           icon: const Icon(Icons.security, size: 18),
@@ -381,8 +364,7 @@ class HomeState extends State<Home> {
                       mini: true,
                       onPressed: _getLocation,
                       backgroundColor: Colors.white,
-                      child:
-                          const Icon(Icons.my_location, color: Colors.blue),
+                      child: const Icon(Icons.my_location, color: Colors.blue),
                     ),
                   ),
                 ],
