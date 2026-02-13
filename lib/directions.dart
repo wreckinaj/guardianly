@@ -148,10 +148,6 @@ class DirectionsState extends State<Directions> {
                         TileLayer(
                           urlTemplate:
                               'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token={accessToken}',
-                          /*additionalOptions: const {
-                            'accessToken':
-                                'pk.eyJ1Ijoic2hvb2tkIiwiYSI6ImNtaG9mNXE3ajBhbGYycXBzYmpsN2ppanEifQ.Zw3YIGnVLC9K36olfWBI6A',
-                          },*/
                           additionalOptions: {
                             'accessToken': dotenv.env['MAPBOX_TOKEN'] ?? '',
                           },
