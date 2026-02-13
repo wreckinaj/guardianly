@@ -11,6 +11,7 @@ import 'saved.dart';
 import 'alertdetails.dart';
 import 'forgot_pw.dart';
 import 'reset_pw.dart';
+import 'fromto.dart';
 
 
 
@@ -37,10 +38,10 @@ class MyApp extends StatefulWidget {
   const MyApp({super.key});
 
   @override
-  State<MyApp> createState() => _MyAppState();
+  State<MyApp> createState() => MyAppState();
 }
 
-class _MyAppState extends State<MyApp> {
+class MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
@@ -54,7 +55,7 @@ class _MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: LoginPage(),
+      home: const Home(),
       routes:{
         '/signup': (context) => SignUpPage(),
         '/forgot_pw': (context) => const ForgotPW(),
@@ -62,10 +63,11 @@ class _MyAppState extends State<MyApp> {
         '/login': (context) => LoginPage(),
         '/home': (context) => const Home(),
         '/profile': (context) => const Profile(),
-        '/alert': (context) => const Alert(),
+        '/alertlist': (context) => const Alert(),
         '/settings': (context) => const Settings(),
         '/saved': (context) => const SavedAlerts(),
         '/alertdetails': (context) => const AlertDetails(),
+        '/fromto': (context) => const FromTo(),
       }
     );
   }

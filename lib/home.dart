@@ -3,17 +3,18 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import '/Components/searchbar.dart';
 import '/Components/menu.dart';
-import 'alertdetails.dart';
+import '/Components/key.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
 
   @override
-  State<Home> createState() => _HomeState();
+  State<Home> createState() => HomeState();
 }
 
-class _HomeState extends State<Home> {
+class HomeState extends State<Home> {
   final MapController mapController = MapController();
+  bool showKeyBox = false;
 
   @override
   Widget build(BuildContext context) {
@@ -22,9 +23,8 @@ class _HomeState extends State<Home> {
       appBar: const Menu(),
       body: Column(
         children: [
-          const SearchBarApp(),
+          const SearchBarApp(isOnAlertPage: false),
           const SizedBox(height: 16),
-          // Increased padding to make the map widget smaller relative to the screen
           Expanded(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(24.0, 0.0, 24.0, 32.0),
@@ -51,32 +51,10 @@ class _HomeState extends State<Home> {
                       ],
                     ),
                   ),
-                  Positioned(
+                  const Positioned(
                     bottom: 16,
                     left: 16,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        // Navigate to AlertDetails screen
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(builder: (context) => const AlertDetails()),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.red,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                        elevation: 2,
-                      ),
-                      child: const Text(
-                        'Key',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
+                    child: MapKey(),
                   ),
                 ],
               ),
@@ -87,3 +65,4 @@ class _HomeState extends State<Home> {
     );
   }
 }
+                  
