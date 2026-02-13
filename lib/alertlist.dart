@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'Components/searchbar.dart';
 import '/Components/menu.dart';
+import 'alertdetails.dart';
 
 class Alert extends StatelessWidget {
   const Alert({super.key});
@@ -12,11 +13,9 @@ class Alert extends StatelessWidget {
       appBar: const Menu(),
       body: Column(
         children: [
-          // Search bar at the top
-          const SearchBarApp(),
+          const SearchBarApp(isOnAlertPage: true),
 
           const SizedBox(height: 16),
-
           // Alert list with individual cards
           Expanded(
             child: ListView.builder(
@@ -80,6 +79,18 @@ class Alert extends StatelessWidget {
                                 GestureDetector(
                                   onTap: () {
                                     // Placeholder for "Read More" action
+                                    if (index == 0) {
+                                      // Navigate to AlertDetails for the first alert for now
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => const AlertDetails(),
+                                        ),
+                                      );
+                                    } else {
+                                      // Placeholder for other alerts
+                                    }
+
                                   },
                                   child: const Text(
                                     'Read more',

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '/Components/menu.dart';
+import 'alertdetails.dart';
 
 class SavedAlerts extends StatelessWidget {
   const SavedAlerts({super.key});
@@ -30,6 +31,10 @@ class SavedAlerts extends StatelessWidget {
               padding: const EdgeInsets.symmetric(horizontal: 16),
               itemCount: 3, // placeholder count
               itemBuilder: (context, index) {
+                bool isSaved = false; // added
+                
+                return StatefulBuilder(
+                  builder: (context, setState) {
                 return Container(
                   margin: const EdgeInsets.symmetric(vertical: 8),
                   padding: const EdgeInsets.all(12),
@@ -51,7 +56,10 @@ class SavedAlerts extends StatelessWidget {
                       Container(
                         width: 30,
                         height: 30,
-                        margin: const EdgeInsets.only(top: 20, right: 12),
+                        margin: const EdgeInsets.only(
+                          top: 20, 
+                          right: 12
+                        ),
                         decoration: const BoxDecoration(
                           color: Colors.red,
                           shape: BoxShape.circle,
@@ -81,7 +89,21 @@ class SavedAlerts extends StatelessWidget {
                             ),
                             const SizedBox(height: 6),
                             GestureDetector(
-                              onTap: () {},
+                              onTap: () {
+                                if (index == 0) {
+                                  // Navigate to AlertDetails for the first alert for now
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const AlertDetails(),
+                                    ),
+                                  );
+                                } 
+                                else {
+                                  // Placeholder for other alerts
+                                }
+                              },
+
                               child: const Text(
                                 'Read more',
                                 style: TextStyle(
@@ -95,16 +117,26 @@ class SavedAlerts extends StatelessWidget {
                         ),
                       ),
 
-                      // Saved icon (always filled)
-                      const Icon(
-                        Icons.bookmark,
-                        color: Colors.black,
+                      // Saved icon - toggles
+                      IconButton(
+                        icon: Icon(
+                          isSaved ? Icons.bookmark : Icons.bookmark_border,
+                          color: isSaved ? Colors.black : Colors.grey,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            isSaved = !isSaved; // toggle save state
+                        });
+                        },
                       ),
                     ],
                   ),
                 );
               },
+            );
+              },
             ),
+  
           ),
         ],
       ),

@@ -103,10 +103,13 @@ class LoginPage extends StatelessWidget {
                                 Navigator.pushNamed(context, '/forgot_pw');
                               },
                               child: const Text(
-                                'Forgot Password?',
+                                'Forgot Password',
                                 style: TextStyle(
                                   color: Colors.red,
                                   fontWeight: FontWeight.bold,
+                                  decoration: TextDecoration.underline,
+                                  decorationColor: Colors.red,
+                                  decorationThickness: 2,
                                 ),
                               ),
                             ),
@@ -114,17 +117,17 @@ class LoginPage extends StatelessWidget {
                         ),
                       ),
 
-                      const SizedBox(height: 50),
+                      const SizedBox(height: 20),
 
                       // Login Button
                       GestureDetector(
                         onTap: () => loginUser(context),
                         child: Container(
-                          padding: const EdgeInsets.all(20),
-                          margin: const EdgeInsets.symmetric(horizontal: 70),
+                          padding: const EdgeInsets.all(12),
+                          margin: const EdgeInsets.symmetric(horizontal: 25),
                           decoration: BoxDecoration(
                             color: Colors.black,
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Center(
                             child: Text(
@@ -162,6 +165,9 @@ class LoginPage extends StatelessWidget {
                               style: TextStyle(
                                 color: Colors.blue,
                                 fontWeight: FontWeight.bold,
+                                decoration: TextDecoration.underline,
+                                decorationColor: Colors.blue,
+                                decorationThickness: 2,
                               ),
                             ),
                           ),
