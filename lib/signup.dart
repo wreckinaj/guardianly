@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '/Components/textfield.dart';
 import '/Components/logoname.dart';
+import '/policy.dart';
 
 class SignUpPage extends StatelessWidget {
   SignUpPage({super.key});
@@ -127,33 +128,41 @@ class SignUpPage extends StatelessWidget {
                         hintText: 'Username',
                         obscureText: false,
                       ),
+                      
                       const SizedBox(height: 20),
+                    
                       MyTextField(
                         controller: emailController,
                         hintText: 'Email',
                         obscureText: false,
                       ),
+                      
                       const SizedBox(height: 20),
+                      
                       MyTextField(
                         controller: passwordController,
                         hintText: 'Password',
                         obscureText: true,
                       ),
+                      
                       const SizedBox(height: 10),
+
                       MyTextField(
                         controller: confirmPasswordController,
                         hintText: 'Confirm Password',
                         obscureText: true,
                       ),
-                      const SizedBox(height: 50),
+
+                      const SizedBox(height: 20),
+                      
                       GestureDetector(
                         onTap: () => signUpUser(context),
                         child: Container(
-                          padding: const EdgeInsets.all(20),
-                          margin: const EdgeInsets.symmetric(horizontal: 70),
+                          padding: const EdgeInsets.all(12),
+                          margin: const EdgeInsets.symmetric(horizontal: 25),
                           decoration: BoxDecoration(
                             color: Colors.black,
-                            borderRadius: BorderRadius.circular(20),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                           child: const Center(
                             child: Text(
@@ -185,6 +194,34 @@ class SignUpPage extends StatelessWidget {
                               style: TextStyle(
                                 color: Colors.blue,
                                 fontWeight: FontWeight.bold,
+                                decoration: TextDecoration.underline,
+                                decorationColor: Colors.blue,
+                                decorationThickness: 2,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 5),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(width: 4),
+                          GestureDetector(
+                            onTap: () {
+                              Navigator.push(context,
+                                MaterialPageRoute(
+                                  builder: (context) => const Policy(),
+                                ),
+                              );
+                            },
+                            child: const Text(
+                              'Terms of Service and Policy',
+                              style: TextStyle(
+                                color: Colors.grey,
+                                decoration: TextDecoration.underline,
+                                decorationColor: Colors.grey,
+                                decorationThickness: 2,
                               ),
                             ),
                           ),

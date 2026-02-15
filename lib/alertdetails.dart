@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
 import '/Components/searchbar.dart';
 import '/Components/menu.dart';
+import '/Components/key.dart';
 
 class AlertDetails extends StatefulWidget {
   const AlertDetails({super.key});
@@ -11,6 +14,13 @@ class AlertDetails extends StatefulWidget {
 
 class AlertDetailsState extends State<AlertDetails> {
   bool showInfoBox = true;
+  final MapController mapController = MapController();
+
+  @override
+  void dispose() {
+    mapController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,14 +31,14 @@ class AlertDetailsState extends State<AlertDetails> {
       appBar: const Menu(),
       body: Column(
         children: [
-          const SearchBarApp(),
+          const SearchBarApp(isOnAlertPage: false),
           const SizedBox(height: 16),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(24.0, 0.0, 24.0, 32.0),
               child: Stack(
                 children: [
-                  // Map placeholder
+                  // Actual FlutterMap
                   ClipRRect(
                     borderRadius: BorderRadius.circular(16),
                     child: GestureDetector(
@@ -39,70 +49,32 @@ class AlertDetailsState extends State<AlertDetails> {
                           });
                         }
                       },
-                      child: Container(
-                        width: double.infinity,
-                        height: double.infinity,
-                        decoration: const BoxDecoration(
-                          color: Color.fromARGB(255, 219, 239, 255),
+                      child: FlutterMap(
+                        mapController: mapController,
+                        options: const MapOptions(
+                          initialCenter: LatLng(40.7128, -74.0060),
+                          initialZoom: 12.0,
                         ),
-                        child: const Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Icon(
-                                Icons.location_on,
-                                color: Colors.red,
-                                size: 48,
-                              ),
-                              SizedBox(height: 12),
-                              Text(
-                                'Alert Location',
-                                style: TextStyle(
-                                  color: Color.fromARGB(255, 110, 110, 110),
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                'Amazon Warehouse Area',
-                                style: TextStyle(
-                                  color: Color.fromARGB(180, 110, 110, 110),
-                                  fontSize: 16,
-                                ),
-                              ),
-                            ],
+                        children: [
+                          TileLayer(
+                            urlTemplate:
+                                'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token={accessToken}',
+                            additionalOptions: const {
+                              'accessToken':
+                                  'pk.eyJ1Ijoic2hvb2tkIiwiYSI6ImNtaG9mNXE3ajBhbGYycXBzYmpsN2ppanEifQ.Zw3YIGnVLC9K36olfWBI6A',
+                            },
                           ),
-                        ),
+                        ],
                       ),
                     ),
                   ),
 
-                  // Key button
-                  Positioned(
+                  // MapKey component
+                  const Positioned(
                     bottom: 16,
                     left: 16,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        setState(() {
-                          showInfoBox = !showInfoBox;
-                        });
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: Colors.red,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 8),
-                        elevation: 2,
-                      ),
-                      child: const Text(
-                        'Key',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
+                    child:  MapKey(),
+                  
                   ),
 
                   // Enhanced INFO BOX
