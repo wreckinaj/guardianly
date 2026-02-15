@@ -29,7 +29,7 @@ dependencies:
   settings_ui: ^2.0.2
 
   # Location
-  geolocator: ^13.0.1
+  geolocator: ^14.0.2
 
   # Mapbox
   flutter_map: ^7.0.2
