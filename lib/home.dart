@@ -2,23 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '/Components/searchbar.dart';
 import '/Components/menu.dart';
-import 'alertdetails.dart';
-import 'services/api_service.dart';
-
-// A simple class to represent an Alert localized for now
-class LocalAlert {
-  final LatLng position;
-  final String title;
-  final String description;
-
-  LocalAlert({
-    required this.position,
-    required this.title,
-    required this.description,
-  });
-}
+import '/Components/key.dart';
 
 class LocalAlert {
   final LatLng position;
@@ -47,6 +34,7 @@ class HomeState extends State<Home> {
   final MapController mapController = MapController();
   bool showKeyBox = false;
   LatLng? _currentP;
+  final String mapboxToken = dotenv.env['MAPBOX_ACCESS_TOKEN'] ?? '';
 
   // Mock alerts in Corvallis matching the Map Legend
   final List<LocalAlert> _mockAlerts = [
@@ -189,9 +177,8 @@ class HomeState extends State<Home> {
                         TileLayer(
                           urlTemplate:
                               'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token={accessToken}',
-                          additionalOptions: const {
-                            'accessToken':
-                                'pk.eyJ1Ijoic2hvb2tkIiwiYSI6ImNtaG9mNXE3ajBhbGYycXBzYmpsN2ppanEifQ.Zw3YIGnVLC9K36olfWBI6A',
+                          additionalOptions: {
+                            'accessToken': mapboxToken,
                           },
                         ),
                         if (_currentP != null)
@@ -220,7 +207,7 @@ class HomeState extends State<Home> {
                                     shape: BoxShape.circle,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.2), // Fixed deprecated withOpacity
+                                        color: Colors.black.withValues(alpha: 0.2),
                                         blurRadius: 4,
                                         offset: const Offset(0, 2),
                                       ),
@@ -235,81 +222,10 @@ class HomeState extends State<Home> {
                       ],
                     ),
                   ),
-                  
-                  // Loading Indicator Overlay
-                  if (_isLoading)
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Center(
-                        child: CircularProgressIndicator(color: Colors.white),
-                      ),
-                    ),
-
-                  // "Key" Button and "AI Check" Button (Bottom Left)
-                  Positioned(
+                  const Positioned(
                     bottom: 16,
                     left: 16,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // AI Safety Check Button
-                        ElevatedButton.icon(
-                          onPressed: _getAIAdvice,
-                          icon: const Icon(Icons.security, size: 18),
-                          label: const Text('AI Check'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.black,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 8),
-                            elevation: 2,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        // Existing Key Button
-                        ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => const AlertDetails()),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.red,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 8),
-                            elevation: 2,
-                          ),
-                          child: const Text(
-                            'Key',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  // My Location Button (Bottom Right)
-                  Positioned(
-                    bottom: 16,
-                    right: 16,
-                    child: FloatingActionButton(
-                      mini: true,
-                      onPressed: _getLocation,
-                      backgroundColor: Colors.white,
-                      child: const Icon(Icons.my_location, color: Colors.blue),
-                    ),
+                    child: MapKey(),
                   ),
                   Positioned(
                     bottom: 16,
