@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '/Components/key.dart';
 
 class Directions extends StatefulWidget {
@@ -22,37 +23,22 @@ class Directions extends StatefulWidget {
 }
 
 class DirectionsState extends State<Directions> {
-  // --- NEW FUNCTIONAL CODE ---
   final MapController mapController = MapController();
-  final String mapboxToken = 'pk.eyJ1Ijoic2hvb2tkIiwiYSI6ImNtaG9mNXE3ajBhbGYycXBzYmpsN2ppanEifQ.Zw3YIGnVLC9K36olfWBI6A';
+  // Using environment variable for security
+  final String mapboxToken = dotenv.env['MAPBOX_ACCESS_TOKEN'] ?? '';
   
   List<LatLng> routePoints = [];
+  List<DirectionStep> steps = []; // Real directions parsed from Mapbox
   bool isLoading = true;
   String? errorMessage;
   bool isPanelExpanded = true;
-
-  /* --- ORIGINAL CODE (COMMENTED OUT) ---
-  bool showDirections = true;
-  TextEditingController fromController = TextEditingController();
-  TextEditingController toController = TextEditingController();
-  List<DirectionStep> directions = [];
-  RouteSummary? routeSummary;
-  bool isLoadingDirections = false;
-  */
 
   @override
   void initState() {
     super.initState();
     calculateRoute();
-    
-    /* --- ORIGINAL INITSTATE (COMMENTED OUT) ---
-    fromController.text = widget.fromLocation;
-    toController.text = widget.toLocation;
-    loadMockData();
-    */
   }
 
-  // --- NEW FUNCTIONAL METHODS ---
   Future<void> calculateRoute() async {
     setState(() {
       isLoading = true;
@@ -72,15 +58,33 @@ class DirectionsState extends State<Directions> {
       }
 
       final mode = widget.transportMode == 'drive' ? 'driving' : widget.transportMode;
-      final url = 'https://api.mapbox.com/directions/v5/mapbox/$mode/${startCoords.longitude},${startCoords.latitude};${endCoords.longitude},${endCoords.latitude}?geometries=geojson&access_token=$mapboxToken';
+      // Added steps=true to the URL to get turn-by-turn data
+      final url = 'https://api.mapbox.com/directions/v5/mapbox/$mode/${startCoords.longitude},${startCoords.latitude};${endCoords.longitude},${endCoords.latitude}?geometries=geojson&steps=true&access_token=$mapboxToken';
       
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        final List coords = data['routes'][0]['geometry']['coordinates'];
+        final route = data['routes'][0];
+        final List coords = route['geometry']['coordinates'];
         
+        // Parse the turn-by-turn steps
+        final List legs = route['legs'];
+        List<DirectionStep> parsedSteps = [];
+        int stepCount = 1;
+
+        for (var leg in legs) {
+          for (var step in leg['steps']) {
+            parsedSteps.add(DirectionStep(
+              instruction: step['maneuver']['instruction'],
+              distance: "${(step['distance'] * 0.000621371).toStringAsFixed(1)} mi", // Convert meters to miles
+              stepNumber: stepCount++,
+            ));
+          }
+        }
+
         setState(() {
           routePoints = coords.map((c) => LatLng(c[1].toDouble(), c[0].toDouble())).toList();
+          steps = parsedSteps;
           isLoading = false;
         });
 
@@ -134,71 +138,6 @@ class DirectionsState extends State<Directions> {
     );
   }
 
-  /* --- ORIGINAL MOCK DATA METHOD (COMMENTED OUT) ---
-  void loadMockData() {
-    setState(() {
-      directions = [
-        DirectionStep(
-          instruction: 'NW 19th St toward NW Tyler Ave',
-          distance: '0.2 mi',
-          duration: '3 min',
-          arrivalTime: '9:33',
-          turnIcon: Icons.straight,
-          turnColor: Colors.blue,
-          stepNumber: 1,
-          isCurrent: true,
-        ),
-        DirectionStep(
-          instruction: 'Turn left onto NW Tyler Ave',
-          distance: '0.5 mi',
-          duration: '2 min',
-          arrivalTime: '9:35',
-          turnIcon: Icons.turn_left,
-          turnColor: Colors.orange,
-          stepNumber: 2,
-          isCurrent: false,
-        ),
-        DirectionStep(
-          instruction: 'Turn right onto Main St',
-          distance: '1.2 mi',
-          duration: '5 min',
-          arrivalTime: '9:40',
-          turnIcon: Icons.turn_right,
-          turnColor: Colors.green,
-          stepNumber: 3,
-          isCurrent: false,
-        ),
-        DirectionStep(
-          instruction: 'Arrive at destination',
-          distance: '',
-          duration: '',
-          arrivalTime: '',
-          turnIcon: Icons.location_on,
-          turnColor: Colors.red,
-          stepNumber: 4,
-          isCurrent: false,
-        ),
-      ];
-      
-      routeSummary = RouteSummary(
-        totalDistance: '1.9 mi',
-        totalDuration: '10 min',
-        arrivalTime: '9:40 AM',
-        startAddress: widget.fromLocation,
-        endAddress: widget.toLocation,
-      );
-    });
-  }
-  */
-
-  @override
-  void dispose() {
-    // fromController.dispose(); // Commented out original dispose
-    // toController.dispose();
-    mapController.dispose();
-    super.dispose();
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -246,6 +185,47 @@ class DirectionsState extends State<Directions> {
                 ),
             ],
           ),
+          
+          // Sliding Directions Panel
+          if (!isLoading && steps.isNotEmpty)
+            DraggableScrollableSheet(
+              initialChildSize: 0.1,
+              minChildSize: 0.1,
+              maxChildSize: 0.6,
+              builder: (context, scrollController) {
+                return Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                    boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10)],
+                  ),
+                  child: ListView.builder(
+                    controller: scrollController,
+                    itemCount: steps.length + 1,
+                    itemBuilder: (context, index) {
+                      if (index == 0) {
+                        return const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(8.0),
+                            child: Icon(Icons.maximize, color: Colors.grey, size: 40),
+                          ),
+                        );
+                      }
+                      final step = steps[index - 1];
+                      return ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: Colors.blue.shade100,
+                          child: Text("${step.stepNumber}"),
+                        ),
+                        title: Text(step.instruction),
+                        subtitle: Text(step.distance),
+                      );
+                    },
+                  ),
+                );
+              },
+            ),
+
           if (isLoading)
             const Center(child: CircularProgressIndicator()),
           if (errorMessage != null)
@@ -254,58 +234,16 @@ class DirectionsState extends State<Directions> {
       ),
     );
   }
-
-  /* --- ORIGINAL HELPER UI METHODS (COMMENTED OUT) ---
-  Widget buildDirectionsPanel(double screenHeight, IconData transportIcon, String transportLabel) {
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeInOut,
-      height: isPanelExpanded ? screenHeight * 0.45 : screenHeight * 0.08,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 12, spreadRadius: 2)],
-      ),
-      child: Column(
-        children: [
-          GestureDetector(
-            onTap: () => setState(() => isPanelExpanded = !isPanelExpanded),
-            child: Container(width: 40, height: 4, margin: const EdgeInsets.only(top: 12, bottom: 8), decoration: BoxDecoration(color: Colors.grey.shade400, borderRadius: BorderRadius.circular(2))),
-          ),
-          if (isPanelExpanded) Expanded(child: SingleChildScrollView(child: Column(...))), // Logic omitted for brevity but preserved in Git
-        ],
-      ),
-    );
-  }
-
-  Widget buildSummaryItem(IconData icon, String label, String value) { ... }
-  Widget buildDirectionStep(DirectionStep step) { ... }
-  IconData getTransportIcon(String mode) { ... }
-  String getTransportLabel(String mode) { ... }
-  */
 }
 
-/* --- ORIGINAL CLASSES (COMMENTED OUT) ---
 class DirectionStep {
   final String instruction;
   final String distance;
-  final String duration;
-  final String arrivalTime;
-  final IconData turnIcon;
-  final Color turnColor;
   final int stepNumber;
-  final bool isCurrent;
 
-  DirectionStep({required this.instruction, required this.distance, required this.duration, required this.arrivalTime, required this.turnIcon, required this.turnColor, required this.stepNumber, required this.isCurrent});
+  DirectionStep({
+    required this.instruction,
+    required this.distance,
+    required this.stepNumber,
+  });
 }
-
-class RouteSummary {
-  final String totalDistance;
-  final String totalDuration;
-  final String arrivalTime;
-  final String startAddress;
-  final String endAddress;
-
-  RouteSummary({required this.totalDistance, required this.totalDuration, required this.arrivalTime, required this.startAddress, required this.endAddress});
-}
-*/
