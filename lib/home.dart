@@ -4,7 +4,21 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import '/Components/searchbar.dart';
 import '/Components/menu.dart';
-import '/Components/key.dart';
+import 'alertdetails.dart';
+import 'services/api_service.dart';
+
+// A simple class to represent an Alert localized for now
+class LocalAlert {
+  final LatLng position;
+  final String title;
+  final String description;
+
+  LocalAlert({
+    required this.position,
+    required this.title,
+    required this.description,
+  });
+}
 
 class LocalAlert {
   final LatLng position;
@@ -221,10 +235,81 @@ class HomeState extends State<Home> {
                       ],
                     ),
                   ),
-                  const Positioned(
+                  
+                  // Loading Indicator Overlay
+                  if (_isLoading)
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: const Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      ),
+                    ),
+
+                  // "Key" Button and "AI Check" Button (Bottom Left)
+                  Positioned(
                     bottom: 16,
                     left: 16,
-                    child: MapKey(),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        // AI Safety Check Button
+                        ElevatedButton.icon(
+                          onPressed: _getAIAdvice,
+                          icon: const Icon(Icons.security, size: 18),
+                          label: const Text('AI Check'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.black,
+                            foregroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                            elevation: 2,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        // Existing Key Button
+                        ElevatedButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const AlertDetails()),
+                            );
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.red,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
+                            elevation: 2,
+                          ),
+                          child: const Text(
+                            'Key',
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // My Location Button (Bottom Right)
+                  Positioned(
+                    bottom: 16,
+                    right: 16,
+                    child: FloatingActionButton(
+                      mini: true,
+                      onPressed: _getLocation,
+                      backgroundColor: Colors.white,
+                      child: const Icon(Icons.my_location, color: Colors.blue),
+                    ),
                   ),
                   Positioned(
                     bottom: 16,
