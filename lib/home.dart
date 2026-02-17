@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+
+// Components
 import '/Components/searchbar.dart';
 import '/Components/menu.dart';
 import '/Components/key.dart';
@@ -21,6 +24,20 @@ class LocalAlert {
     required this.icon,
     required this.color,
   });
+
+  // Factory to create from JSON (ready for backend integration)
+  factory LocalAlert.fromJson(Map<String, dynamic> json) {
+    return LocalAlert(
+      position: LatLng(
+        json['lat'] ?? 0.0, 
+        json['lng'] ?? 0.0
+      ),
+      title: json['title'] ?? 'Alert',
+      description: json['description'] ?? '',
+      icon: Icons.warning, // You might map string types to Icons here
+      color: Colors.red,   // You might map severity to Colors here
+    );
+  }
 }
 
 class Home extends StatefulWidget {
@@ -31,12 +48,18 @@ class Home extends StatefulWidget {
 }
 
 class HomeState extends State<Home> {
+  // --- State Variables ---
   final MapController mapController = MapController();
-  bool showKeyBox = false;
-  LatLng? _currentP;
   final String mapboxToken = dotenv.env['MAPBOX_ACCESS_TOKEN'] ?? '';
+  
+  LatLng? _currentP;
+  List<LocalAlert> _alerts = [];
+  
+  // Async & Streams
+  StreamSubscription<Position>? _positionStream;
+  Timer? _pollingTimer;
 
-  // Mock alerts in Corvallis matching the Map Legend
+  // --- Mock Data (Fallback) ---
   final List<LocalAlert> _mockAlerts = [
     LocalAlert(
       position: const LatLng(44.567, -123.278),
@@ -78,38 +101,127 @@ class HomeState extends State<Home> {
   @override
   void initState() {
     super.initState();
-    _getLocation();
+    // 1. Initialize data
+    _alerts = _mockAlerts; // Start with mocks, then fetch real data
+    
+    // 2. Start Services
+    _startLocationUpdates();
+    _fetchAlerts(); 
+    
+    // 3. Set up Polling (every 60 seconds)
+    _pollingTimer = Timer.periodic(const Duration(seconds: 60), (_) => _fetchAlerts());
   }
 
-  Future<void> _getLocation() async {
+  @override
+  void dispose() {
+    _positionStream?.cancel();
+    _pollingTimer?.cancel();
+    mapController.dispose();
+    super.dispose();
+  }
+
+  // --- Logic: Location Tracking ---
+  Future<void> _startLocationUpdates() async {
     bool serviceEnabled;
     LocationPermission permission;
 
+    // Check Service
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) return;
 
+    // Check Permissions
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) return;
     }
-
     if (permission == LocationPermission.deniedForever) return;
 
-    try {
-      Position position = await Geolocator.getCurrentPosition();
+    // Start Stream
+    const LocationSettings locationSettings = LocationSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: 10, // Only update if moved 10 meters
+    );
+
+    _positionStream = Geolocator.getPositionStream(locationSettings: locationSettings)
+        .listen((Position position) {
+      
       setState(() {
         _currentP = LatLng(position.latitude, position.longitude);
       });
 
-      if (_currentP != null) {
-        mapController.move(_currentP!, 15.0);
+      // Move map only on first fix or valid update (optional)
+      // mapController.move(_currentP!, 15.0); 
+
+      // Check proximity to any active alerts
+      _checkProximityToHazards(position);
+    });
+  }
+
+  // --- Logic: Alert Proximity ---
+  void _checkProximityToHazards(Position userPos) {
+    for (var alert in _alerts) {
+      double distanceInMeters = Geolocator.distanceBetween(
+        userPos.latitude,
+        userPos.longitude,
+        alert.position.latitude,
+        alert.position.longitude,
+      );
+
+      // Warning Threshold: 500 meters
+      if (distanceInMeters < 500) {
+        // Debounce logic could go here to prevent spamming
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              "WARNING: Approaching ${alert.title} (${distanceInMeters.toStringAsFixed(0)}m)",
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            backgroundColor: alert.color,
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: 'VIEW',
+              textColor: Colors.white,
+              onPressed: () => _showAlertDetails(alert),
+            ),
+          ),
+        );
       }
-    } catch (e) {
-      debugPrint("Error getting location: $e");
     }
   }
 
+  // --- Logic: Fetch Alerts from Backend ---
+  Future<void> _fetchAlerts() async {
+    // TODO: Replace with your actual backend URL
+    // final String apiUrl = "${dotenv.env['API_URL']}/api/alerts";
+    
+    try {
+      // NOTE: When ready for real backend:
+      // 1. Add 'package:http/http.dart' as http;
+      // 2. Add 'dart:convert';
+      // 3. Uncomment the lines below:
+
+      // final response = await http.get(Uri.parse(apiUrl));
+      // if (response.statusCode == 200) {
+      //   final List<dynamic> data = json.decode(response.body);
+      //   setState(() {
+      //     _alerts = data.map((json) => LocalAlert.fromJson(json)).toList();
+      //   });
+      // }
+      
+      // Simulate network delay then refresh mocks
+      await Future.delayed(const Duration(seconds: 1));
+      if (mounted) {
+        setState(() {
+          _alerts = _mockAlerts; // Reset to mocks for demo
+        });
+      }
+    } catch (e) {
+      debugPrint("Error fetching alerts: $e");
+    }
+  }
+
+  // --- UI: Alert Modal ---
   void _showAlertDetails(LocalAlert alert) {
     showModalBottomSheet(
       context: context,
@@ -151,6 +263,7 @@ class HomeState extends State<Home> {
     );
   }
 
+  // --- UI: Build ---
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -172,6 +285,8 @@ class HomeState extends State<Home> {
                       options: MapOptions(
                         initialCenter: _currentP ?? const LatLng(44.5646, -123.2620),
                         initialZoom: 14.0,
+                        // Prevent rotation for simpler navigation UI
+                        interactionOptions: const InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
                       ),
                       children: [
                         TileLayer(
@@ -181,6 +296,7 @@ class HomeState extends State<Home> {
                             'accessToken': mapboxToken,
                           },
                         ),
+                        // User Location Marker
                         if (_currentP != null)
                           MarkerLayer(
                             markers: [
@@ -192,9 +308,9 @@ class HomeState extends State<Home> {
                               ),
                             ],
                           ),
-                        // Mock alerts MarkerLayer
+                        // Hazard Markers
                         MarkerLayer(
-                          markers: _mockAlerts.map((alert) {
+                          markers: _alerts.map((alert) {
                             return Marker(
                               point: alert.position,
                               width: 40,
@@ -222,17 +338,23 @@ class HomeState extends State<Home> {
                       ],
                     ),
                   ),
+                  // Map Legend / Key
                   const Positioned(
                     bottom: 16,
                     left: 16,
                     child: MapKey(),
                   ),
+                  // Recenter Button
                   Positioned(
                     bottom: 16,
                     right: 16,
                     child: FloatingActionButton(
                       mini: true,
-                      onPressed: _getLocation,
+                      onPressed: () {
+                         if (_currentP != null) {
+                           mapController.move(_currentP!, 15.0);
+                         }
+                      },
                       backgroundColor: Colors.white,
                       child: const Icon(Icons.my_location, color: Colors.blue),
                     ),
