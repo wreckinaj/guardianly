@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart'; // Required for debugPrint
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
@@ -14,12 +15,12 @@ class NotificationService {
     );
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      print('User granted permission');
+      debugPrint('User granted permission');
     }
 
     // 2. Get the Device Token (Send this to your backend!)
     String? token = await _firebaseMessaging.getToken();
-    print("FCM Token: $token");
+    debugPrint("FCM Token: $token");
     // TODO: Call an API to save this token to your user's profile in the backend
 
     // 3. Handle Foreground Messages
