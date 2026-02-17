@@ -206,7 +206,7 @@ class HomeState extends State<Home> {
                                     shape: BoxShape.circle,
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.2),
+                                        color: Colors.black.withValues(alpha: 0.2), // Fixed deprecated withOpacity
                                         blurRadius: 4,
                                         offset: const Offset(0, 2),
                                       ),

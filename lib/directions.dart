@@ -4,7 +4,6 @@ import 'package:latlong2/latlong.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import '/Components/key.dart';
 
 class Directions extends StatefulWidget {
   final String fromLocation;
@@ -214,7 +213,7 @@ class DirectionsState extends State<Directions> {
                       final step = steps[index - 1];
                       return ListTile(
                         leading: CircleAvatar(
-                          backgroundColor: Colors.blue.shade100,
+                          backgroundColor: Colors.blue.shade50,
                           child: Text("${step.stepNumber}"),
                         ),
                         title: Text(step.instruction),

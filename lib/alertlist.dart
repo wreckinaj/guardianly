@@ -82,7 +82,7 @@ class Alert extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.grey.withOpacity(0.2),
+                            color: Colors.grey.withValues(alpha: 0.2), // Fixed deprecated withOpacity
                             blurRadius: 5,
                             offset: const Offset(0, 3),
                           ),
@@ -97,7 +97,7 @@ class Alert extends StatelessWidget {
                             height: 40,
                             margin: const EdgeInsets.only(top: 4, right: 12),
                             decoration: BoxDecoration(
-                              color: alert.color.withOpacity(0.1),
+                              color: alert.color.withValues(alpha: 0.1), // Fixed deprecated withOpacity
                               shape: BoxShape.circle,
                             ),
                             child: Icon(alert.icon, color: alert.color, size: 24),
