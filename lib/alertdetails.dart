@@ -33,7 +33,6 @@ class AlertDetailsState extends State<AlertDetails> {
         children: [
           const SearchBarApp(isOnAlertPage: false),
           const SizedBox(height: 16),
-
           Expanded(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(24.0, 0.0, 24.0, 32.0),
@@ -112,7 +111,6 @@ class AlertDetailsState extends State<AlertDetails> {
                               borderRadius: BorderRadius.circular(2),
                             ),
                           ),
-
                           Expanded(
                             child: SingleChildScrollView(
                               padding: const EdgeInsets.symmetric(
@@ -124,7 +122,8 @@ class AlertDetailsState extends State<AlertDetails> {
                                 children: [
                                   // Header row
                                   Row(
-                                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
                                     children: [
                                       Expanded(
                                         child: Text(
@@ -137,7 +136,8 @@ class AlertDetailsState extends State<AlertDetails> {
                                         ),
                                       ),
                                       IconButton(
-                                        icon: const Icon(Icons.close, size: 22),
+                                        icon:
+                                            const Icon(Icons.close, size: 22),
                                         onPressed: () {
                                           setState(() {
                                             showInfoBox = false;
@@ -147,13 +147,13 @@ class AlertDetailsState extends State<AlertDetails> {
                                       ),
                                     ],
                                   ),
-
                                   const SizedBox(height: 4),
 
                                   // Location
                                   Row(
                                     children: [
-                                      Icon(Icons.location_on,
+                                      Icon(
+                                        Icons.location_on,
                                         size: 16,
                                         color: Colors.grey.shade600,
                                       ),
@@ -167,7 +167,6 @@ class AlertDetailsState extends State<AlertDetails> {
                                       ),
                                     ],
                                   ),
-
                                   const SizedBox(height: 16),
 
                                   // Tags
@@ -175,11 +174,14 @@ class AlertDetailsState extends State<AlertDetails> {
                                     spacing: 12,
                                     runSpacing: 8,
                                     children: [
-                                      Tag(label: 'Type: Fire', color: Colors.red),
-                                      Tag(label: 'Severity: High', color: Colors.red),
+                                      Tag(
+                                          label: 'Type: Fire',
+                                          color: Colors.red),
+                                      Tag(
+                                          label: 'Severity: High',
+                                          color: Colors.red),
                                     ],
                                   ),
-
                                   const SizedBox(height: 20),
 
                                   // Info grid
@@ -188,10 +190,12 @@ class AlertDetailsState extends State<AlertDetails> {
                                     decoration: BoxDecoration(
                                       color: Colors.grey.shade50,
                                       borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: Colors.grey.shade200),
+                                      border: Border.all(
+                                          color: Colors.grey.shade200),
                                     ),
                                     child: Row(
-                                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
                                       children: [
                                         buildInfoBlock(
                                           icon: Icons.directions_walk,
@@ -211,7 +215,6 @@ class AlertDetailsState extends State<AlertDetails> {
                                       ],
                                     ),
                                   ),
-
                                   const SizedBox(height: 20),
 
                                   // Description
@@ -230,7 +233,6 @@ class AlertDetailsState extends State<AlertDetails> {
                                       fontSize: 14,
                                     ),
                                   ),
-
                                   const SizedBox(height: 20),
 
                                   // Safety Instructions
@@ -240,15 +242,16 @@ class AlertDetailsState extends State<AlertDetails> {
                                       color: const Color(0x0DFF0000),
                                       borderRadius: BorderRadius.circular(12),
                                       border: Border.all(
-                                        color: const Color(0x33FF0000)
-                                      ),
+                                          color: const Color(0x33FF0000)),
                                     ),
                                     child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Row(
                                           children: [
-                                            Icon(Icons.security,
+                                            Icon(
+                                              Icons.security,
                                               color: Colors.red.shade800,
                                               size: 20,
                                             ),
