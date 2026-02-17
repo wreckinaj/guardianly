@@ -3,26 +3,74 @@ import 'Components/searchbar.dart';
 import '/Components/menu.dart';
 import 'alertdetails.dart';
 
+class LocalAlert {
+  final String title;
+  final String description;
+  final IconData icon;
+  final Color color;
+
+  LocalAlert({
+    required this.title,
+    required this.description,
+    required this.icon,
+    required this.color,
+  });
+}
+
 class Alert extends StatelessWidget {
   const Alert({super.key});
 
   @override
   Widget build(BuildContext context) {
+    // Shared mock data matching home.dart
+    final List<LocalAlert> mockAlerts = [
+      LocalAlert(
+        title: "Fire Alert",
+        description: "Small brush fire reported near the stadium. Emergency services are on site.",
+        icon: Icons.local_fire_department,
+        color: Colors.red,
+      ),
+      LocalAlert(
+        title: "Police Presence",
+        description: "Police investigating a minor incident downtown. Area remains open but use caution.",
+        icon: Icons.security,
+        color: Colors.blue,
+      ),
+      LocalAlert(
+        title: "Medical Emergency",
+        description: "Ambulance on site near the medical center responding to a reported accident.",
+        icon: Icons.add_box,
+        color: Colors.green,
+      ),
+      LocalAlert(
+        title: "General Warning",
+        description: "Caution: Slippery conditions in Avery Park due to recent weather.",
+        icon: Icons.warning,
+        color: Colors.amber,
+      ),
+      LocalAlert(
+        title: "Traffic Incident",
+        description: "Road work causing delays on Highway 99. Expect 10-15 minute delays.",
+        icon: Icons.directions_car,
+        color: Colors.purple,
+      ),
+    ];
+
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: const Menu(),
       body: Column(
         children: [
           const SearchBarApp(isOnAlertPage: true),
-
           const SizedBox(height: 16),
           // Alert list with individual cards
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: 5, // example alerts
+              itemCount: mockAlerts.length,
               itemBuilder: (context, index) {
-                bool isSaved = false; // default state for save icon
+                final alert = mockAlerts[index];
+                bool isSaved = false;
 
                 return StatefulBuilder(
                   builder: (context, setState) {
@@ -34,7 +82,7 @@ class Alert extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.grey.withValues(alpha: 0.2),
+                            color: Colors.grey.withValues(alpha: 0.2), // Fixed deprecated withOpacity
                             blurRadius: 5,
                             offset: const Offset(0, 3),
                           ),
@@ -43,15 +91,16 @@ class Alert extends StatelessWidget {
                       child: Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          // Hazard indicator
+                          // Dynamic icon and color based on alert type
                           Container(
-                            width: 30,
-                            height: 30,
-                            margin: const EdgeInsets.only(top: 20, right: 12),
-                            decoration: const BoxDecoration(
-                              color: Colors.red, // can change based on severity
+                            width: 40,
+                            height: 40,
+                            margin: const EdgeInsets.only(top: 4, right: 12),
+                            decoration: BoxDecoration(
+                              color: alert.color.withValues(alpha: 0.1), // Fixed deprecated withOpacity
                               shape: BoxShape.circle,
                             ),
+                            child: Icon(alert.icon, color: alert.color, size: 24),
                           ),
 
                           // Alert text
@@ -60,7 +109,7 @@ class Alert extends StatelessWidget {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Alert $index', // title
+                                  alert.title,
                                   style: const TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.bold,
@@ -68,9 +117,9 @@ class Alert extends StatelessWidget {
                                   ),
                                 ),
                                 const SizedBox(height: 4),
-                                const Text(
-                                  'Details about the alert go here.', // details
-                                  style: TextStyle(
+                                Text(
+                                  alert.description,
+                                  style: const TextStyle(
                                     fontSize: 14,
                                     color: Colors.black54,
                                   ),
@@ -78,19 +127,12 @@ class Alert extends StatelessWidget {
                                 const SizedBox(height: 6),
                                 GestureDetector(
                                   onTap: () {
-                                    // Placeholder for "Read More" action
-                                    if (index == 0) {
-                                      // Navigate to AlertDetails for the first alert for now
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) => const AlertDetails(),
-                                        ),
-                                      );
-                                    } else {
-                                      // Placeholder for other alerts
-                                    }
-
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => const AlertDetails(),
+                                      ),
+                                    );
                                   },
                                   child: const Text(
                                     'Read more',
@@ -113,7 +155,7 @@ class Alert extends StatelessWidget {
                             ),
                             onPressed: () {
                               setState(() {
-                                isSaved = !isSaved; // toggle save state
+                                isSaved = !isSaved;
                               });
                             },
                           ),

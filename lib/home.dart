@@ -2,21 +2,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '/Components/searchbar.dart';
 import '/Components/menu.dart';
-import 'alertdetails.dart';
-import 'services/api_service.dart';
+import '/Components/key.dart';
 
-// A simple class to represent an Alert localized for now
 class LocalAlert {
   final LatLng position;
   final String title;
   final String description;
+  final IconData icon;
+  final Color color;
 
   LocalAlert({
     required this.position,
     required this.title,
     required this.description,
+    required this.icon,
+    required this.color,
   });
 }
 
@@ -31,19 +34,44 @@ class HomeState extends State<Home> {
   final MapController mapController = MapController();
   bool showKeyBox = false;
   LatLng? _currentP;
-  bool _isLoading = false; // This is now used
+  final String mapboxToken = dotenv.env['MAPBOX_ACCESS_TOKEN'] ?? '';
 
-  // Localized mock data for alerts - Updated to Corvallis, OR
+  // Mock alerts in Corvallis matching the Map Legend
   final List<LocalAlert> _mockAlerts = [
     LocalAlert(
-      position: const LatLng(44.568, -123.270), // Example: Near OSU campus
-      title: "Suspicious Activity",
-      description: "Reports of suspicious behavior near the park entrance.",
+      position: const LatLng(44.567, -123.278),
+      title: "Fire Alert",
+      description: "Small brush fire reported near the stadium.",
+      icon: Icons.local_fire_department,
+      color: Colors.red,
     ),
     LocalAlert(
-      position: const LatLng(44.560, -123.250), // Near Corvallis downtown
-      title: "Construction Hazard",
-      description: "Falling debris reported near the construction site.",
+      position: const LatLng(44.564, -123.261),
+      title: "Police Presence",
+      description: "Police investigating a minor incident downtown.",
+      icon: Icons.security,
+      color: Colors.blue,
+    ),
+    LocalAlert(
+      position: const LatLng(44.588, -123.275),
+      title: "Medical Emergency",
+      description: "Ambulance on site near the medical center.",
+      icon: Icons.add_box,
+      color: Colors.green,
+    ),
+    LocalAlert(
+      position: const LatLng(44.553, -123.270),
+      title: "General Warning",
+      description: "Caution: Slippery conditions in Avery Park.",
+      icon: Icons.warning,
+      color: Colors.amber,
+    ),
+    LocalAlert(
+      position: const LatLng(44.560, -123.255),
+      title: "Traffic Incident",
+      description: "Road work causing delays on Highway 99.",
+      icon: Icons.directions_car,
+      color: Colors.purple,
     ),
   ];
 
@@ -68,109 +96,17 @@ class HomeState extends State<Home> {
 
     if (permission == LocationPermission.deniedForever) return;
 
-    Position position = await Geolocator.getCurrentPosition();
-    setState(() {
-      _currentP = LatLng(position.latitude, position.longitude);
+    try {
+      Position position = await Geolocator.getCurrentPosition();
+      setState(() {
+        _currentP = LatLng(position.latitude, position.longitude);
+      });
 
-      // Optionally add a mock alert right where the user is for testing
-      _mockAlerts.add(LocalAlert(
-        position: LatLng(position.latitude + 0.002, position.longitude + 0.002),
-        title: "Recent Report",
-        description: "An alert was recently reported near your location.",
-      ));
-    });
-
-    if (_currentP != null) {
-      mapController.move(_currentP!, 15.0);
-    }
-  }
-
-  // AI Integration Function
-  void _getAIAdvice() async {
-    if (_currentP == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Waiting for location...")),
-      );
-      return;
-    }
-
-    setState(() => _isLoading = true);
-
-    // Call the backend service
-    final result = await ApiService.generateSafetyAlert(
-      hazardType: "General Safety Check", // You can make this dynamic later
-      lat: _currentP!.latitude,
-      lng: _currentP!.longitude,
-    );
-
-    setState(() => _isLoading = false);
-
-    if (!mounted) return;
-
-    if (result != null) {
-      // Show the AI Response
-      showDialog(
-        context: context,
-        builder: (context) => AlertDialog(
-          title: Row(
-            children: [
-              Icon(
-                Icons.shield,
-                color: result.severity == 'High' ? Colors.red : Colors.orange,
-              ),
-              const SizedBox(width: 8),
-              Text("${result.severity} Alert"),
-            ],
-          ),
-          content: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  result.message,
-                  style: const TextStyle(fontSize: 16),
-                ),
-                const SizedBox(height: 15),
-                const Text(
-                  "Recommended Actions:",
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 5),
-                ...result.actions.map((action) => Padding(
-                      padding: const EdgeInsets.only(bottom: 4.0),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text("• "),
-                          Expanded(child: Text(action)),
-                        ],
-                      ),
-                    )),
-                const SizedBox(height: 15),
-                Text(
-                  "Source: ${result.source}",
-                  style: const TextStyle(
-                      fontSize: 12,
-                      fontStyle: FontStyle.italic,
-                      color: Colors.grey),
-                ),
-              ],
-            ),
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("OK"),
-            ),
-          ],
-        ),
-      );
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-            content: Text("Could not connect to AI Safety System.")),
-      );
+      if (_currentP != null) {
+        mapController.move(_currentP!, 15.0);
+      }
+    } catch (e) {
+      debugPrint("Error getting location: $e");
     }
   }
 
@@ -189,30 +125,23 @@ class HomeState extends State<Home> {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.local_fire_department,
-                      color: Colors.red, size: 28),
+                  Icon(alert.icon, color: alert.color, size: 28),
                   const SizedBox(width: 10),
                   Text(
                     alert.title,
-                    style: const TextStyle(
-                        fontSize: 20, fontWeight: FontWeight.bold),
+                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                 ],
               ),
               const SizedBox(height: 15),
-              Text(
-                alert.description,
-                style: const TextStyle(fontSize: 16),
-              ),
+              Text(alert.description, style: const TextStyle(fontSize: 16)),
               const SizedBox(height: 20),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: () => Navigator.pop(context),
-                  style:
-                      ElevatedButton.styleFrom(backgroundColor: Colors.black),
-                  child: const Text("Dismiss",
-                      style: TextStyle(color: Colors.white)),
+                  style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
+                  child: const Text("Dismiss", style: TextStyle(color: Colors.white)),
                 ),
               ),
             ],
@@ -241,20 +170,17 @@ class HomeState extends State<Home> {
                     child: FlutterMap(
                       mapController: mapController,
                       options: MapOptions(
-                        initialCenter: _currentP ??
-                            const LatLng(44.5646, -123.2620), // Default to Corvallis
+                        initialCenter: _currentP ?? const LatLng(44.5646, -123.2620),
                         initialZoom: 14.0,
                       ),
                       children: [
                         TileLayer(
                           urlTemplate:
                               'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token={accessToken}',
-                          additionalOptions: const {
-                            'accessToken':
-                                'pk.eyJ1Ijoic2hvb2tkIiwiYSI6ImNtaG9mNXE3ajBhbGYycXBzYmpsN2ppanEifQ.Zw3YIGnVLC9K36olfWBI6A',
+                          additionalOptions: {
+                            'accessToken': mapboxToken,
                           },
                         ),
-                        // Marker Layer for User Location
                         if (_currentP != null)
                           MarkerLayer(
                             markers: [
@@ -262,15 +188,11 @@ class HomeState extends State<Home> {
                                 point: _currentP!,
                                 width: 40,
                                 height: 40,
-                                child: const Icon(
-                                  Icons.person_pin_circle,
-                                  color: Colors.blue,
-                                  size: 40,
-                                ),
+                                child: const Icon(Icons.person_pin_circle, color: Colors.blue, size: 40),
                               ),
                             ],
                           ),
-                        // Marker Layer for Danger/Alert points
+                        // Mock alerts MarkerLayer
                         MarkerLayer(
                           markers: _mockAlerts.map((alert) {
                             return Marker(
@@ -279,10 +201,19 @@ class HomeState extends State<Home> {
                               height: 40,
                               child: GestureDetector(
                                 onTap: () => _showAlertDetails(alert),
-                                child: const Icon(
-                                  Icons.local_fire_department,
-                                  color: Colors.red,
-                                  size: 40,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withValues(alpha: 0.2),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Icon(alert.icon, color: alert.color, size: 28),
                                 ),
                               ),
                             );
@@ -291,72 +222,11 @@ class HomeState extends State<Home> {
                       ],
                     ),
                   ),
-                  
-                  // Loading Indicator Overlay
-                  if (_isLoading)
-                    Container(
-                      decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.3),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Center(
-                        child: CircularProgressIndicator(color: Colors.white),
-                      ),
-                    ),
-
-                  // "Key" Button and "AI Check" Button (Bottom Left)
-                  Positioned(
+                  const Positioned(
                     bottom: 16,
                     left: 16,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        // AI Safety Check Button
-                        ElevatedButton.icon(
-                          onPressed: _getAIAdvice,
-                          icon: const Icon(Icons.security, size: 18),
-                          label: const Text('AI Check'),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.black,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 8),
-                            elevation: 2,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        // Existing Key Button
-                        ElevatedButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => const AlertDetails()),
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.red,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 8),
-                            elevation: 2,
-                          ),
-                          child: const Text(
-                            'Key',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ],
-                    ),
+                    child: MapKey(),
                   ),
-
-                  // My Location Button (Bottom Right)
                   Positioned(
                     bottom: 16,
                     right: 16,

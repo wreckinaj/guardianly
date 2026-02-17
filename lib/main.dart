@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'firebase_options.dart';
 import 'login.dart';
 import 'signup.dart';
@@ -19,6 +20,9 @@ Future<void> main() async {
   // Ensure widgets are bound before async calls
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Load environment variables
+  await dotenv.load(fileName: ".env");
+
   try {
     // Initialize Firebase
     await Firebase.initializeApp(
@@ -26,7 +30,6 @@ Future<void> main() async {
     );
     debugPrint('Firebase.initializeApp() succeeded');
   } catch (e, st) {
-    // Fixed: Using debugPrint instead of print to satisfy linter
     debugPrint('Firebase.initializeApp() failed: $e');
     debugPrint(st.toString());
     debugPrint('Continuing app start despite Firebase init failure (for debugging).');
@@ -46,7 +49,6 @@ class MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
-    // This runs after the first frame; when this prints, syncing is complete and UI is visible
     WidgetsBinding.instance.addPostFrameCallback((_) {
       debugPrint('>>> SYNC COMPLETE: First frame rendered on device');
     });
@@ -56,7 +58,7 @@ class MyAppState extends State<MyApp> {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: const Home(),
+      home: LoginPage(),
       routes:{
         '/signup': (context) => SignUpPage(),
         '/forgot_pw': (context) => const ForgotPW(),

@@ -9,17 +9,23 @@ class LoginPage extends StatelessWidget {
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
 
-  // Updated loginUser method
+  // Updated loginUser method to use mock credentials for testing
   void loginUser(BuildContext context) async {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
+    // MOCK CREDENTIALS
+    const String mockEmail = "test@example.com";
+    const String mockPassword = "password123";
+
     try {
+      // Using mock credentials instead of text field input
       await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: usernameController.text.trim(),
-        password: passwordController.text.trim(),
+        email: mockEmail,
+        password: mockPassword,
       );
 
       if (context.mounted) {
@@ -34,7 +40,7 @@ class LoginPage extends StatelessWidget {
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Login Failed'),
-            content: Text(e.message ?? 'An error occurred'),
+            content: Text('Mock login failed: ${e.message}\n\nMake sure "$mockEmail" exists in your Firebase Console.'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
@@ -74,25 +80,23 @@ class LoginPage extends StatelessWidget {
                   ),
                   child: Column(
                     children: [
-                      // username text field
+                      // Note: These fields are now ignored by the loginUser method
                       MyTextField(
                         controller: usernameController,
-                        hintText: 'Enter an Email',
+                        hintText: 'Enter an Email (ignored in mock)',
                         obscureText: false,
                       ),
 
                       const SizedBox(height: 20),
 
-                      // password text field
                       MyTextField(
                         controller: passwordController,
-                        hintText: 'Password',
+                        hintText: 'Password (ignored in mock)',
                         obscureText: true,
                       ),
 
                       const SizedBox(height: 10),
 
-                      // forgot password? - UPDATED TO BE CLICKABLE
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 25.0),
                         child: Row(
@@ -131,7 +135,7 @@ class LoginPage extends StatelessWidget {
                           ),
                           child: const Center(
                             child: Text(
-                              "Login",
+                              "Login (Mock)",
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
@@ -142,7 +146,13 @@ class LoginPage extends StatelessWidget {
                         ),
                       ),
 
-                      const SizedBox(height: 30),
+                      const SizedBox(height: 10),
+                      const Text(
+                        "Using: test@example.com / password123",
+                        style: TextStyle(color: Colors.grey, fontSize: 12),
+                      ),
+
+                      const SizedBox(height: 20),
 
                       // Don't have an account? Sign Up Now
                       Row(
