@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart'; // Required for debugPrint
+import 'package:flutter/foundation.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
@@ -7,7 +7,18 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
 
   Future<void> init() async {
-    // 1. Request Permission
+    // --- 1. Initialize Local Notifications (REQUIRED) ---
+    const AndroidInitializationSettings androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const DarwinInitializationSettings iosInit = DarwinInitializationSettings();
+    
+    const InitializationSettings initSettings = InitializationSettings(
+      android: androidInit,
+      iOS: iosInit,
+    );
+
+    await _localNotifications.initialize(initSettings);
+
+    // --- 2. Request Permissions ---
     NotificationSettings settings = await _firebaseMessaging.requestPermission(
       alert: true,
       badge: true,
@@ -18,19 +29,17 @@ class NotificationService {
       debugPrint('User granted permission');
     }
 
-    // 2. Get the Device Token (Send this to your backend!)
+    // --- 3. Get FCM Token ---
     String? token = await _firebaseMessaging.getToken();
     debugPrint("FCM Token: $token");
-    // TODO: Call an API to save this token to your user's profile in the backend
 
-    // 3. Handle Foreground Messages
+    // --- 4. Handle Foreground Messages ---
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       _showLocalNotification(message);
     });
   }
 
   void _showLocalNotification(RemoteMessage message) {
-    // Uses flutter_local_notifications to show a banner while app is open
     const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
       'high_importance_channel', 
       'High Importance Notifications',
@@ -40,10 +49,10 @@ class NotificationService {
     const NotificationDetails details = NotificationDetails(android: androidDetails);
 
     _localNotifications.show(
-      message.hashCode,
-      message.notification?.title,
-      message.notification?.body,
-      details,
+      message.hashCode,               // id (Positional)
+      message.notification?.title,    // title (Positional)
+      message.notification?.body,     // body (Positional)
+      details,                        // details (Positional)
     );
   }
 }

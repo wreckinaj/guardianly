@@ -10,8 +10,6 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  
-  flutter_local_notifications: ^16.3.0
 
   cupertino_icons: ^1.0.8
   http: ^1.2.0
@@ -20,7 +18,7 @@ dependencies:
   firebase_core: ^3.6.0
   firebase_auth: ^5.3.1
   cloud_firestore: ^5.4.4
-  firebase_messaging: ^15.2.0
+  firebase_messaging: 15.2.0
 
   # Fonts
   google_fonts: ^7.0.1
@@ -40,6 +38,12 @@ dependencies:
 
   # Environment variable management
   flutter_dotenv: ^5.1.0
+
+  # Local Notifications
+  flutter_local_notifications: 18.0.1
+
+dependency_overrides:
+  flutter_local_notifications: ^18.0.1
 
 dev_dependencies:
   flutter_test:
