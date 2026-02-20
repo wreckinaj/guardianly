@@ -1,8 +1,14 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:firebase_auth/firebase_auth.dart';
+
+// Components
 import '/Components/searchbar.dart';
 import '/Components/menu.dart';
 import '/Components/key.dart';
@@ -21,6 +27,20 @@ class LocalAlert {
     required this.icon,
     required this.color,
   });
+
+  // Factory to create from JSON (ready for backend integration)
+  factory LocalAlert.fromJson(Map<String, dynamic> json) {
+    return LocalAlert(
+      position: LatLng(
+        json['lat'] ?? 0.0, 
+        json['lng'] ?? 0.0
+      ),
+      title: json['title'] ?? 'Alert',
+      description: json['description'] ?? '',
+      icon: Icons.warning, // You might map string types to Icons here
+      color: Colors.red,   // You might map severity to Colors here
+    );
+  }
 }
 
 class Home extends StatefulWidget {
@@ -31,12 +51,18 @@ class Home extends StatefulWidget {
 }
 
 class HomeState extends State<Home> {
+  // --- State Variables ---
   final MapController mapController = MapController();
-  bool showKeyBox = false;
-  LatLng? _currentP;
   final String mapboxToken = dotenv.env['MAPBOX_ACCESS_TOKEN'] ?? '';
+  
+  LatLng? _currentP;
+  List<LocalAlert> _alerts = [];
+  
+  // Async & Streams
+  StreamSubscription<Position>? _positionStream;
+  Timer? _pollingTimer;
 
-  // Mock alerts in Corvallis matching the Map Legend
+  // --- Mock Data (Fallback) ---
   final List<LocalAlert> _mockAlerts = [
     LocalAlert(
       position: const LatLng(44.567, -123.278),
@@ -78,38 +104,166 @@ class HomeState extends State<Home> {
   @override
   void initState() {
     super.initState();
-    _getLocation();
+    // 1. Initialize data
+    _alerts = _mockAlerts; // Start with mocks, then fetch real data
+    
+    // 2. Start Services
+    _startLocationUpdates();
+    _fetchAlerts(); 
+    
+    // 3. Set up Polling (every 60 seconds)
+    _pollingTimer = Timer.periodic(const Duration(seconds: 60), (_) => _fetchAlerts());
   }
 
-  Future<void> _getLocation() async {
+  @override
+  void dispose() {
+    _positionStream?.cancel();
+    _pollingTimer?.cancel();
+    mapController.dispose();
+    super.dispose();
+  }
+
+  // --- Logic: Location Tracking ---
+  Future<void> _startLocationUpdates() async {
     bool serviceEnabled;
     LocationPermission permission;
 
+    // Check Service
     serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) return;
 
+    // Check Permissions
     permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) return;
     }
-
     if (permission == LocationPermission.deniedForever) return;
 
-    try {
-      Position position = await Geolocator.getCurrentPosition();
+    // Start Stream
+    const LocationSettings locationSettings = LocationSettings(
+      accuracy: LocationAccuracy.high,
+      distanceFilter: 10, // Only update if moved 10 meters
+    );
+
+    _positionStream = Geolocator.getPositionStream(locationSettings: locationSettings)
+        .listen((Position position) {
+      
       setState(() {
         _currentP = LatLng(position.latitude, position.longitude);
       });
 
-      if (_currentP != null) {
-        mapController.move(_currentP!, 15.0);
+      // Move map only on first fix or valid update (optional)
+      // mapController.move(_currentP!, 15.0); 
+
+      // Check proximity to any active alerts
+      _checkProximityToHazards(position);
+    });
+  }
+
+  // --- Logic: Alert Proximity ---
+  void _checkProximityToHazards(Position userPos) {
+    for (var alert in _alerts) {
+      double distanceInMeters = Geolocator.distanceBetween(
+        userPos.latitude,
+        userPos.longitude,
+        alert.position.latitude,
+        alert.position.longitude,
+      );
+
+      // Warning Threshold: 500 meters
+      if (distanceInMeters < 500) {
+        // Debounce logic could go here to prevent spamming
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              "WARNING: Approaching ${alert.title} (${distanceInMeters.toStringAsFixed(0)}m)",
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            ),
+            backgroundColor: alert.color,
+            duration: const Duration(seconds: 4),
+            action: SnackBarAction(
+              label: 'VIEW',
+              textColor: Colors.white,
+              onPressed: () => _showAlertDetails(alert),
+            ),
+          ),
+        );
       }
-    } catch (e) {
-      debugPrint("Error getting location: $e");
     }
   }
 
+  // --- Logic: Fetch Alerts from Backend ---
+   Future<void> _fetchAlerts() async {
+      // Get the base URL from your .env file (e.g., your Cloud Run URL or http://10.0.2.2:5000 for local Android)
+      final String baseUrl = 'https://guardianly-backend-34405523525.us-west1.run.app';
+      if (baseUrl.isEmpty) {
+        debugPrint("Warning: API_URL not found");
+        return;
+      }
+
+      final String apiUrl = "$baseUrl/api/notifications";
+
+      try {
+        // 1. Get the current user's Firebase token
+        final user = FirebaseAuth.instance.currentUser;
+        if (user == null) {
+          debugPrint("User not logged in, cannot fetch alerts.");
+          return;
+        }
+        final token = await user.getIdToken();
+
+        // 2. Make the authenticated GET request
+        final response = await http.get(
+          Uri.parse(apiUrl),
+          headers: {
+            'Authorization': 'Bearer $token', // Required by server.py @token_required
+            'Content-Type': 'application/json',
+          },
+        );
+
+      // 3. Parse and map the response
+      if (response.statusCode == 200) {
+          final Map<String, dynamic> data = json.decode(response.body);
+
+          if (data['status'] == 'success') {
+            final List<dynamic> fetchedNotifications = data['notifications'];
+            if (mounted) {
+              setState(() {
+                _alerts = fetchedNotifications.map((json) {
+                  // Map the backend JSON to your LocalAlert model
+                  return LocalAlert(
+                    // NOTE: Your backend doesn't save lat/lng yet, using fallback coordinates
+                    position: LatLng(json['lat'] ?? 44.564, json['lng'] ?? -123.261), 
+                    title: json['title'] ?? 'Alert',
+                    description: json['message'] ?? '', // server.py uses 'message', not 'description'
+                    icon: Icons.warning, 
+                    color: Colors.red,
+                  );
+                }).toList();
+              });
+            }
+          }
+      } else {
+        debugPrint("Failed to fetch alerts. Status Code: ${response.statusCode}");
+        _fallbackToMocks();
+      }
+    } catch (e) {
+      debugPrint("Error fetching alerts: $e");
+      _fallbackToMocks();
+    }
+  }
+
+  // Helper method to keep your map populated if the server is offline during dev
+  void _fallbackToMocks() {
+    if (mounted) {
+      setState(() {
+        _alerts = _mockAlerts; 
+      });
+    }
+  }
+
+  // --- UI: Alert Modal ---
   void _showAlertDetails(LocalAlert alert) {
     showModalBottomSheet(
       context: context,
@@ -151,6 +305,7 @@ class HomeState extends State<Home> {
     );
   }
 
+  // --- UI: Build ---
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -172,6 +327,8 @@ class HomeState extends State<Home> {
                       options: MapOptions(
                         initialCenter: _currentP ?? const LatLng(44.5646, -123.2620),
                         initialZoom: 14.0,
+                        // Prevent rotation for simpler navigation UI
+                        interactionOptions: const InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
                       ),
                       children: [
                         TileLayer(
@@ -181,6 +338,7 @@ class HomeState extends State<Home> {
                             'accessToken': mapboxToken,
                           },
                         ),
+                        // User Location Marker
                         if (_currentP != null)
                           MarkerLayer(
                             markers: [
@@ -192,9 +350,9 @@ class HomeState extends State<Home> {
                               ),
                             ],
                           ),
-                        // Mock alerts MarkerLayer
+                        // Hazard Markers
                         MarkerLayer(
-                          markers: _mockAlerts.map((alert) {
+                          markers: _alerts.map((alert) {
                             return Marker(
                               point: alert.position,
                               width: 40,
@@ -222,17 +380,23 @@ class HomeState extends State<Home> {
                       ],
                     ),
                   ),
+                  // Map Legend / Key
                   const Positioned(
                     bottom: 16,
                     left: 16,
                     child: MapKey(),
                   ),
+                  // Recenter Button
                   Positioned(
                     bottom: 16,
                     right: 16,
                     child: FloatingActionButton(
                       mini: true,
-                      onPressed: _getLocation,
+                      onPressed: () {
+                         if (_currentP != null) {
+                           mapController.move(_currentP!, 15.0);
+                         }
+                      },
                       backgroundColor: Colors.white,
                       child: const Icon(Icons.my_location, color: Colors.blue),
                     ),

@@ -6,14 +6,13 @@ import json
 from functools import wraps
 from marshmallow import ValidationError
 import firebase_admin
-from firebase_admin import credentials, auth
+from firebase_admin import credentials, auth, messaging # Added messaging import
 from schemas import GeneratePromptRequestSchema, AlertRecommendationSchema
 from pinecone import Pinecone
 from openai import OpenAI
 from dotenv import load_dotenv
 
 load_dotenv()
-
 
 app = Flask(__name__)
 
@@ -36,7 +35,6 @@ except Exception as e:
     print(f"Warning: Firebase Admin failed to initialize. Auth will fail. Error: {e}")
 
 # --- Mock Data Storage (In-Memory) ---
-# Note: For production, replace these with Firestore calls.
 notifications = []
 mock_notification_settings = {}
 
@@ -89,25 +87,67 @@ def home():
 @app.route('/api/push', methods=['POST'])
 @token_required
 def push_endpoint(current_user_uid):
-    """Send/Store push notification (requires authentication)"""
+    """Send a real Push Notification via Firebase Cloud Messaging"""
     data = request.get_json()
+    
+    # Validation
     if not data or not data.get("title") or not data.get("message"):
         return jsonify({"error": "Title and message are required"}), 400
+    
+    registration_token = data.get('fcm_token')
+    if not registration_token:
+        return jsonify({"error": "FCM Token (fcm_token) is required"}), 400
 
-    note = {
-        "user": current_user_uid,
-        "title": data["title"],
-        "message": data["message"],
-        "timestamp": datetime.datetime.utcnow().isoformat()
-    }
-    notifications.append(note)
-    print(f"[Notification] For User {current_user_uid}: {note}")
+    # Extract location and styling data, providing safe defaults if missing
+    lat = data.get("lat", 44.5646) # Default to Corvallis if missing
+    lng = data.get("lng", -123.2620)
+    icon = data.get("icon", "warning")
+    color = data.get("color", "red")
 
-    return jsonify({
-        "status": "success",
-        "message": "Notification stored successfully",
-        "notification": note
-    }), 201
+    # 1. Construct the Message
+    message = messaging.Message(
+        notification=messaging.Notification(
+            title=data["title"],
+            body=data["message"],
+        ),
+        # Pass extra variables directly to the mobile device in the background
+        data={
+            "lat": str(lat),   # FCM data values must be strings
+            "lng": str(lng),
+            "icon": icon,
+            "color": color
+        },
+        token=registration_token,
+    )
+
+    try:
+        # 2. Send via Firebase
+        response = messaging.send(message)
+        
+        # 3. Log locally (Optional, for history and for the Map to fetch)
+        note = {
+            "user": current_user_uid,
+            "title": data["title"],
+            "message": data["message"],
+            "lat": lat,          # Save as floats for the /api/notifications endpoint
+            "lng": lng,
+            "icon": icon,
+            "color": color,
+            "timestamp": datetime.datetime.utcnow().isoformat(),
+            "message_id": response
+        }
+        notifications.append(note)
+        print(f"[Notification] Sent to {current_user_uid}: {response}")
+
+        return jsonify({
+            "status": "success", 
+            "message_id": response,
+            "notification": note
+        }), 201
+
+    except Exception as e:
+        print(f"[Notification Error] {str(e)}")
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/api/notifications', methods=['GET'])
 @token_required
@@ -179,11 +219,7 @@ def directions():
     end = request.args.get('end', 'Albany,OR')
     profile = request.args.get('profile', 'driving')
     
-    # Simple helper to handle place names vs coords logic would go here
-    # (Simplified for brevity as per original file structure)
     try:
-        # Assuming inputs are coordinates or pre-validated place names for this snippet
-        # In full prod code, retain the is_place_name / geocode lookup logic here.
         url = f'https://api.mapbox.com/directions/v5/mapbox/{profile}/{start};{end}'
         params = {'access_token': MAPBOX_ACCESS_TOKEN, 'geometries': 'geojson', 'steps': 'true'}
         response = requests.get(url, params=params)
@@ -234,7 +270,7 @@ def generate_prompt_endpoint(current_user_uid):
     user_lat = data['user_lat']
     user_lng = data['user_lng']
     
-    # Normalize hazard string for display (e.g. "road_closure" -> "Road Closure")
+    # Normalize hazard string for display
     hazard_display = raw_hazard.replace("_", " ").title()
     
     # 1. Retrieve Context (RAG)
@@ -268,7 +304,7 @@ def generate_prompt_endpoint(current_user_uid):
     try:
         # 4. Call OpenAI with JSON mode
         completion = openai_client.chat.completions.create(
-            model="gpt-3.5-turbo", # Switch to gpt-4-turbo for complex reasoning
+            model="gpt-3.5-turbo",
             messages=[
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_message}
@@ -293,7 +329,6 @@ def generate_prompt_endpoint(current_user_uid):
 
     except Exception as e:
         print(f"AI Generation Error: {e}")
-        # Fallback response to ensure app stability
         return jsonify({
             "status": "warning",
             "hazard": hazard_display,

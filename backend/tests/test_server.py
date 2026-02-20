@@ -94,6 +94,15 @@ def auth_headers(mock_auth):
     mock_auth.return_value = {'uid': 'test_firebase_uid_123'}
     return {"Authorization": "Bearer dummy_token"}
 
+@pytest.fixture
+def mock_messaging():
+    """
+    Patches the 'messaging' module imported in server.py.
+    This captures calls to messaging.Message() and messaging.send().
+    """
+    with patch('server.messaging') as mock_msg_module:
+        yield mock_msg_module
+
 # --- STEP 5: Tests ---
 
 def test_generate_prompt_with_rag(client, auth_headers, mock_rag_dependencies):
@@ -137,3 +146,71 @@ def test_generate_prompt_validation_error(client, auth_headers):
     assert response.status_code == 400
     data = response.get_json()
     assert "Invalid input data" in data["error"]
+
+def test_push_notification_success(client, auth_headers, mock_messaging):
+    """Test successful dispatch of a push notification."""
+    
+    # 1. Setup Mock: Simulate a successful response from Firebase
+    mock_messaging.send.return_value = "projects/guardianly/messages/test_msg_id_123"
+    
+    payload = {
+        "fcm_token": "fake_device_token_xyz",
+        "title": "Evacuate",
+        "message": "Fire reported in your sector."
+    }
+
+    # 2. Execute Request
+    response = client.post(
+        "/api/push",
+        data=json.dumps(payload),
+        content_type="application/json",
+        headers=auth_headers
+    )
+
+    # 3. Assertions
+    assert response.status_code == 201
+    data = response.get_json()
+    
+    assert data["status"] == "success"
+    assert data["message_id"] == "projects/guardianly/messages/test_msg_id_123"
+    
+    # Verify messaging.send was called
+    mock_messaging.send.assert_called_once()
+    
+    # --- FIX: Check constructor calls instead of attribute access ---
+    
+    # 1. Verify Notification was created with the correct text
+    mock_messaging.Notification.assert_called_once_with(
+        title="Evacuate",
+        body="Fire reported in your sector."
+    )
+    
+    # 2. Verify Message was created with the correct token
+    # We check call_args.kwargs to ensure the 'token' param was passed correctly
+    call_args = mock_messaging.Message.call_args
+    assert call_args.kwargs['token'] == "fake_device_token_xyz"
+
+def test_push_notification_firebase_error(client, auth_headers, mock_messaging):
+    """Test handling of Firebase errors (e.g., invalid token)."""
+    
+    # 1. Setup Mock: Simulate an exception from Firebase
+    mock_messaging.send.side_effect = Exception("Invalid registration token")
+    
+    payload = {
+        "fcm_token": "bad_token",
+        "title": "Test",
+        "message": "This should fail"
+    }
+
+    # 2. Execute Request
+    response = client.post(
+        "/api/push",
+        data=json.dumps(payload),
+        content_type="application/json",
+        headers=auth_headers
+    )
+
+    # 3. Assertions
+    assert response.status_code == 500
+    data = response.get_json()
+    assert "Invalid registration token" in data["error"]
