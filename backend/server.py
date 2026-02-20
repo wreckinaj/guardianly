@@ -98,12 +98,25 @@ def push_endpoint(current_user_uid):
     if not registration_token:
         return jsonify({"error": "FCM Token (fcm_token) is required"}), 400
 
+    # Extract location and styling data, providing safe defaults if missing
+    lat = data.get("lat", 44.5646) # Default to Corvallis if missing
+    lng = data.get("lng", -123.2620)
+    icon = data.get("icon", "warning")
+    color = data.get("color", "red")
+
     # 1. Construct the Message
     message = messaging.Message(
         notification=messaging.Notification(
             title=data["title"],
             body=data["message"],
         ),
+        # Pass extra variables directly to the mobile device in the background
+        data={
+            "lat": str(lat),   # FCM data values must be strings
+            "lng": str(lng),
+            "icon": icon,
+            "color": color
+        },
         token=registration_token,
     )
 
@@ -111,11 +124,15 @@ def push_endpoint(current_user_uid):
         # 2. Send via Firebase
         response = messaging.send(message)
         
-        # 3. Log locally (Optional, for history)
+        # 3. Log locally (Optional, for history and for the Map to fetch)
         note = {
             "user": current_user_uid,
             "title": data["title"],
             "message": data["message"],
+            "lat": lat,          # Save as floats for the /api/notifications endpoint
+            "lng": lng,
+            "icon": icon,
+            "color": color,
             "timestamp": datetime.datetime.utcnow().isoformat(),
             "message_id": response
         }

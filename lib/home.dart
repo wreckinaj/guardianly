@@ -4,6 +4,9 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+import 'package:firebase_auth/firebase_auth.dart';
 
 // Components
 import '/Components/searchbar.dart';
@@ -191,33 +194,72 @@ class HomeState extends State<Home> {
   }
 
   // --- Logic: Fetch Alerts from Backend ---
-  Future<void> _fetchAlerts() async {
-    // TODO: Replace with your actual backend URL
-    // final String apiUrl = "${dotenv.env['API_URL']}/api/alerts";
-    
-    try {
-      // NOTE: When ready for real backend:
-      // 1. Add 'package:http/http.dart' as http;
-      // 2. Add 'dart:convert';
-      // 3. Uncomment the lines below:
+   Future<void> _fetchAlerts() async {
+      // Get the base URL from your .env file (e.g., your Cloud Run URL or http://10.0.2.2:5000 for local Android)
+      final String? baseUrl = 'https://guardianly-backend-34405523525.us-west1.run.app';
+      if (baseUrl == null || baseUrl.isEmpty) {
+        debugPrint("Warning: API_URL not found in .env");
+        return;
+      }
 
-      // final response = await http.get(Uri.parse(apiUrl));
-      // if (response.statusCode == 200) {
-      //   final List<dynamic> data = json.decode(response.body);
-      //   setState(() {
-      //     _alerts = data.map((json) => LocalAlert.fromJson(json)).toList();
-      //   });
-      // }
-      
-      // Simulate network delay then refresh mocks
-      await Future.delayed(const Duration(seconds: 1));
-      if (mounted) {
-        setState(() {
-          _alerts = _mockAlerts; // Reset to mocks for demo
-        });
+      final String apiUrl = "$baseUrl/api/notifications";
+
+      try {
+        // 1. Get the current user's Firebase token
+        final user = FirebaseAuth.instance.currentUser;
+        if (user == null) {
+          debugPrint("User not logged in, cannot fetch alerts.");
+          return;
+        }
+        final token = await user.getIdToken();
+
+        // 2. Make the authenticated GET request
+        final response = await http.get(
+          Uri.parse(apiUrl),
+          headers: {
+            'Authorization': 'Bearer $token', // Required by server.py @token_required
+            'Content-Type': 'application/json',
+          },
+        );
+
+      // 3. Parse and map the response
+      if (response.statusCode == 200) {
+          final Map<String, dynamic> data = json.decode(response.body);
+
+          if (data['status'] == 'success') {
+            final List<dynamic> fetchedNotifications = data['notifications'];
+            if (mounted) {
+              setState(() {
+                _alerts = fetchedNotifications.map((json) {
+                  // Map the backend JSON to your LocalAlert model
+                  return LocalAlert(
+                    // NOTE: Your backend doesn't save lat/lng yet, using fallback coordinates
+                    position: LatLng(json['lat'] ?? 44.564, json['lng'] ?? -123.261), 
+                    title: json['title'] ?? 'Alert',
+                    description: json['message'] ?? '', // server.py uses 'message', not 'description'
+                    icon: Icons.warning, 
+                    color: Colors.red,
+                  );
+                }).toList();
+              });
+            }
+          }
+      } else {
+        debugPrint("Failed to fetch alerts. Status Code: ${response.statusCode}");
+        _fallbackToMocks();
       }
     } catch (e) {
       debugPrint("Error fetching alerts: $e");
+      _fallbackToMocks();
+    }
+  }
+
+  // Helper method to keep your map populated if the server is offline during dev
+  void _fallbackToMocks() {
+    if (mounted) {
+      setState(() {
+        _alerts = _mockAlerts; 
+      });
     }
   }
 
