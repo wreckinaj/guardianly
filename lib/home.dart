@@ -196,9 +196,9 @@ class HomeState extends State<Home> {
   // --- Logic: Fetch Alerts from Backend ---
    Future<void> _fetchAlerts() async {
       // Get the base URL from your .env file (e.g., your Cloud Run URL or http://10.0.2.2:5000 for local Android)
-      final String? baseUrl = 'https://guardianly-backend-34405523525.us-west1.run.app';
-      if (baseUrl == null || baseUrl.isEmpty) {
-        debugPrint("Warning: API_URL not found in .env");
+      final String baseUrl = 'https://guardianly-backend-34405523525.us-west1.run.app';
+      if (baseUrl.isEmpty) {
+        debugPrint("Warning: API_URL not found");
         return;
       }
 
