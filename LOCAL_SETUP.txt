@@ -1,0 +1,94 @@
+=========================================================
+GUARDIANLY - LOCAL DEVELOPMENT & CLOUD SETUP GUIDE
+=========================================================
+
+Welcome to the Guardianly team! This project consists of a Flutter frontend and a Python (Flask) backend, utilizing Firebase for authentication/push notifications and Google Cloud Run for deployment. 
+
+Follow these steps carefully to set up your local environment.
+
+---------------------------------------------------------
+PART 1: PREREQUISITES
+---------------------------------------------------------
+Before starting, ensure you have the following installed:
+1. Flutter SDK (v3.8.0+)
+2. Python (v3.10+)
+3. Google Cloud CLI (gcloud) - See "Google Cloud Setup" below.
+4. An invite to the project's Firebase / Google Cloud console (ask the admin).
+
+---------------------------------------------------------
+PART 2: BACKEND SETUP (Flask & Firebase Admin)
+---------------------------------------------------------
+The backend handles AI generation, push notifications, and map routing.
+
+1. Navigate to the backend folder:
+   cd backend
+
+2. Set up your Python environment:
+   python -m venv venv
+   source venv/bin/activate  # On Windows use: venv\Scripts\activate
+   pip install -r requirements.txt
+
+3. Set up Environment Variables:
+   - Make a copy of `backend/.env.example` and name it `backend/.env`.
+   - Ask the team lead for the required development API keys:
+     * PINECONE_API_KEY
+     * OPENAI_API_KEY
+     * MAPBOX_ACCESS_TOKEN
+
+4. Get the Firebase Admin Key:
+   The backend needs administrative access to send push notifications.
+   - Go to the Firebase Console: https://console.firebase.google.com/
+   - Select the `guardianly-auth` project.
+   - Go to Gear Icon (Project Settings) -> Service Accounts.
+   - Click "Generate new private key".
+   - Rename the downloaded file to exactly `admin_key.json`.
+   - Move `admin_key.json` into the `guardianly/backend/` folder.
+   
+   🚨 CRITICAL: NEVER commit `admin_key.json` or `.env` to version control. They are already in the .gitignore.
+
+5. Run the local server:
+   python server.py
+   (It will run on http://127.0.0.1:5000)
+
+---------------------------------------------------------
+PART 3: FRONTEND SETUP (Flutter)
+---------------------------------------------------------
+1. Open a new terminal and navigate to the root `guardianly/` folder.
+
+2. Fetch dependencies:
+   flutter pub get
+
+3. Set up Environment Variables:
+   - Create a file named `.env` in the root `guardianly/` directory.
+   - Add the following variables:
+     MAPBOX_ACCESS_TOKEN=your_mapbox_token_here
+     
+     # If testing on an iOS simulator or Web:
+     API_URL=http://localhost:5000
+     
+     # If testing on an Android emulator, you MUST use this IP instead:
+     # API_URL=http://10.0.2.2:5000
+
+4. Run the app:
+   flutter run
+
+---------------------------------------------------------
+PART 4: GOOGLE CLOUD CLI SETUP (For Deployment)
+---------------------------------------------------------
+If you are authorized to push updates to the live server on Google Cloud Run, follow these steps:
+
+1. Install the Google Cloud CLI: https://cloud.google.com/sdk/docs/install
+2. Open your terminal and run:
+   gcloud init
+3. Log in with your Google account that has access to the Guardianly project.
+4. Select the correct project ID (e.g., guardianly-cloud) and your default region (e.g., us-west1).
+
+To deploy backend updates to production, run this from inside the `backend/` directory:
+gcloud run deploy guardianly-backend --source .
+
+---------------------------------------------------------
+TROUBLESHOOTING
+---------------------------------------------------------
+- "Firebase Admin failed to initialize": You forgot to place `admin_key.json` in the `backend/` folder, or it's named incorrectly.
+- "Connection Refused" in Flutter: Make sure your Flask server is running. If on Android, ensure your root `.env` uses `http://10.0.2.2:5000`.
+- "Mapbox / Maps not loading": Check that your `MAPBOX_ACCESS_TOKEN` is correct in BOTH the root `.env` and `backend/.env`.

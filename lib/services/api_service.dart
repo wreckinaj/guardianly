@@ -6,7 +6,7 @@ import 'package:flutter/foundation.dart';
 
 class ApiService {
   // Use 10.0.2.2 for Android Emulator, localhost for iOS Simulator
-  static const String baseUrl = 'http://10.0.2.2:5000'; 
+  static const String baseUrl = 'https://guardianly-backend-34405523525.us-west1.run.app';
   // static const String baseUrl = 'http://localhost:5000'; // Use this for iOS
 
   // Helper to get the current user's token
