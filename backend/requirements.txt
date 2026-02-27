@@ -1,4 +1,5 @@
 Flask==3.0.2
+google-api-python-client==2.118.0
 google-api-core==2.17.1
 requests==2.31.0
 marshmallow==3.20.2
