@@ -1,0 +1,5 @@
+HAZARD: Flood / Flash Flood.
+Context: Low-lying routes, underpasses, and bridges likely impassable. Water depth unknown.
+Nearby Resources: High ground locations, emergency shelters.
+Recomm: Avoid all routes crossing rivers or known flood zones. Do not attempt to drive through standing water.
+Action: Suggest detour prioritizing higher elevation routes (Mapbox API) and alert to seek high ground.

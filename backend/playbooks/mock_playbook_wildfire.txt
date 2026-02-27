@@ -1,0 +1,5 @@
+HAZARD: Wildfire / Grass Fire.
+Context: Rapidly changing perimeter. High risk of road closures and reduced visibility from smoke.
+Nearby Resources: Evacuation centers.
+Recomm: Evacuate immediately in the opposite direction of the fire's reported spread.
+Action: Route to nearest safe zone prioritizing multi-lane highways heading away from the hazard (Mapbox routing).

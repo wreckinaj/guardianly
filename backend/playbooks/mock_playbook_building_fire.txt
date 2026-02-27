@@ -1,0 +1,5 @@
+HAZARD: Building Fire.
+Context: Localized road closures for emergency vehicle access. Potential smoke hazard reducing visibility.
+Nearby Resources: Nearest fire station, urgent care.
+Recomm: Reroute away from the affected block to avoid traffic bottlenecks and emergency responders.
+Action: Create a 0.5-mile exclusion zone around the incident (Mapbox Directions API) for detour routing.

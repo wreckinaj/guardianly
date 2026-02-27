@@ -1,0 +1,5 @@
+HAZARD: Hurricane / Tropical Storm.
+Context: Widespread flooding, storm surge, and high winds. Coastal and low-lying routes likely impassable.
+Nearby Resources: Designated inland emergency shelters, hospitals.
+Recomm: Evacuate immediately using official evacuation routes. Do not drive through flooded roads.
+Action: Prioritize established evacuation routes (Mapbox routing) and alert users within projected storm surge zones.

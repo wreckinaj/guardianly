@@ -1,0 +1,4 @@
+HAZARD: Hazardous Material Spill / Gas Leak.
+Context: Airborne toxicity risk. Wind direction heavily dictates the danger zone.
+Recomm: Roll up windows and turn off A/C if driving nearby. Evacuate upwind of the spill location.
+Action: Calculate dynamic exclusion zone based on local wind data and suggest upwind detours.
