@@ -27,7 +27,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           # Install ALL backend dependencies
-          pip install flask marshmallow requests PyJWT pytest firebase-admin python-dotenv pinecone-client openai
+          pip install -r backend/requirements.txt
           
       - name: Run Pytest
         working-directory: ./backend
