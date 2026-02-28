@@ -1,54 +1,52 @@
 import 'package:flutter/material.dart';
+import 'package:latlong2/latlong.dart'; // <-- Added this for coordinates
 import 'Components/searchbar.dart';
 import '/Components/menu.dart';
 import 'alertdetails.dart';
-
-class LocalAlert {
-  final String title;
-  final String description;
-  final IconData icon;
-  final Color color;
-
-  LocalAlert({
-    required this.title,
-    required this.description,
-    required this.icon,
-    required this.color,
-  });
-}
+import '/models/local_alert.dart'; // <-- Using the shared model now
 
 class Alert extends StatelessWidget {
   const Alert({super.key});
 
   @override
   Widget build(BuildContext context) {
-    // Shared mock data matching home.dart
+    // Shared mock data updated to match the new LocalAlert model
     final List<LocalAlert> mockAlerts = [
       LocalAlert(
+        position: const LatLng(44.567, -123.278), // Added
+        hazardType: "wildfire",                   // Added
         title: "Fire Alert",
         description: "Small brush fire reported near the stadium. Emergency services are on site.",
         icon: Icons.local_fire_department,
         color: Colors.red,
       ),
       LocalAlert(
+        position: const LatLng(44.564, -123.261), // Added
+        hazardType: "police_activity",            // Added
         title: "Police Presence",
         description: "Police investigating a minor incident downtown. Area remains open but use caution.",
         icon: Icons.security,
         color: Colors.blue,
       ),
       LocalAlert(
+        position: const LatLng(44.566, -123.270), // Added
+        hazardType: "medical_emergency",          // Added
         title: "Medical Emergency",
         description: "Ambulance on site near the medical center responding to a reported accident.",
         icon: Icons.add_box,
         color: Colors.green,
       ),
       LocalAlert(
+        position: const LatLng(44.558, -123.265), // Added
+        hazardType: "severe_weather",             // Added
         title: "General Warning",
         description: "Caution: Slippery conditions in Avery Park due to recent weather.",
         icon: Icons.warning,
         color: Colors.amber,
       ),
       LocalAlert(
+        position: const LatLng(44.560, -123.255), // Added
+        hazardType: "road_closure",               // Added
         title: "Traffic Incident",
         description: "Road work causing delays on Highway 99. Expect 10-15 minute delays.",
         icon: Icons.directions_car,
@@ -82,7 +80,7 @@ class Alert extends StatelessWidget {
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.grey.withValues(alpha: 0.2), // Fixed deprecated withOpacity
+                            color: Colors.grey.withValues(alpha: 0.2), 
                             blurRadius: 5,
                             offset: const Offset(0, 3),
                           ),
@@ -97,7 +95,7 @@ class Alert extends StatelessWidget {
                             height: 40,
                             margin: const EdgeInsets.only(top: 4, right: 12),
                             decoration: BoxDecoration(
-                              color: alert.color.withValues(alpha: 0.1), // Fixed deprecated withOpacity
+                              color: alert.color.withValues(alpha: 0.1), 
                               shape: BoxShape.circle,
                             ),
                             child: Icon(alert.icon, color: alert.color, size: 24),
@@ -130,7 +128,13 @@ class Alert extends StatelessWidget {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) => const AlertDetails(),
+                                        builder: (context) => AlertDetails(
+                                          hazardType: alert.hazardType,        
+                                          lat: alert.position.latitude,       
+                                          lng: alert.position.longitude,      
+                                          title: alert.title,                 
+                                          locationName: alert.description,    
+                                        ),
                                       ),
                                     );
                                   },

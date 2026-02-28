@@ -69,7 +69,13 @@ class MyAppState extends State<MyApp> {
         '/alertlist': (context) => const Alert(),
         '/settings': (context) => const Settings(),
         '/saved': (context) => const SavedAlerts(),
-        '/alertdetails': (context) => const AlertDetails(),
+        '/alertdetails': (context) => const AlertDetails(
+          hazardType: 'building_fire',
+          lat: 44.5646,
+          lng: -123.2620,
+          title: 'Building Fire',
+          locationName: 'Amazon Warehouse - South Side',
+        ),
         '/fromto': (context) => const FromTo(),
       }
     );

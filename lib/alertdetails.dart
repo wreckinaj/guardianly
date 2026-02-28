@@ -4,9 +4,24 @@ import 'package:latlong2/latlong.dart';
 import '/Components/searchbar.dart';
 import '/Components/menu.dart';
 import '/Components/key.dart';
+import '/services/api_service.dart';
+import '/models/safety_recommendation.dart';
 
 class AlertDetails extends StatefulWidget {
-  const AlertDetails({super.key});
+  final String hazardType;
+  final double lat;
+  final double lng;
+  final String title;
+  final String locationName;
+
+  const AlertDetails({
+    super.key,
+    required this.hazardType,
+    required this.lat,
+    required this.lng,
+    required this.title,
+    required this.locationName,
+  });
 
   @override
   State<AlertDetails> createState() => AlertDetailsState();
@@ -15,6 +30,34 @@ class AlertDetails extends StatefulWidget {
 class AlertDetailsState extends State<AlertDetails> {
   bool showInfoBox = true;
   final MapController mapController = MapController();
+  
+  // --- AI State Variables ---
+  SafetyRecommendation? _recommendation;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchAIRecommendation();
+  }
+
+  // --- Fetch RAG Data from Backend ---
+  Future<void> _fetchAIRecommendation() async {
+    setState(() => _isLoading = true);
+    
+    final result = await ApiService.generateSafetyAlert(
+      hazardType: widget.hazardType,
+      lat: widget.lat,
+      lng: widget.lng,
+    );
+
+    if (mounted) {
+      setState(() {
+        _recommendation = result;
+        _isLoading = false;
+      });
+    }
+  }
 
   @override
   void dispose() {
@@ -44,16 +87,14 @@ class AlertDetailsState extends State<AlertDetails> {
                     child: GestureDetector(
                       onTap: () {
                         if (showInfoBox) {
-                          setState(() {
-                            showInfoBox = false;
-                          });
+                          setState(() => showInfoBox = false);
                         }
                       },
                       child: FlutterMap(
                         mapController: mapController,
-                        options: const MapOptions(
-                          initialCenter: LatLng(40.7128, -74.0060),
-                          initialZoom: 12.0,
+                        options: MapOptions(
+                          initialCenter: LatLng(widget.lat, widget.lng),
+                          initialZoom: 14.0,
                         ),
                         children: [
                           TileLayer(
@@ -64,6 +105,21 @@ class AlertDetailsState extends State<AlertDetails> {
                                   'pk.eyJ1Ijoic2hvb2tkIiwiYSI6ImNtaG9mNXE3ajBhbGYycXBzYmpsN2ppanEifQ.Zw3YIGnVLC9K36olfWBI6A',
                             },
                           ),
+                          // Hazard Marker Layer
+                          MarkerLayer(
+                            markers: [
+                              Marker(
+                                point: LatLng(widget.lat, widget.lng),
+                                width: 50.0,
+                                height: 50.0,
+                                child: const Icon(
+                                  Icons.location_on,
+                                  color: Colors.red,
+                                  size: 40.0,
+                                ),
+                              ),
+                            ],
+                          ),
                         ],
                       ),
                     ),
@@ -73,8 +129,7 @@ class AlertDetailsState extends State<AlertDetails> {
                   const Positioned(
                     bottom: 16,
                     left: 16,
-                    child:  MapKey(),
-                  
+                    child: MapKey(),
                   ),
 
                   // Enhanced INFO BOX
@@ -127,7 +182,7 @@ class AlertDetailsState extends State<AlertDetails> {
                                     children: [
                                       Expanded(
                                         child: Text(
-                                          'Building Fire',
+                                          widget.title,
                                           style: TextStyle(
                                             fontSize: 22,
                                             fontWeight: FontWeight.bold,
@@ -136,12 +191,9 @@ class AlertDetailsState extends State<AlertDetails> {
                                         ),
                                       ),
                                       IconButton(
-                                        icon:
-                                            const Icon(Icons.close, size: 22),
+                                        icon: const Icon(Icons.close, size: 22),
                                         onPressed: () {
-                                          setState(() {
-                                            showInfoBox = false;
-                                          });
+                                          setState(() => showInfoBox = false);
                                         },
                                         padding: EdgeInsets.zero,
                                       ),
@@ -158,9 +210,9 @@ class AlertDetailsState extends State<AlertDetails> {
                                         color: Colors.grey.shade600,
                                       ),
                                       const SizedBox(width: 6),
-                                      const Text(
-                                        'Amazon Warehouse - South Side',
-                                        style: TextStyle(
+                                      Text(
+                                        widget.locationName,
+                                        style: const TextStyle(
                                           color: Colors.grey,
                                           fontSize: 14,
                                         ),
@@ -169,115 +221,110 @@ class AlertDetailsState extends State<AlertDetails> {
                                   ),
                                   const SizedBox(height: 16),
 
-                                  // Tags
-                                  const Wrap(
-                                    spacing: 12,
-                                    runSpacing: 8,
-                                    children: [
-                                      Tag(
-                                          label: 'Type: Fire',
-                                          color: Colors.red),
-                                      Tag(
-                                          label: 'Severity: High',
-                                          color: Colors.red),
-                                    ],
-                                  ),
-                                  const SizedBox(height: 20),
-
-                                  // Info grid
-                                  Container(
-                                    padding: const EdgeInsets.all(16),
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey.shade50,
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                          color: Colors.grey.shade200),
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
+                                  // --- Conditional UI based on AI Loading State ---
+                                  if (_isLoading)
+                                    const Center(
+                                      child: Padding(
+                                        padding: EdgeInsets.all(32.0),
+                                        child: CircularProgressIndicator(),
+                                      ),
+                                    )
+                                  else if (_recommendation != null) ...[
+                                    // Tags
+                                    Wrap(
+                                      spacing: 12,
+                                      runSpacing: 8,
                                       children: [
-                                        buildInfoBlock(
-                                          icon: Icons.directions_walk,
-                                          title: 'Distance',
-                                          value: '0.8 km',
-                                        ),
-                                        buildInfoBlock(
-                                          icon: Icons.access_time,
-                                          title: 'Reported',
-                                          value: '15 min ago',
-                                        ),
-                                        buildInfoBlock(
-                                          icon: Icons.local_fire_department,
-                                          title: 'Status',
-                                          value: 'Active',
-                                        ),
+                                        Tag(
+                                            label: 'Type: ${widget.hazardType.split('_').join(' ').toUpperCase()}',
+                                            color: Colors.red),
+                                        Tag(
+                                            label: 'Severity: ${_recommendation!.severity}',
+                                            color: _recommendation!.severity == 'High' 
+                                                ? Colors.red 
+                                                : Colors.orange),
                                       ],
                                     ),
-                                  ),
-                                  const SizedBox(height: 20),
+                                    const SizedBox(height: 20),
 
-                                  // Description
-                                  const Text(
-                                    'Description',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
+                                    // Description (Generated by AI)
+                                    const Text(
+                                      'AI Situation Analysis',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  const Text(
-                                    'Fire department responding to building fire at south side of amazon warehouse. Multiple fire trucks and emergency personnel on scene.',
-                                    style: TextStyle(
-                                      height: 1.5,
-                                      fontSize: 14,
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      _recommendation!.message,
+                                      style: const TextStyle(
+                                        height: 1.5,
+                                        fontSize: 14,
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 20),
+                                    const SizedBox(height: 20),
 
-                                  // Safety Instructions
-                                  Container(
-                                    padding: const EdgeInsets.all(14),
-                                    decoration: BoxDecoration(
-                                      color: const Color(0x0DFF0000),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(
-                                          color: const Color(0x33FF0000)),
-                                    ),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.start,
-                                      children: [
-                                        Row(
-                                          children: [
-                                            Icon(
-                                              Icons.security,
-                                              color: Colors.red.shade800,
-                                              size: 20,
-                                            ),
-                                            const SizedBox(width: 8),
-                                            const Text(
-                                              'Safety Instructions',
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.bold,
-                                                fontSize: 16,
-                                                color: Colors.red,
+                                    // Safety Instructions (Generated by AI)
+                                    Container(
+                                      padding: const EdgeInsets.all(14),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0x0DFF0000),
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                            color: const Color(0x33FF0000)),
+                                      ),
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                Icons.security,
+                                                color: Colors.red.shade800,
+                                                size: 20,
                                               ),
-                                            ),
-                                          ],
-                                        ),
-                                        const SizedBox(height: 8),
-                                        const Text(
-                                          'Evacuate the building immediately. Stay at least 500 meters away from the area. Follow instructions from emergency personnel.',
-                                          style: TextStyle(
-                                            height: 1.5,
-                                            fontSize: 14,
+                                              const SizedBox(width: 8),
+                                              const Text(
+                                                'Recommended Actions',
+                                                style: TextStyle(
+                                                  fontWeight: FontWeight.bold,
+                                                  fontSize: 16,
+                                                  color: Colors.red,
+                                                ),
+                                              ),
+                                            ],
                                           ),
-                                        ),
-                                      ],
+                                          const SizedBox(height: 12),
+                                          // Map the AI actions to a list of bullet points
+                                          ..._recommendation!.actions.map((action) => Padding(
+                                            padding: const EdgeInsets.only(bottom: 8.0),
+                                            child: Row(
+                                              crossAxisAlignment: CrossAxisAlignment.start,
+                                              children: [
+                                                const Text("• ", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                                                Expanded(child: Text(action, style: const TextStyle(height: 1.4))),
+                                              ],
+                                            ),
+                                          )),
+                                          const SizedBox(height: 8),
+                                          Align(
+                                            alignment: Alignment.centerRight,
+                                            child: Text(
+                                              'Source: ${_recommendation!.source}',
+                                              style: TextStyle(fontSize: 10, color: Colors.grey.shade600, fontStyle: FontStyle.italic),
+                                            ),
+                                          )
+                                        ],
+                                      ),
                                     ),
-                                  ),
-                                  const SizedBox(height: 24),
+                                    const SizedBox(height: 24),
+                                  ] else
+                                    // Error State
+                                    const Text(
+                                      'Failed to load safety recommendations. Please check your network connection.',
+                                      style: TextStyle(color: Colors.red),
+                                    ),
                                 ],
                               ),
                             ),
@@ -294,37 +341,9 @@ class AlertDetailsState extends State<AlertDetails> {
       ),
     );
   }
-
-  Widget buildInfoBlock({
-    required IconData icon,
-    required String title,
-    required String value,
-  }) {
-    return Column(
-      children: [
-        Icon(icon, color: Colors.blue, size: 24),
-        const SizedBox(height: 6),
-        Text(
-          title,
-          style: TextStyle(
-            color: Colors.grey.shade600,
-            fontSize: 12,
-          ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 14,
-          ),
-        ),
-      ],
-    );
-  }
 }
 
-// Tag widget
+// Tag widget remains unchanged
 class Tag extends StatelessWidget {
   final String label;
   final Color color;

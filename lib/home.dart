@@ -7,41 +7,14 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
+import '/alertdetails.dart';
+import '/models/local_alert.dart';
+// import '/services/api_service.dart';
 
 // Components
 import '/Components/searchbar.dart';
 import '/Components/menu.dart';
 import '/Components/key.dart';
-
-class LocalAlert {
-  final LatLng position;
-  final String title;
-  final String description;
-  final IconData icon;
-  final Color color;
-
-  LocalAlert({
-    required this.position,
-    required this.title,
-    required this.description,
-    required this.icon,
-    required this.color,
-  });
-
-  // Factory to create from JSON (ready for backend integration)
-  factory LocalAlert.fromJson(Map<String, dynamic> json) {
-    return LocalAlert(
-      position: LatLng(
-        json['lat'] ?? 0.0, 
-        json['lng'] ?? 0.0
-      ),
-      title: json['title'] ?? 'Alert',
-      description: json['description'] ?? '',
-      icon: Icons.warning, // You might map string types to Icons here
-      color: Colors.red,   // You might map severity to Colors here
-    );
-  }
-}
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -68,6 +41,7 @@ class HomeState extends State<Home> {
       position: const LatLng(44.567, -123.278),
       title: "Fire Alert",
       description: "Small brush fire reported near the stadium.",
+      hazardType: "wildfire",
       icon: Icons.local_fire_department,
       color: Colors.red,
     ),
@@ -75,6 +49,7 @@ class HomeState extends State<Home> {
       position: const LatLng(44.564, -123.261),
       title: "Police Presence",
       description: "Police investigating a minor incident downtown.",
+      hazardType: "police_activity",
       icon: Icons.security,
       color: Colors.blue,
     ),
@@ -82,6 +57,7 @@ class HomeState extends State<Home> {
       position: const LatLng(44.588, -123.275),
       title: "Medical Emergency",
       description: "Ambulance on site near the medical center.",
+      hazardType: "severe_weather",
       icon: Icons.add_box,
       color: Colors.green,
     ),
@@ -89,15 +65,9 @@ class HomeState extends State<Home> {
       position: const LatLng(44.553, -123.270),
       title: "General Warning",
       description: "Caution: Slippery conditions in Avery Park.",
+      hazardType: "road_closure",
       icon: Icons.warning,
       color: Colors.amber,
-    ),
-    LocalAlert(
-      position: const LatLng(44.560, -123.255),
-      title: "Traffic Incident",
-      description: "Road work causing delays on Highway 99.",
-      icon: Icons.directions_car,
-      color: Colors.purple,
     ),
   ];
 
@@ -197,6 +167,7 @@ class HomeState extends State<Home> {
    Future<void> _fetchAlerts() async {
       // Get the base URL from your .env file (e.g., your Cloud Run URL or http://10.0.2.2:5000 for local Android)
       final String baseUrl = 'https://guardianly-backend-34405523525.us-west1.run.app';
+      // final String baseUrl = ApiService.baseUrl;
       if (baseUrl.isEmpty) {
         debugPrint("Warning: API_URL not found");
         return;
@@ -236,7 +207,8 @@ class HomeState extends State<Home> {
                     // NOTE: Your backend doesn't save lat/lng yet, using fallback coordinates
                     position: LatLng(json['lat'] ?? 44.564, json['lng'] ?? -123.261), 
                     title: json['title'] ?? 'Alert',
-                    description: json['message'] ?? '', // server.py uses 'message', not 'description'
+                    description: json['message'] ?? '',
+                    hazardType: json['hazardType'] ?? 'general',
                     icon: Icons.warning, 
                     color: Colors.red,
                   );
@@ -265,43 +237,18 @@ class HomeState extends State<Home> {
 
   // --- UI: Alert Modal ---
   void _showAlertDetails(LocalAlert alert) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    // Instead of a simple bottom sheet, push the full AlertDetails screen!
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => AlertDetails(
+          hazardType: alert.hazardType, // Passes 'wildfire', etc. to the AI
+          lat: alert.position.latitude,
+          lng: alert.position.longitude,
+          title: alert.title,
+          locationName: alert.description, 
+        ),
       ),
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Icon(alert.icon, color: alert.color, size: 28),
-                  const SizedBox(width: 10),
-                  Text(
-                    alert.title,
-                    style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 15),
-              Text(alert.description, style: const TextStyle(fontSize: 16)),
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(backgroundColor: Colors.black),
-                  child: const Text("Dismiss", style: TextStyle(color: Colors.white)),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 
