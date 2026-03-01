@@ -1,0 +1,5 @@
+HAZARD: Active Shooter.
+Context: Highly volatile and unpredictable localized threat. Strict lockdown protocols in effect.
+Nearby Resources: Nearest police station, hospitals.
+Recomm: Shelter in place if currently in the area. If outside the area, avoid approaching entirely.
+Action: Establish a 1-mile hard exclusion geofence and immediately push alert to avoid the zone.

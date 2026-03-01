@@ -1,0 +1,5 @@
+HAZARD: Volcanic Eruption.
+Context: Ashfall severely reduces visibility, damages vehicle engines, and causes respiratory issues. Lava flows block routes.
+Nearby Resources: Indoor shelters with sealed ventilation.
+Recomm: Seek indoor shelter and close all windows. Do not drive through heavy ashfall.
+Action: Calculate ash plume trajectory based on prevailing winds and route traffic entirely outside the fallout zone.

@@ -1,4 +1,5 @@
 from flask import jsonify, request, Flask
+from flask_cors import CORS
 import requests
 import os
 import datetime
@@ -15,6 +16,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
+
+# Replace the old CORS line with this simple one:
+CORS(app)
 
 # --- Initialize Clients ---
 # Ensure these environment variables are set in your deployment environment

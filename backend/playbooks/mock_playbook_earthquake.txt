@@ -1,0 +1,4 @@
+HAZARD: Earthquake.
+Context: Potential for structural damage to overpasses, bridges, and downed power lines.
+Recomm: Pull over to a clear area away from buildings, trees, and overpasses. If driving, proceed with extreme caution.
+Action: Suspend standard routing until infrastructure safety is confirmed. Find nearest open space (Mapbox POI search).
