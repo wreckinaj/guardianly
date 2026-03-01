@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:geolocator/geolocator.dart';
 import '/Components/searchbar.dart';
 import '/Components/menu.dart';
 import '/Components/key.dart';
@@ -20,6 +21,9 @@ class FromToState extends State<FromTo> {
   TextEditingController toController = TextEditingController();
   final MapController mapController = MapController();
   String selectedTransportMode = 'drive';
+  
+  // Store the real LatLng for "My Location" to avoid geocoding errors
+  LatLng? startLatLng;
 
   @override
   void dispose() {
@@ -27,6 +31,23 @@ class FromToState extends State<FromTo> {
     toController.dispose();
     mapController.dispose();
     super.dispose();
+  }
+
+  Future<void> _useCurrentLocation() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) return;
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) return;
+    }
+
+    Position position = await Geolocator.getCurrentPosition();
+    setState(() {
+      fromController.text = "Current Location";
+      startLatLng = LatLng(position.latitude, position.longitude);
+    });
   }
 
   @override
@@ -46,7 +67,6 @@ class FromToState extends State<FromTo> {
               padding: const EdgeInsets.fromLTRB(24.0, 0.0, 24.0, 32.0),
               child: Stack(
                 children: [
-                  // Map
                   ClipRRect(
                     borderRadius: BorderRadius.circular(16),
                     child: GestureDetector(
@@ -60,7 +80,7 @@ class FromToState extends State<FromTo> {
                       child: FlutterMap(
                         mapController: mapController,
                         options: const MapOptions(
-                          initialCenter: LatLng(40.7128, -74.0060),
+                          initialCenter: LatLng(44.5646, -123.2620), 
                           initialZoom: 12.0,
                         ),
                         children: [
@@ -77,21 +97,19 @@ class FromToState extends State<FromTo> {
                     ),
                   ),
 
-                  // Map key
                   const Positioned(
                     bottom: 16,
                     left: 16,
                     child: MapKey(),
                   ),
 
-                  // INFO BOX
                   AnimatedPositioned(
                     duration: const Duration(milliseconds: 300),
                     curve: Curves.easeInOut,
                     left: 0,
                     right: 0,
-                    bottom: showInfoBox ? 0 : -screenHeight * 0.45,
-                    height: screenHeight * 0.45,
+                    bottom: showInfoBox ? 0 : -screenHeight * 0.50,
+                    height: screenHeight * 0.50,
                     child: Container(
                       decoration: const BoxDecoration(
                         color: Colors.white,
@@ -117,7 +135,6 @@ class FromToState extends State<FromTo> {
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
-                                  // Header row
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
@@ -145,7 +162,6 @@ class FromToState extends State<FromTo> {
 
                                   const SizedBox(height: 5),
 
-                                  // From/To Input Container
                                   Container(
                                     padding: const EdgeInsets.all(16),
                                     decoration: BoxDecoration(
@@ -155,7 +171,6 @@ class FromToState extends State<FromTo> {
                                     ),
                                     child: Column(
                                       children: [
-                                        // From input
                                         Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
@@ -168,30 +183,47 @@ class FromToState extends State<FromTo> {
                                               ),
                                             ),
                                             const SizedBox(height: 6),
-                                            Row(
-                                              children: [
-                                                const Padding(
-                                                  padding: EdgeInsets.only(left: 12, right: 8),
-                                                  child: Icon(
-                                                    Icons.location_on,
-                                                    color: Colors.blue,
-                                                    size: 20,
+                                            LayoutBuilder(
+                                              builder: (context, constraints) {
+                                                return DropdownMenu<String>(
+                                                  width: constraints.maxWidth,
+                                                  controller: fromController,
+                                                  hintText: 'Enter starting location',
+                                                  leadingIcon: const Padding(
+                                                    padding: EdgeInsets.only(left: 12, right: 8),
+                                                    child: Icon(Icons.location_on, color: Colors.blue, size: 20),
                                                   ),
-                                                ),
-                                                Expanded(
-                                                  child: MyTextField(
-                                                    controller: fromController,
-                                                    hintText: 'Enter starting location',
-                                                    obscureText: false,
+                                                  dropdownMenuEntries: const [
+                                                    DropdownMenuEntry(
+                                                      value: 'My Location',
+                                                      label: 'My Location',
+                                                      leadingIcon: Icon(Icons.my_location, size: 18),
+                                                    ),
+                                                  ],
+                                                  onSelected: (String? value) {
+                                                    if (value == 'My Location') {
+                                                      _useCurrentLocation();
+                                                    } else {
+                                                      // If they type something else, clear the stored LatLng
+                                                      startLatLng = null;
+                                                    }
+                                                  },
+                                                  inputDecorationTheme: InputDecorationTheme(
+                                                    fillColor: Colors.grey.shade200,
+                                                    filled: true,
+                                                    contentPadding: EdgeInsets.zero,
+                                                    border: OutlineInputBorder(
+                                                      borderRadius: BorderRadius.circular(12),
+                                                      borderSide: BorderSide.none,
+                                                    ),
                                                   ),
-                                                ),
-                                              ],
+                                                );
+                                              }
                                             ),
                                           ],
                                         ),
                                         const SizedBox(height: 12),
                                         
-                                        // To input
                                         Column(
                                           crossAxisAlignment: CrossAxisAlignment.start,
                                           children: [
@@ -231,7 +263,6 @@ class FromToState extends State<FromTo> {
 
                                   const SizedBox(height: 16),
 
-                                  // Transport mode selection
                                   const Text(
                                     'Select Transport Mode',
                                     style: TextStyle(
@@ -241,51 +272,26 @@ class FromToState extends State<FromTo> {
                                   ),
                                   const SizedBox(height: 12),
                                   
-                                  // Transport mode options
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                     children: [
-                                      buildTransportOption(
-                                        icon: Icons.directions_walk,
-                                        label: 'Walk',
-                                        mode: 'walk',
-                                      ),
-                                      buildTransportOption(
-                                        icon: Icons.directions_car,
-                                        label: 'Drive',
-                                        mode: 'drive',
-                                      ),
-                                      buildTransportOption(
-                                        icon: Icons.directions_bus,
-                                        label: 'Transit',
-                                        mode: 'transit',
-                                      ),
-                                      buildTransportOption(
-                                        icon: Icons.directions_bike,
-                                        label: 'Bike',
-                                        mode: 'bike',
-                                      ),
+                                      buildTransportOption(icon: Icons.directions_walk, label: 'Walk', mode: 'walk'),
+                                      buildTransportOption(icon: Icons.directions_car, label: 'Drive', mode: 'drive'),
+                                      buildTransportOption(icon: Icons.directions_bus, label: 'Transit', mode: 'transit'),
+                                      buildTransportOption(icon: Icons.directions_bike, label: 'Bike', mode: 'bike'),
                                     ],
                                   ),
 
                                   const SizedBox(height: 24),
 
-                                  // START button at the bottom
                                   Center(
                                     child: ElevatedButton(
                                       onPressed: () {
-                                        // Validate inputs
                                         if (fromController.text.isEmpty || toController.text.isEmpty) {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(
-                                              content: Text('Please enter both locations'),
-                                              backgroundColor: Colors.red,
-                                            ),
-                                          );
+                                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Please enter both locations'), backgroundColor: Colors.red));
                                           return;
                                         }
                                         
-                                        // Navigate to directions screen
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
@@ -293,6 +299,8 @@ class FromToState extends State<FromTo> {
                                               fromLocation: fromController.text,
                                               toLocation: toController.text,
                                               transportMode: selectedTransportMode,
+                                              // NEW: Pass the real coordinates if we have them
+                                              startLatLng: startLatLng, 
                                             ),
                                           ),
                                         );
@@ -300,23 +308,11 @@ class FromToState extends State<FromTo> {
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.green,
                                         foregroundColor: Colors.white,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(12),
-                                        ),
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 100,
-                                          vertical: 16,
-                                        ),
+                                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                        padding: const EdgeInsets.symmetric(horizontal: 100, vertical: 16),
                                         elevation: 4,
                                       ),
-                                      child: const Text(
-                                        'GET DIRECTIONS',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.bold,
-                                          letterSpacing: 0.5,
-                                        ),
-                                      ),
+                                      child: const Text('GET DIRECTIONS', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, letterSpacing: 0.5)),
                                     ),
                                   ),
                                   const SizedBox(height: 16),
@@ -337,46 +333,23 @@ class FromToState extends State<FromTo> {
     );
   }
 
-  Widget buildTransportOption({
-    required IconData icon,
-    required String label,
-    required String mode,
-  }) {
+  Widget buildTransportOption({required IconData icon, required String label, required String mode}) {
     bool isSelected = selectedTransportMode == mode;
     return GestureDetector(
-      onTap: () {
-        setState(() {
-          selectedTransportMode = mode;
-        });
-      },
+      onTap: () => setState(() => selectedTransportMode = mode),
       child: Column(
         children: [
           Container(
-            width: 56,
-            height: 56,
+            width: 56, height: 56,
             decoration: BoxDecoration(
               color: isSelected ? Colors.blue.shade50 : Colors.grey.shade100,
               borderRadius: BorderRadius.circular(28),
-              border: Border.all(
-                color: isSelected ? Colors.blue : Colors.grey.shade300,
-                width: isSelected ? 2 : 1,
-              ),
+              border: Border.all(color: isSelected ? Colors.blue : Colors.grey.shade300, width: isSelected ? 2 : 1),
             ),
-            child: Icon(
-              icon,
-              color: isSelected ? Colors.blue : Colors.grey.shade700,
-              size: 28,
-            ),
+            child: Icon(icon, color: isSelected ? Colors.blue : Colors.grey.shade700, size: 28),
           ),
           const SizedBox(height: 8),
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-              color: isSelected ? Colors.blue : Colors.black87,
-            ),
-          ),
+          Text(label, style: TextStyle(fontSize: 12, fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal, color: isSelected ? Colors.blue : Colors.black87)),
         ],
       ),
     );
