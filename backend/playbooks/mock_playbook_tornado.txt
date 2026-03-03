@@ -1,0 +1,5 @@
+HAZARD: Tornado.
+Context: Extreme winds and flying debris. Vehicles offer zero protection. Path can change rapidly.
+Nearby Resources: Sturdy buildings, storm cellars (basements).
+Recomm: Seek sturdy indoor shelter immediately. If driving, abandon the vehicle for a low ditch or building. Do NOT shelter under overpasses.
+Action: Suspend driving directions and push urgent alert to find immediate indoor shelter (Mapbox POI search).

@@ -1,0 +1,4 @@
+HAZARD: Police Activity / Law Enforcement Action.
+Context: Localized road closures, potential tactical situations, unpredictable environment.
+Recomm: Avoid the immediate area to ensure personal safety and allow responders to work unimpeded.
+Action: Create a dynamic 0.5-mile exclusion zone around the reported incident (Mapbox Directions API) and suggest detours.

@@ -1,4 +1,6 @@
 from flask import jsonify, request, Flask
+from flask_cors import CORS
+from flask_caching import Cache
 import requests
 import os
 import datetime
@@ -15,6 +17,16 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
+
+# --- Cache Configuration ---
+# Using SimpleCache for in-memory storage. 
+# For production on Google Cloud, swap to 'RedisCache' and provide a CACHE_REDIS_URL.
+app.config['CACHE_TYPE'] = 'SimpleCache'
+app.config['CACHE_DEFAULT_TIMEOUT'] = 86400 # 24 hours in seconds
+cache = Cache(app)
+
+# Replace the old CORS line with this simple one:
+CORS(app)
 
 # --- Initialize Clients ---
 # Ensure these environment variables are set in your deployment environment
@@ -230,11 +242,13 @@ def directions():
 
 # --- AI & RAG Logic ---
 
-def get_retrieved_context(hazard_key, user_lat, user_lng):
+@cache.memoize(timeout=86400) # Cache embeddings and Pinecone results for 24 hours
+def get_retrieved_context(hazard_key, user_lat_rounded, user_lng_rounded):
     """
     Embeds the hazard query and retrieves relevant playbook sections from Pinecone.
+    Uses rounded coordinates to maximize cache hits.
     """
-    query_text = f"Procedures for {hazard_key} hazard near {user_lat}, {user_lng}"
+    query_text = f"Procedures for {hazard_key} hazard near {user_lat_rounded}, {user_lng_rounded}"
     
     try:
         response = openai_client.embeddings.create(
@@ -255,28 +269,8 @@ def get_retrieved_context(hazard_key, user_lat, user_lng):
         print(f"RAG Retrieval Error: {e}")
         return "Context retrieval failed."
 
-@app.route('/api/generate_prompt', methods=['POST'])
-@token_required
-def generate_prompt_endpoint(current_user_uid):
-    """
-    Generates a structured safety recommendation using RAG context and OpenAI.
-    """
-    try:
-        data = GeneratePromptRequestSchema().load(request.get_json())
-    except ValidationError as err:
-        return jsonify({"error": "Invalid input data", "messages": err.messages}), 400
-
-    raw_hazard = data['hazard']
-    user_lat = data['user_lat']
-    user_lng = data['user_lng']
-    
-    # Normalize hazard string for display
-    hazard_display = raw_hazard.replace("_", " ").title()
-    
-    # 1. Retrieve Context (RAG)
-    retrieved_context = get_retrieved_context(raw_hazard, user_lat, user_lng)
-
-    # 2. Construct System Prompt
+@cache.memoize(timeout=3600) # Cache the final AI recommendation for 1 hour
+def generate_ai_recommendation(hazard_display, retrieved_context, lat_rounded, lng_rounded):
     system_prompt = """
     You are Guardianly, an advanced safety AI. 
     Your goal is to analyze a hazard and provided safety context to generate a structured alert.
@@ -290,35 +284,59 @@ def generate_prompt_endpoint(current_user_uid):
     Base your advice strictly on the provided Context. If the Context is insufficient, provide general safety best practices.
     """
 
-    # 3. Construct User Prompt
     user_message = f"""
     Hazard Type: {hazard_display}
-    User Location: {user_lat}, {user_lng}
+    User Location: {lat_rounded}, {lng_rounded}
 
     Context from Playbooks:
     {retrieved_context}
 
     Generate the safety recommendation now.
     """
+    
+    completion = openai_client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_message}
+        ],
+        response_format={"type": "json_object"},
+        temperature=0.3
+    )
 
+    llm_response_text = completion.choices[0].message.content
+    generated_data = json.loads(llm_response_text)
+    return AlertRecommendationSchema().load(generated_data)
+
+@app.route('/api/generate_prompt', methods=['POST'])
+@token_required
+def generate_prompt_endpoint(current_user_uid):
     try:
-        # 4. Call OpenAI with JSON mode
-        completion = openai_client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[
-                {"role": "system", "content": system_prompt},
-                {"role": "user", "content": user_message}
-            ],
-            response_format={"type": "json_object"},
-            temperature=0.3
-        )
+        data = GeneratePromptRequestSchema().load(request.get_json())
+    except ValidationError as err:
+        return jsonify({"error": "Invalid input data", "messages": err.messages}), 400
 
-        # 5. Parse and Validate Response
-        llm_response_text = completion.choices[0].message.content
-        generated_data = json.loads(llm_response_text)
-        
-        # Ensure the AI output matches our Schema
-        final_recommendation = AlertRecommendationSchema().load(generated_data)
+    raw_hazard = data['hazard']
+    user_lat = data['user_lat']
+    user_lng = data['user_lng']
+    
+    # Round coordinates to 2 decimal places (~1.1 km resolution) for caching
+    lat_rounded = round(float(user_lat), 2)
+    lng_rounded = round(float(user_lng), 2)
+    
+    hazard_display = raw_hazard.replace("_", " ").title()
+    
+    try:
+        # 1. Retrieve Context (Cached)
+        retrieved_context = get_retrieved_context(raw_hazard, lat_rounded, lng_rounded)
+
+        # 2. Generate final recommendation (Cached)
+        final_recommendation = generate_ai_recommendation(
+            hazard_display, 
+            retrieved_context, 
+            lat_rounded, 
+            lng_rounded
+        )
         
         return jsonify({
             "status": "success",

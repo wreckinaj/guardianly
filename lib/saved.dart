@@ -95,7 +95,13 @@ class SavedAlerts extends StatelessWidget {
                                   Navigator.push(
                                     context,
                                     MaterialPageRoute(
-                                      builder: (context) => const AlertDetails(),
+                                      builder: (context) => const AlertDetails(
+                                        hazardType: 'road_closure', 
+                                        lat: 44.560,
+                                        lng: -123.255,
+                                        title: 'Road Closure',
+                                        locationName: 'Highway 99',
+                                      ),
                                     ),
                                   );
                                 } 

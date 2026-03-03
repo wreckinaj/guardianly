@@ -1,0 +1,5 @@
+HAZARD: Tsunami.
+Context: Imminent, massive coastal flooding following a seismic event. Extremely limited warning time.
+Nearby Resources: High ground (100+ feet above sea level), locations several miles inland.
+Recomm: Evacuate to high ground immediately. Abandon vehicles if stuck in coastal traffic and proceed on foot.
+Action: Push critical alert to all users within coastal geofences to seek high elevation immediately (incorporate elevation data).

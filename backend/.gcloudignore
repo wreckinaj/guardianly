@@ -1,0 +1,11 @@
+# Exclude standard Git and Python files
+.git/
+.gitignore
+__pycache__/
+venv/
+tests/
+
+# Exclude your local environment variables (Cloud Run uses the dashboard variables)
+.env
+
+# DO NOT put admin_key.json here! We WANT this file to upload to the container.

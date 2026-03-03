@@ -8,6 +8,7 @@ class ApiService {
   // Use 10.0.2.2 for Android Emulator, localhost for iOS Simulator
   static const String baseUrl = 'https://guardianly-backend-34405523525.us-west1.run.app';
   // static const String baseUrl = 'http://localhost:5000'; // Use this for iOS
+  // static const String baseUrl = 'http://127.0.0.1:5000';
 
   // Helper to get the current user's token
   static Future<String?> _getAuthToken() async {

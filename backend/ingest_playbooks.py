@@ -4,21 +4,18 @@ from pinecone import Pinecone, ServerlessSpec
 from openai import OpenAI
 from dotenv import load_dotenv
 
-# 1. Load environment variables from .env file
-load_dotenv()
+# 1. Load environment variables
+load_dotenv(override=True)
 
-# Retrieve keys safely
 PINECONE_API_KEY = os.getenv("PINECONE_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
-# Basic error handling to ensure keys exist
 if not PINECONE_API_KEY or not OPENAI_API_KEY:
-    raise ValueError("Error: PINECONE_API_KEY or OPENAI_API_KEY missing from .env file")
+    raise ValueError("Error: API keys missing from .env file")
 
 # 2. Configuration
 INDEX_NAME = "guardianly-playbooks"
 
-# Initialize clients
 pc = Pinecone(api_key=PINECONE_API_KEY)
 client = OpenAI(api_key=OPENAI_API_KEY)
 
@@ -37,31 +34,46 @@ else:
 
 index = pc.Index(INDEX_NAME)
 
-# 4. Read and Embed Files
-playbook_files = glob.glob("mock_playbook_*.txt")
+# 4. Read and Embed Files from the 'playbooks' subdirectory
+script_dir = os.path.dirname(os.path.abspath(__file__))
+playbooks_dir = os.path.join(script_dir, "playbooks")
+search_pattern = os.path.join(playbooks_dir, "mock_playbook_*.txt")
 
-print(f"Found {len(playbook_files)} playbooks to ingest.")
+playbook_files = glob.glob(search_pattern)
+print(f"Found {len(playbook_files)} playbooks to ingest in '{playbooks_dir}'.")
 
 for file_path in playbook_files:
-    with open(file_path, "r") as f:
+    # Define filename first
+    filename = os.path.basename(file_path)
+    
+    with open(file_path, "r", encoding="utf-8") as f:
         text_content = f.read()
     
-    # Generate Embedding
     try:
+        # Generate Embedding
         response = client.embeddings.create(
             input=text_content,
             model="text-embedding-3-small"
         )
         embedding = response.data[0].embedding
         
-        # Determine hazard type for metadata filtering
-        filename = os.path.basename(file_path)
-        if "road_closure" in filename:
-            hazard_type = "road_closure"
-        elif "severe_weather" in filename:
-            hazard_type = "severe_weather_rain"
-        else:
-            hazard_type = "general"
+        # Expanded hazard type mapping based on the filename
+        # Ensure your filenames match these keywords (e.g. 'mock_playbook_flood.txt')
+        hazard_type = "general"
+        if "flood" in filename: hazard_type = "flood"
+        elif "building_fire" in filename: hazard_type = "building_fire"
+        elif "wildfire" in filename: hazard_type = "wildfire"
+        elif "hurricane" in filename: hazard_type = "hurricane"
+        elif "tornado" in filename: hazard_type = "tornado"
+        elif "active_shooter" in filename: hazard_type = "active_shooter"
+        elif "police_activity" in filename: hazard_type = "police_activity"
+        elif "road_closure" in filename: hazard_type = "road_closure"
+        elif "severe_weather" in filename: hazard_type = "severe_weather"
+        elif "earthquake" in filename: hazard_type = "earthquake"
+        elif "hazmat" in filename: hazard_type = "hazmat_spill"
+        elif "gas_leak" in filename: hazard_type = "gas_leak"
+        elif "volcanic" or "volcano" in filename: hazard_type = "volcanic_eruption"
+        elif "tsunami" in filename: hazard_type = "tsunami"
 
         # Upsert to Pinecone
         index.upsert(vectors=[
@@ -75,7 +87,7 @@ for file_path in playbook_files:
                 }
             }
         ])
-        print(f"Successfully indexed: {filename}")
+        print(f"Successfully indexed: {filename} as '{hazard_type}'")
         
     except Exception as e:
         print(f"Failed to index {filename}: {e}")

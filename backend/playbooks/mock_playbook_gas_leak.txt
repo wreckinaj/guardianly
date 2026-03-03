@@ -1,0 +1,4 @@
+HAZARD: Gas Leak.
+Context: High risk of explosion, fire, or asphyxiation. Vehicle ignitions or electronics can cause sparks.
+Recomm: Evacuate the immediate area upwind. Do not start vehicles if parked near the suspected leak.
+Action: Establish a localized geofence around the leak and calculate upwind evacuation routes (Mapbox routing).
