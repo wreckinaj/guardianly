@@ -1,9 +1,25 @@
 import 'package:flutter/material.dart';
-import 'package:latlong2/latlong.dart'; // <-- Added this for coordinates
+import 'package:latlong2/latlong.dart';
 import 'Components/searchbar.dart';
 import '/Components/menu.dart';
 import 'alertdetails.dart';
 import '/models/local_alert.dart'; // <-- Using the shared model now
+
+class LocalAlert {
+  final String title;
+  final String description;
+  final IconData icon;
+  final Color color;
+  final LatLng position;
+
+  LocalAlert({
+    required this.title,
+    required this.description,
+    required this.icon,
+    required this.color,
+    required this.position,
+  });
+}
 
 class Alert extends StatelessWidget {
   const Alert({super.key});
@@ -19,6 +35,7 @@ class Alert extends StatelessWidget {
         description: "Small brush fire reported near the stadium. Emergency services are on site.",
         icon: Icons.local_fire_department,
         color: Colors.red,
+        position: const LatLng(44.567, -123.278),
       ),
       LocalAlert(
         position: const LatLng(44.564, -123.261), // Added
@@ -27,6 +44,7 @@ class Alert extends StatelessWidget {
         description: "Police investigating a minor incident downtown. Area remains open but use caution.",
         icon: Icons.security,
         color: Colors.blue,
+        position: const LatLng(44.564, -123.261),
       ),
       LocalAlert(
         position: const LatLng(44.566, -123.270), // Added
@@ -35,6 +53,7 @@ class Alert extends StatelessWidget {
         description: "Ambulance on site near the medical center responding to a reported accident.",
         icon: Icons.add_box,
         color: Colors.green,
+        position: const LatLng(44.588, -123.275),
       ),
       LocalAlert(
         position: const LatLng(44.558, -123.265), // Added
@@ -43,6 +62,7 @@ class Alert extends StatelessWidget {
         description: "Caution: Slippery conditions in Avery Park due to recent weather.",
         icon: Icons.warning,
         color: Colors.amber,
+        position: const LatLng(44.553, -123.270),
       ),
       LocalAlert(
         position: const LatLng(44.560, -123.255), // Added
@@ -51,6 +71,7 @@ class Alert extends StatelessWidget {
         description: "Road work causing delays on Highway 99. Expect 10-15 minute delays.",
         icon: Icons.directions_car,
         color: Colors.purple,
+        position: const LatLng(44.560, -123.255),
       ),
     ];
 
@@ -61,7 +82,6 @@ class Alert extends StatelessWidget {
         children: [
           const SearchBarApp(isOnAlertPage: true),
           const SizedBox(height: 16),
-          // Alert list with individual cards
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -86,8 +106,7 @@ class Alert extends StatelessWidget {
                           ),
                         ],
                       ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                      child: Column(
                         children: [
                           // Dynamic icon and color based on alert type
                           Container(
@@ -136,32 +155,54 @@ class Alert extends StatelessWidget {
                                           locationName: alert.description,    
                                         ),
                                       ),
-                                    );
-                                  },
-                                  child: const Text(
-                                    'Read more',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.blue,
-                                      decoration: TextDecoration.underline,
                                     ),
-                                  ),
+                                  ],
                                 ),
-                              ],
-                            ),
+                              ),
+                              IconButton(
+                                icon: Icon(
+                                  isSaved ? Icons.bookmark : Icons.bookmark_border,
+                                  color: isSaved ? Colors.black : Colors.grey,
+                                ),
+                                onPressed: () {
+                                  setState(() {
+                                    isSaved = !isSaved;
+                                  });
+                                },
+                              ),
+                            ],
                           ),
-
-                          // Save/bookmark button
-                          IconButton(
-                            icon: Icon(
-                              isSaved ? Icons.bookmark : Icons.bookmark_border,
-                              color: isSaved ? Colors.black : Colors.grey,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                isSaved = !isSaved;
-                              });
-                            },
+                          const Divider(height: 24),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                            children: [
+                              // "VIEW ON MAP" Button
+                              TextButton.icon(
+                                onPressed: () {
+                                  Navigator.pushNamedAndRemoveUntil(
+                                    context, 
+                                    '/home', 
+                                    (route) => false, 
+                                    arguments: alert.position
+                                  );
+                                },
+                                icon: const Icon(Icons.map, size: 18),
+                                label: const Text("VIEW ON MAP"),
+                              ),
+                              // "DETAILS" Button
+                              TextButton.icon(
+                                onPressed: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (context) => const AlertDetails(),
+                                    ),
+                                  );
+                                },
+                                icon: const Icon(Icons.info_outline, size: 18),
+                                label: const Text("DETAILS"),
+                              ),
+                            ],
                           ),
                         ],
                       ),

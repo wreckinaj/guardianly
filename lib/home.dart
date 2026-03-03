@@ -16,6 +16,36 @@ import '/Components/searchbar.dart';
 import '/Components/menu.dart';
 import '/Components/key.dart';
 
+class LocalAlert {
+  final LatLng position;
+  final String title;
+  final String description;
+  final IconData icon;
+  final Color color;
+
+  LocalAlert({
+    required this.position,
+    required this.title,
+    required this.description,
+    required this.icon,
+    required this.color,
+  });
+
+  // Factory to create from JSON (ready for backend integration)
+  factory LocalAlert.fromJson(Map<String, dynamic> json) {
+    return LocalAlert(
+      position: LatLng(
+        json['lat'] ?? 0.0, 
+        json['lng'] ?? 0.0
+      ),
+      title: json['title'] ?? 'Alert',
+      description: json['message'] ?? '',
+      icon: Icons.warning, 
+      color: Colors.red,   
+    );
+  }
+}
+
 class Home extends StatefulWidget {
   const Home({super.key});
 
@@ -24,18 +54,15 @@ class Home extends StatefulWidget {
 }
 
 class HomeState extends State<Home> {
-  // --- State Variables ---
   final MapController mapController = MapController();
   final String mapboxToken = dotenv.env['MAPBOX_ACCESS_TOKEN'] ?? '';
   
   LatLng? _currentP;
   List<LocalAlert> _alerts = [];
   
-  // Async & Streams
   StreamSubscription<Position>? _positionStream;
   Timer? _pollingTimer;
 
-  // --- Mock Data (Fallback) ---
   final List<LocalAlert> _mockAlerts = [
     LocalAlert(
       position: const LatLng(44.567, -123.278),
@@ -74,15 +101,21 @@ class HomeState extends State<Home> {
   @override
   void initState() {
     super.initState();
-    // 1. Initialize data
-    _alerts = _mockAlerts; // Start with mocks, then fetch real data
-    
-    // 2. Start Services
+    _alerts = List.from(_mockAlerts); 
     _startLocationUpdates();
     _fetchAlerts(); 
-    
-    // 3. Set up Polling (every 60 seconds)
     _pollingTimer = Timer.periodic(const Duration(seconds: 60), (_) => _fetchAlerts());
+
+    // Check for passed navigation arguments (from alert list)
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final LatLng? navTarget = ModalRoute.of(context)?.settings.arguments as LatLng?;
+      if (navTarget != null) {
+        mapController.move(navTarget, 15.0);
+        // Find the alert to show details
+        final alert = _alerts.firstWhere((a) => a.position == navTarget, orElse: () => _alerts.first);
+        _showAlertDetails(alert);
+      }
+    });
   }
 
   @override
@@ -93,45 +126,33 @@ class HomeState extends State<Home> {
     super.dispose();
   }
 
-  // --- Logic: Location Tracking ---
   Future<void> _startLocationUpdates() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    // Check Service
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) return;
 
-    // Check Permissions
-    permission = await Geolocator.checkPermission();
+    LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) return;
     }
     if (permission == LocationPermission.deniedForever) return;
 
-    // Start Stream
     const LocationSettings locationSettings = LocationSettings(
       accuracy: LocationAccuracy.high,
-      distanceFilter: 10, // Only update if moved 10 meters
+      distanceFilter: 10, 
     );
 
     _positionStream = Geolocator.getPositionStream(locationSettings: locationSettings)
         .listen((Position position) {
-      
-      setState(() {
-        _currentP = LatLng(position.latitude, position.longitude);
-      });
-
-      // Move map only on first fix or valid update (optional)
-      // mapController.move(_currentP!, 15.0); 
-
-      // Check proximity to any active alerts
-      _checkProximityToHazards(position);
+      if (mounted) {
+        setState(() {
+          _currentP = LatLng(position.latitude, position.longitude);
+        });
+        _checkProximityToHazards(position);
+      }
     });
   }
 
-  // --- Logic: Alert Proximity ---
   void _checkProximityToHazards(Position userPos) {
     for (var alert in _alerts) {
       double distanceInMeters = Geolocator.distanceBetween(
@@ -141,9 +162,7 @@ class HomeState extends State<Home> {
         alert.position.longitude,
       );
 
-      // Warning Threshold: 500 meters
       if (distanceInMeters < 500) {
-        // Debounce logic could go here to prevent spamming
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -155,7 +174,10 @@ class HomeState extends State<Home> {
             action: SnackBarAction(
               label: 'VIEW',
               textColor: Colors.white,
-              onPressed: () => _showAlertDetails(alert),
+              onPressed: () {
+                mapController.move(alert.position, 15.0);
+                _showAlertDetails(alert);
+              },
             ),
           ),
         );
@@ -175,27 +197,21 @@ class HomeState extends State<Home> {
 
       final String apiUrl = "$baseUrl/api/notifications";
 
-      try {
-        // 1. Get the current user's Firebase token
-        final user = FirebaseAuth.instance.currentUser;
-        if (user == null) {
-          debugPrint("User not logged in, cannot fetch alerts.");
-          return;
-        }
-        final token = await user.getIdToken();
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) return;
+      final token = await user.getIdToken();
 
-        // 2. Make the authenticated GET request
-        final response = await http.get(
-          Uri.parse(apiUrl),
-          headers: {
-            'Authorization': 'Bearer $token', // Required by server.py @token_required
-            'Content-Type': 'application/json',
-          },
-        );
+      final response = await http.get(
+        Uri.parse(apiUrl),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
 
-      // 3. Parse and map the response
       if (response.statusCode == 200) {
-          final Map<String, dynamic> data = json.decode(response.body);
+        final Map<String, dynamic> data = json.decode(response.body);
 
           if (data['status'] == 'success') {
             final List<dynamic> fetchedNotifications = data['notifications'];
@@ -216,26 +232,23 @@ class HomeState extends State<Home> {
               });
             }
           }
+        }
       } else {
-        debugPrint("Failed to fetch alerts. Status Code: ${response.statusCode}");
         _fallbackToMocks();
       }
     } catch (e) {
-      debugPrint("Error fetching alerts: $e");
       _fallbackToMocks();
     }
   }
 
-  // Helper method to keep your map populated if the server is offline during dev
   void _fallbackToMocks() {
     if (mounted) {
       setState(() {
-        _alerts = _mockAlerts; 
+        _alerts = List.from(_mockAlerts); 
       });
     }
   }
 
-  // --- UI: Alert Modal ---
   void _showAlertDetails(LocalAlert alert) {
     // Instead of a simple bottom sheet, push the full AlertDetails screen!
     Navigator.push(
@@ -252,7 +265,6 @@ class HomeState extends State<Home> {
     );
   }
 
-  // --- UI: Build ---
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -274,7 +286,6 @@ class HomeState extends State<Home> {
                       options: MapOptions(
                         initialCenter: _currentP ?? const LatLng(44.5646, -123.2620),
                         initialZoom: 14.0,
-                        // Prevent rotation for simpler navigation UI
                         interactionOptions: const InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
                       ),
                       children: [
@@ -285,7 +296,6 @@ class HomeState extends State<Home> {
                             'accessToken': mapboxToken,
                           },
                         ),
-                        // User Location Marker
                         if (_currentP != null)
                           MarkerLayer(
                             markers: [
@@ -297,7 +307,6 @@ class HomeState extends State<Home> {
                               ),
                             ],
                           ),
-                        // Hazard Markers
                         MarkerLayer(
                           markers: _alerts.map((alert) {
                             return Marker(
@@ -327,13 +336,11 @@ class HomeState extends State<Home> {
                       ],
                     ),
                   ),
-                  // Map Legend / Key
                   const Positioned(
                     bottom: 16,
                     left: 16,
                     child: MapKey(),
                   ),
-                  // Recenter Button
                   Positioned(
                     bottom: 16,
                     right: 16,

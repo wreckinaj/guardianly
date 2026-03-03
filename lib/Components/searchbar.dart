@@ -88,13 +88,15 @@ class _SearchBarAppState extends State<SearchBarApp> {
                     title: Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        // Left side with name and address
+                        // Left side with "New Route" and a helper icon
+                        const Icon(Icons.add_road, color: Colors.blue, size: 24),
+                        const SizedBox(width: 16),
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               const Text(
-                                'Costco',
+                                'New Route',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
@@ -102,43 +104,25 @@ class _SearchBarAppState extends State<SearchBarApp> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                '3130 Killdeer Ave SE, Albany, OR 97322',
+                                'Plan your next safe journey',
                                 style: TextStyle(
                                   fontSize: 14,
                                   color: Colors.grey.shade600,
                                 ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
                               ),
                             ],
                           ),
                         ),
-                        // Right side with distance and city
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.end,
-                          children: [
-                            Text(
-                              '10 mi',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
-                                color: Colors.grey.shade700,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              'Albany, OR',
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey.shade500,
-                              ),
-                            ),
-                          ],
+                        // Right side icon indicating navigation
+                        Icon(
+                          Icons.arrow_forward_ios,
+                          size: 14,
+                          color: Colors.grey.shade400,
                         ),
                       ],
                     ),
                     onTap: () {
-                      controller.closeView('Costco');
+                      controller.closeView('New Route');
                       final currentContext = context; // Capture context
                       Future.delayed(const Duration(milliseconds: 100), () {
                         if (currentContext.mounted) { 

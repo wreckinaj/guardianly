@@ -9,12 +9,14 @@ class Directions extends StatefulWidget {
   final String fromLocation;
   final String toLocation;
   final String transportMode;
+  final LatLng? startLatLng;
 
   const Directions({
     super.key,
     required this.fromLocation,
     required this.toLocation,
     required this.transportMode,
+    this.startLatLng,
   });
 
   @override
@@ -23,14 +25,12 @@ class Directions extends StatefulWidget {
 
 class DirectionsState extends State<Directions> {
   final MapController mapController = MapController();
-  // Using environment variable for security
   final String mapboxToken = dotenv.env['MAPBOX_ACCESS_TOKEN'] ?? '';
   
   List<LatLng> routePoints = [];
-  List<DirectionStep> steps = []; // Real directions parsed from Mapbox
+  List<DirectionStep> steps = []; 
   bool isLoading = true;
   String? errorMessage;
-  bool isPanelExpanded = true;
 
   @override
   void initState() {
@@ -45,7 +45,15 @@ class DirectionsState extends State<Directions> {
     });
 
     try {
-      final startCoords = await _getCoords(widget.fromLocation);
+      // FIX: Prioritize startLatLng from GPS over the text "Current Location"
+      LatLng? startCoords;
+      if (widget.startLatLng != null) {
+        startCoords = widget.startLatLng;
+        debugPrint('Using GPS coordinates for start: ${startCoords!.latitude}, ${startCoords.longitude}');
+      } else {
+        startCoords = await _getCoords(widget.fromLocation);
+      }
+
       final endCoords = await _getCoords(widget.toLocation);
 
       if (startCoords == null || endCoords == null) {
@@ -57,7 +65,6 @@ class DirectionsState extends State<Directions> {
       }
 
       final mode = widget.transportMode == 'drive' ? 'driving' : widget.transportMode;
-      // Added steps=true to the URL to get turn-by-turn data
       final url = 'https://api.mapbox.com/directions/v5/mapbox/$mode/${startCoords.longitude},${startCoords.latitude};${endCoords.longitude},${endCoords.latitude}?geometries=geojson&steps=true&access_token=$mapboxToken';
       
       final response = await http.get(Uri.parse(url));
@@ -66,7 +73,6 @@ class DirectionsState extends State<Directions> {
         final route = data['routes'][0];
         final List coords = route['geometry']['coordinates'];
         
-        // Parse the turn-by-turn steps
         final List legs = route['legs'];
         List<DirectionStep> parsedSteps = [];
         int stepCount = 1;
@@ -75,7 +81,7 @@ class DirectionsState extends State<Directions> {
           for (var step in leg['steps']) {
             parsedSteps.add(DirectionStep(
               instruction: step['maneuver']['instruction'],
-              distance: "${(step['distance'] * 0.000621371).toStringAsFixed(1)} mi", // Convert meters to miles
+              distance: "${(step['distance'] * 0.000621371).toStringAsFixed(1)} mi",
               stepNumber: stepCount++,
             ));
           }
@@ -91,9 +97,10 @@ class DirectionsState extends State<Directions> {
           _fitMapToRoute();
         }
       } else {
-        throw Exception("Failed to load directions");
+        throw Exception("Failed to load directions from Mapbox API");
       }
     } catch (e) {
+      debugPrint('Routing Error: $e');
       setState(() {
         errorMessage = "Error: $e";
         isLoading = false;
@@ -185,10 +192,9 @@ class DirectionsState extends State<Directions> {
             ],
           ),
           
-          // Sliding Directions Panel
           if (!isLoading && steps.isNotEmpty)
             DraggableScrollableSheet(
-              initialChildSize: 0.1,
+              initialChildSize: 0.2,
               minChildSize: 0.1,
               maxChildSize: 0.6,
               builder: (context, scrollController) {
@@ -214,7 +220,7 @@ class DirectionsState extends State<Directions> {
                       return ListTile(
                         leading: CircleAvatar(
                           backgroundColor: Colors.blue.shade50,
-                          child: Text("${step.stepNumber}"),
+                          child: Text("${step.stepNumber}", style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blue)),
                         ),
                         title: Text(step.instruction),
                         subtitle: Text(step.distance),
