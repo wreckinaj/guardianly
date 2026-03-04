@@ -25,6 +25,13 @@ os.environ['MAPBOX_ACCESS_TOKEN'] = 'testing'
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from server import app as flask_app
+import server
+from unittest.mock import MagicMock # Make sure this is imported at the top!
+
+# Inject a mock database into the server. 
+# This prevents 'name db is not defined' errors since the real 
+# Firebase initialization intentionally fails in the test environment.
+server.db = MagicMock()
 
 # --- STEP 4: Test Fixtures ---
 
