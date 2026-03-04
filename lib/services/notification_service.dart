@@ -1,58 +1,48 @@
-import 'package:flutter/foundation.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 
 class NotificationService {
-  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
-  final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
+  final FirebaseMessaging _fcm = FirebaseMessaging.instance;
+  final FirebaseFirestore _db = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
 
-  Future<void> init() async {
-    // --- 1. Initialize Local Notifications (REQUIRED) ---
-    const AndroidInitializationSettings androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
-    const DarwinInitializationSettings iosInit = DarwinInitializationSettings();
-    
-    const InitializationSettings initSettings = InitializationSettings(
-      android: androidInit,
-      iOS: iosInit,
-    );
-
-    await _localNotifications.initialize(initSettings);
-
-    // --- 2. Request Permissions ---
-    NotificationSettings settings = await _firebaseMessaging.requestPermission(
+  Future<void> initialize() async {
+    // 1. Request permission (Required for iOS and Android 13+)
+    NotificationSettings settings = await _fcm.requestPermission(
       alert: true,
       badge: true,
       sound: true,
     );
 
     if (settings.authorizationStatus == AuthorizationStatus.authorized) {
-      debugPrint('User granted permission');
+      debugPrint('User granted push notification permission');
+      
+      // 2. Fetch the unique FCM device token
+      String? token = await _fcm.getToken();
+      if (token != null) {
+        debugPrint('FCM Token generated: $token');
+        await _saveTokenToDatabase(token);
+      }
+
+      // 3. Listen for token refreshes (Firebase occasionally rotates these)
+      _fcm.onTokenRefresh.listen(_saveTokenToDatabase);
+      
+    } else {
+      debugPrint('User declined push notification permissions');
     }
-
-    // --- 3. Get FCM Token ---
-    String? token = await _firebaseMessaging.getToken();
-    debugPrint("FCM Token: $token");
-
-    // --- 4. Handle Foreground Messages ---
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      _showLocalNotification(message);
-    });
   }
 
-  void _showLocalNotification(RemoteMessage message) {
-    const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
-      'high_importance_channel', 
-      'High Importance Notifications',
-      importance: Importance.max,
-      priority: Priority.high,
-    );
-    const NotificationDetails details = NotificationDetails(android: androidDetails);
-
-    _localNotifications.show(
-      message.hashCode,               // id (Positional)
-      message.notification?.title,    // title (Positional)
-      message.notification?.body,     // body (Positional)
-      details,                        // details (Positional)
-    );
+  // --- Helper method to securely update the user's document ---
+  Future<void> _saveTokenToDatabase(String token) async {
+    String? userId = _auth.currentUser?.uid;
+    
+    if (userId != null) {
+      await _db.collection('users').doc(userId).set({
+        'fcm_token': token,
+        'fcm_token_updated_at': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true)); // merge: true ensures we don't overwrite their username/email!
+    }
   }
 }

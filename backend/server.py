@@ -8,7 +8,7 @@ import json
 from functools import wraps
 from marshmallow import ValidationError
 import firebase_admin
-from firebase_admin import credentials, auth, messaging # Added messaging import
+from firebase_admin import credentials, auth, messaging, firestore # <-- Added firestore
 from schemas import GeneratePromptRequestSchema, AlertRecommendationSchema
 from pinecone import Pinecone
 from openai import OpenAI
@@ -19,90 +19,140 @@ load_dotenv()
 app = Flask(__name__)
 
 # --- Cache Configuration ---
-# Using SimpleCache for in-memory storage. 
-# For production on Google Cloud, swap to 'RedisCache' and provide a CACHE_REDIS_URL.
 app.config['CACHE_TYPE'] = 'SimpleCache'
 app.config['CACHE_DEFAULT_TIMEOUT'] = 86400 # 24 hours in seconds
 cache = Cache(app)
 
-# Replace the old CORS line with this simple one:
 CORS(app)
 
 # --- Initialize Clients ---
-# Ensure these environment variables are set in your deployment environment
 pc = Pinecone(api_key=os.environ.get('PINECONE_API_KEY'))
 openai_client = OpenAI(api_key=os.environ.get('OPENAI_API_KEY'))
 index = pc.Index("guardianly-playbooks")
 
-# --- Configuration ---
 MAPBOX_ACCESS_TOKEN = os.environ.get('MAPBOX_ACCESS_TOKEN', 'your_mapbox_token_here')
 
 # --- Initialize Firebase Admin SDK ---
 try:
-    # Ensure 'admin_key.json' is present in the backend directory for local dev
     cred = credentials.Certificate("admin_key.json")
     firebase_admin.initialize_app(cred)
-    print("Firebase Admin Initialized")
+    db = firestore.client() # <-- Initialize Firestore
+    print("Firebase Admin & Firestore Initialized")
 except Exception as e:
-    print(f"Warning: Firebase Admin failed to initialize. Auth will fail. Error: {e}")
+    print(f"Warning: Firebase Admin failed to initialize. Error: {e}")
 
-# --- Mock Data Storage (In-Memory) ---
-notifications = []
-mock_notification_settings = {}
-
-# --- Authentication Decorator ---
-def token_required(f):
+# --- Security Checkpoint ---
+def check_token(f):
     @wraps(f)
-    def decorated(*args, **kwargs):
-        token = request.headers.get('Authorization')
-        
-        if not token:
-            return jsonify({'error': 'Token is missing'}), 401
+    def wrap(*args, **kwargs):
+        auth_header = request.headers.get('Authorization')
+        if not auth_header or not auth_header.startswith('Bearer '):
+            return jsonify({'status': 'error', 'message': 'Missing or invalid token'}), 401
         
         try:
-            # Remove 'Bearer ' prefix if present
-            if token.startswith('Bearer '):
-                token = token[7:]
-            
-            # Verify the Firebase ID token
+            token = auth_header.split('Bearer ')[1]
             decoded_token = auth.verify_id_token(token)
-            current_user_uid = decoded_token['uid']
-            
-        except ValueError:
-            return jsonify({'error': 'Invalid token'}), 401
-        except auth.ExpiredIdTokenError:
-            return jsonify({'error': 'Token has expired'}), 401
-        except auth.RevokedIdTokenError:
-            return jsonify({'error': 'Token has been revoked'}), 401
+            request.uid = decoded_token['uid'] # Attach the secure UID to the request
         except Exception as e:
-            return jsonify({'error': f'Authentication failed: {str(e)}'}), 401
-        
-        return f(current_user_uid, *args, **kwargs)
-    
-    return decorated
+            return jsonify({'status': 'error', 'message': f'Invalid token: {str(e)}'}), 401
+            
+        return f(*args, **kwargs)
+    return wrap
 
 @app.route('/')
 def home():
     return jsonify({
         'message': 'Guardianly Backend API',
         'endpoints': {
+            'profile': '/api/profile (GET, requires auth)',
             'push_notification': '/api/push (POST, requires auth)',
             'get_notifications': '/api/notifications (GET, requires auth)',
+            'create_alert': '/api/alerts (POST)',
             'generate_prompt': '/api/generate_prompt (POST, requires auth)',
             'geocoding': '/geocode?place=Corvallis',
             'directions': '/directions?start=Corvallis,OR&end=Albany,OR'
         }
     })
 
-# --- Notification Endpoints ---
+# --- User & Profile Endpoints ---
+
+@app.route('/api/profile', methods=['GET'])
+@check_token
+def get_profile():
+    try:
+        user_uid = request.uid 
+        user_doc_ref = db.collection('users').document(user_uid)
+        user_doc = user_doc_ref.get()
+        
+        if user_doc.exists:
+            return jsonify({
+                'status': 'success',
+                'profile': user_doc.to_dict()
+            }), 200
+        else:
+            return jsonify({'status': 'error', 'message': 'User profile not found'}), 404
+            
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+# --- Alert & Notification Endpoints ---
+
+@app.route('/api/alerts', methods=['POST'])
+def save_alert():
+    try:
+        data = request.get_json()
+        new_alert_ref = db.collection('alerts').document()
+        
+        alert_payload = {
+            'title': data.get('title', 'System Alert'),
+            'message': data.get('message', ''),
+            'hazardType': data.get('hazardType', 'general'),
+            'lat': data.get('lat', 0.0),
+            'lng': data.get('lng', 0.0),
+            'timestamp': firestore.SERVER_TIMESTAMP 
+        }
+        
+        new_alert_ref.set(alert_payload)
+        
+        return jsonify({
+            'status': 'success', 
+            'message': 'Alert saved to Firestore!',
+            'id': new_alert_ref.id
+        }), 201
+        
+    except Exception as e:
+        print(f"Error saving alert: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/api/notifications', methods=['GET'])
+@check_token
+def get_notifications():
+    try:
+        user_uid = request.uid
+        print(f"Securely fetching alerts for user: {user_uid}")
+        
+        alerts_ref = db.collection('alerts')
+        docs = alerts_ref.order_by('timestamp', direction=firestore.Query.DESCENDING).stream()
+        
+        notifications = []
+        for doc in docs:
+            alert_data = doc.to_dict()
+            alert_data['id'] = doc.id 
+            if 'timestamp' in alert_data and alert_data['timestamp'] is not None:
+                alert_data['timestamp'] = alert_data['timestamp'].isoformat()
+            notifications.append(alert_data)
+            
+        return jsonify({'status': 'success', 'notifications': notifications}), 200
+        
+    except Exception as e:
+        return jsonify({'status': 'error', 'message': str(e)}), 500
 
 @app.route('/api/push', methods=['POST'])
-@token_required
-def push_endpoint(current_user_uid):
+@check_token
+def push_endpoint():
     """Send a real Push Notification via Firebase Cloud Messaging"""
     data = request.get_json()
     
-    # Validation
     if not data or not data.get("title") or not data.get("message"):
         return jsonify({"error": "Title and message are required"}), 400
     
@@ -110,21 +160,18 @@ def push_endpoint(current_user_uid):
     if not registration_token:
         return jsonify({"error": "FCM Token (fcm_token) is required"}), 400
 
-    # Extract location and styling data, providing safe defaults if missing
-    lat = data.get("lat", 44.5646) # Default to Corvallis if missing
+    lat = data.get("lat", 44.5646) 
     lng = data.get("lng", -123.2620)
     icon = data.get("icon", "warning")
     color = data.get("color", "red")
 
-    # 1. Construct the Message
     message = messaging.Message(
         notification=messaging.Notification(
             title=data["title"],
             body=data["message"],
         ),
-        # Pass extra variables directly to the mobile device in the background
         data={
-            "lat": str(lat),   # FCM data values must be strings
+            "lat": str(lat),   
             "lng": str(lng),
             "icon": icon,
             "color": color
@@ -133,68 +180,29 @@ def push_endpoint(current_user_uid):
     )
 
     try:
-        # 2. Send via Firebase
         response = messaging.send(message)
+        print(f"[Notification] Sent to {request.uid}: {response}")
         
-        # 3. Log locally (Optional, for history and for the Map to fetch)
-        note = {
-            "user": current_user_uid,
+        # Also save this push notification to Firestore
+        db.collection('alerts').add({
+            "user": request.uid,
             "title": data["title"],
             "message": data["message"],
-            "lat": lat,          # Save as floats for the /api/notifications endpoint
+            "hazardType": data.get('hazardType', 'general'),
+            "lat": lat,          
             "lng": lng,
-            "icon": icon,
-            "color": color,
-            "timestamp": datetime.datetime.utcnow().isoformat(),
+            "timestamp": firestore.SERVER_TIMESTAMP,
             "message_id": response
-        }
-        notifications.append(note)
-        print(f"[Notification] Sent to {current_user_uid}: {response}")
+        })
 
         return jsonify({
             "status": "success", 
-            "message_id": response,
-            "notification": note
+            "message_id": response
         }), 201
 
     except Exception as e:
         print(f"[Notification Error] {str(e)}")
         return jsonify({"error": str(e)}), 500
-
-@app.route('/api/notifications', methods=['GET'])
-@token_required
-def get_notifications(current_user_uid):
-    """Retrieve all notifications for the authenticated user"""
-    user_notes = [n for n in notifications if n["user"] == current_user_uid]
-    return jsonify({
-        "status": "success",
-        "count": len(user_notes),
-        "notifications": user_notes
-    }), 200
-
-@app.route('/api/notifications/settings', methods=['GET'])
-@token_required
-def get_notification_settings(current_user_uid):
-    settings = mock_notification_settings.get(current_user_uid, {"enabled_types": []})
-    return jsonify({
-        "status": "success",
-        "user": current_user_uid,
-        "settings": settings
-    }), 200
-
-@app.route('/api/notifications/settings', methods=['PUT'])
-@token_required
-def update_notification_settings(current_user_uid):
-    data = request.get_json()
-    enabled_types = data.get("enabled_types", [])
-    mock_notification_settings[current_user_uid] = {"enabled_types": enabled_types}
-    
-    return jsonify({
-        "status": "success",
-        "message": "Notification settings updated",
-        "user": current_user_uid,
-        "settings": mock_notification_settings[current_user_uid]
-    }), 200
 
 # --- Mapbox Endpoints ---
 
@@ -242,12 +250,8 @@ def directions():
 
 # --- AI & RAG Logic ---
 
-@cache.memoize(timeout=86400) # Cache embeddings and Pinecone results for 24 hours
+@cache.memoize(timeout=86400) 
 def get_retrieved_context(hazard_key, user_lat_rounded, user_lng_rounded):
-    """
-    Embeds the hazard query and retrieves relevant playbook sections from Pinecone.
-    Uses rounded coordinates to maximize cache hits.
-    """
     query_text = f"Procedures for {hazard_key} hazard near {user_lat_rounded}, {user_lng_rounded}"
     
     try:
@@ -269,7 +273,7 @@ def get_retrieved_context(hazard_key, user_lat_rounded, user_lng_rounded):
         print(f"RAG Retrieval Error: {e}")
         return "Context retrieval failed."
 
-@cache.memoize(timeout=3600) # Cache the final AI recommendation for 1 hour
+@cache.memoize(timeout=3600) 
 def generate_ai_recommendation(hazard_display, retrieved_context, lat_rounded, lng_rounded):
     system_prompt = """
     You are Guardianly, an advanced safety AI. 
@@ -309,8 +313,8 @@ def generate_ai_recommendation(hazard_display, retrieved_context, lat_rounded, l
     return AlertRecommendationSchema().load(generated_data)
 
 @app.route('/api/generate_prompt', methods=['POST'])
-@token_required
-def generate_prompt_endpoint(current_user_uid):
+@check_token
+def generate_prompt_endpoint():
     try:
         data = GeneratePromptRequestSchema().load(request.get_json())
     except ValidationError as err:
@@ -320,17 +324,14 @@ def generate_prompt_endpoint(current_user_uid):
     user_lat = data['user_lat']
     user_lng = data['user_lng']
     
-    # Round coordinates to 2 decimal places (~1.1 km resolution) for caching
     lat_rounded = round(float(user_lat), 2)
     lng_rounded = round(float(user_lng), 2)
     
     hazard_display = raw_hazard.replace("_", " ").title()
     
     try:
-        # 1. Retrieve Context (Cached)
         retrieved_context = get_retrieved_context(raw_hazard, lat_rounded, lng_rounded)
 
-        # 2. Generate final recommendation (Cached)
         final_recommendation = generate_ai_recommendation(
             hazard_display, 
             retrieved_context, 

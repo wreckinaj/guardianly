@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '/Components/textfield.dart';
 import '/Components/logoname.dart';
 import '/policy.dart';
+import '/services/auth_service.dart';
 
 class SignUpPage extends StatelessWidget {
   SignUpPage({super.key});
@@ -12,6 +12,8 @@ class SignUpPage extends StatelessWidget {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   final confirmPasswordController = TextEditingController();
+
+  final AuthService _authService = AuthService();
 
   void signUpUser(BuildContext context) async {
     // 1. Basic Validation
@@ -26,70 +28,58 @@ class SignUpPage extends StatelessWidget {
     // 2. Show Loading Indicator
     showDialog(
       context: context,
-      barrierDismissible: false, // Prevent user from dismissing by tapping outside
+      barrierDismissible: false,
       builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
     try {
-      // 3. Create User in Firebase Auth
-      UserCredential userCredential = 
-          await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: emailController.text.trim(),
-        password: passwordController.text.trim(),
+      // 3. Create User using AuthService
+      final userCredential = await _authService.signUp(
+        emailController.text.trim(),
+        passwordController.text.trim(),
       );
 
-      // 4. Store Account Preferences in Firestore
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userCredential.user!.uid)
-          .set({
-        'username': usernameController.text.trim(),
-        'email': emailController.text.trim(),
-        'created_at': FieldValue.serverTimestamp(),
-        'preferences': {
-          'notifications_enabled': true,
-          'theme': 'light',
-        }
-      });
+      if (userCredential != null && userCredential.user != null) {
+        // 4. Store Account Preferences in Firestore
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userCredential.user!.uid)
+            .set({
+          'username': usernameController.text.trim(),
+          'email': emailController.text.trim(),
+          'created_at': FieldValue.serverTimestamp(),
+          'preferences': {
+            'notifications_enabled': true,
+            'theme': 'light',
+          }
+        });
 
-      // 5. Success! Navigate away.
-      if (context.mounted) {
-        Navigator.pop(context); // Pop loading circle
-        Navigator.pop(context); // Go back to login
-      }
-      
-    } on FirebaseAuthException catch (e) {
-      // Handle Auth specific errors (weak password, email already in use)
-      if (context.mounted) {
-        Navigator.pop(context); // Pop loading
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text("Sign Up Error"),
-            content: Text(e.message ?? "An authentication error occurred."),
-          ),
-        );
-      }
-    } on FirebaseException catch (e) {
-      // Handle Firestore specific errors (permission denied, not found)
-      if (context.mounted) {
-        Navigator.pop(context); // Pop loading
-        showDialog(
-          context: context,
-          builder: (context) => AlertDialog(
-            title: const Text("Database Error"),
-            content: Text("${e.plugin}: ${e.message}"), // Helpful debug info
-          ),
-        );
+        // 5. Success! Navigate away.
+        if (context.mounted) {
+          Navigator.pop(context); // Pop loading circle
+          Navigator.pop(context); // Go back to login
+        }
+      } else {
+        // Failed inside AuthService (e.g., weak password, email in use)
+        if (context.mounted) {
+          Navigator.pop(context); // Pop loading
+          showDialog(
+            context: context,
+            builder: (context) => const AlertDialog(
+              title: Text("Sign Up Error"),
+              content: Text("Could not create account. The email may already be in use or the password is too weak."),
+            ),
+          );
+        }
       }
     } catch (e) {
-      // Handle any other unexpected errors
+      // Handle Firestore or unexpected errors
       if (context.mounted) {
-        Navigator.pop(context); // Pop loading
+        Navigator.pop(context);
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text("Unknown Error"),
+            title: const Text("Error"),
             content: Text(e.toString()),
           ),
         );

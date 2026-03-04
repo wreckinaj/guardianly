@@ -9,6 +9,7 @@ import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
 import '/alertdetails.dart';
 import '/models/local_alert.dart';
+import '/services/notification_service.dart';
 // import '/services/api_service.dart';
 
 // Components
@@ -74,14 +75,20 @@ class HomeState extends State<Home> {
   @override
   void initState() {
     super.initState();
-    // 1. Initialize data
-    _alerts = _mockAlerts; // Start with mocks, then fetch real data
     
-    // 2. Start Services
+    // 1. Initialize data
+    _alerts = _mockAlerts; 
+
+    // 2. Request Push Notification permissions & save token
+    NotificationService().initialize(); 
+    
+    // 3. Start GPS tracking
     _startLocationUpdates();
+    
+    // 4. Fetch the live hazards from backend
     _fetchAlerts(); 
     
-    // 3. Set up Polling (every 60 seconds)
+    // 5. Set up Polling (every 60 seconds)
     _pollingTimer = Timer.periodic(const Duration(seconds: 60), (_) => _fetchAlerts());
   }
 

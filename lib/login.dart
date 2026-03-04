@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import '/Components/textfield.dart';
 import '/Components/logoname.dart';
+import '/services/auth_service.dart';
 
 class LoginPage extends StatelessWidget {
   LoginPage({super.key});
@@ -9,7 +9,8 @@ class LoginPage extends StatelessWidget {
   final usernameController = TextEditingController();
   final passwordController = TextEditingController();
 
-  // Updated loginUser method to use mock credentials for testing
+  final AuthService _authService = AuthService();
+
   void loginUser(BuildContext context) async {
     showDialog(
       context: context,
@@ -17,30 +18,28 @@ class LoginPage extends StatelessWidget {
       builder: (context) => const Center(child: CircularProgressIndicator()),
     );
 
-    // MOCK CREDENTIALS
-    const String mockEmail = "test@example.com";
-    const String mockPassword = "password123";
+    // Grab the actual text from the input fields
+    final email = usernameController.text.trim();
+    final password = passwordController.text.trim();
 
-    try {
-      // Using mock credentials instead of text field input
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: mockEmail,
-        password: mockPassword,
-      );
+    // Call your new AuthService
+    final userCredential = await _authService.logIn(email, password);
 
+    if (context.mounted) {
+      Navigator.pop(context); // Pop loading circle
+    }
+
+    if (userCredential != null) {
       if (context.mounted) {
-        Navigator.pop(context); // Pop loading
-        // Navigate to home screen
         Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
       }
-    } on FirebaseAuthException catch (e) {
+    } else {
       if (context.mounted) {
-        Navigator.pop(context);
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
             title: const Text('Login Failed'),
-            content: Text('Mock login failed: ${e.message}\n\nMake sure "$mockEmail" exists in your Firebase Console.'),
+            content: const Text('Please check your email and password and try again.'),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
@@ -83,7 +82,7 @@ class LoginPage extends StatelessWidget {
                       // Note: These fields are now ignored by the loginUser method
                       MyTextField(
                         controller: usernameController,
-                        hintText: 'Enter an Email (ignored in mock)',
+                        hintText: 'Enter an Email',
                         obscureText: false,
                       ),
 
@@ -91,7 +90,7 @@ class LoginPage extends StatelessWidget {
 
                       MyTextField(
                         controller: passwordController,
-                        hintText: 'Password (ignored in mock)',
+                        hintText: 'Password',
                         obscureText: true,
                       ),
 
@@ -135,7 +134,7 @@ class LoginPage extends StatelessWidget {
                           ),
                           child: const Center(
                             child: Text(
-                              "Login (Mock)",
+                              "Login",
                               style: TextStyle(
                                 color: Colors.white,
                                 fontWeight: FontWeight.bold,
@@ -147,11 +146,6 @@ class LoginPage extends StatelessWidget {
                       ),
 
                       const SizedBox(height: 10),
-                      const Text(
-                        "Using: test@example.com / password123",
-                        style: TextStyle(color: Colors.grey, fontSize: 12),
-                      ),
-
                       const SizedBox(height: 20),
 
                       // Don't have an account? Sign Up Now
