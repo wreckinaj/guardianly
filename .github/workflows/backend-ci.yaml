@@ -35,6 +35,8 @@ jobs:
         run: |
           cd backend
           pytest
+        env:
+          FIREBASE_CREDENTIALS_JSON: ${{ secrets.FIREBASE_CREDENTIALS_JSON }}
 
   test-docker-build:
     name: Test Docker Deployment Build

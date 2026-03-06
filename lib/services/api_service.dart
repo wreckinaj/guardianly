@@ -120,4 +120,43 @@ class ApiService {
     }
     return null;
   }
+
+  // --- Create a New Alert in Firestore ---
+  static Future<bool> createAlert({
+    required String title,
+    required String description,
+    required String hazardType,
+    required double lat,
+    required double lng,
+  }) async {
+    final url = Uri.parse('$baseUrl/api/alerts');
+    
+    try {
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          // 'Authorization': 'Bearer YOUR_TOKEN_HERE', // Uncomment when you add Auth0!
+        },
+        body: json.encode({
+          'title': title,
+          'message': description, // Server expects 'message'
+          'hazardType': hazardType,
+          'lat': lat,
+          'lng': lng,
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        debugPrint('Success: Alert saved to database!');
+        return true;
+      } else {
+        debugPrint('Failed to save alert: ${response.statusCode} - ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      debugPrint('Network error while saving alert: $e');
+      return false;
+    }
+  }
 }
