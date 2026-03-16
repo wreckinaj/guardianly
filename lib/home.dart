@@ -10,6 +10,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'alertdetails.dart';
 import 'models/local_alert.dart';
 import '/services/notification_service.dart';
+import 'services/api_service.dart';
 
 // Components
 import '/Components/searchbar.dart';
@@ -55,25 +56,25 @@ class HomeState extends State<Home> {
     ),
     LocalAlert(
       position: const LatLng(44.588, -123.275),
+      hazardType: "medical_emergency",
       title: "Medical Emergency",
       description: "Ambulance on site near the medical center.",
-      hazardType: "medical_emergency",
       icon: Icons.add_box,
       color: Colors.green,
     ),
     LocalAlert(
       position: const LatLng(44.553, -123.270),
+      hazardType: "severe_weather",
       title: "General Warning",
       description: "Caution: Slippery conditions in Avery Park.",
-      hazardType: "severe_weather",
       icon: Icons.warning,
       color: Colors.amber,
     ),
     LocalAlert(
       position: const LatLng(44.560, -123.255),
+      hazardType: "road_closure",
       title: "Traffic Incident",
       description: "Road work causing delays on Highway 99.",
-      hazardType: "road_closure",
       icon: Icons.directions_car,
       color: Colors.purple,
     ),
@@ -83,7 +84,6 @@ class HomeState extends State<Home> {
   void initState() {
     super.initState();
     _alerts = List.from(_mockAlerts); 
-    // FIXED: Changed .init() to .initialize() to match the method name in notification_service.dart
     NotificationService().initialize(); 
     _startLocationUpdates();
     _fetchAlerts(); 
@@ -189,6 +189,7 @@ class HomeState extends State<Home> {
           final List<dynamic> fetchedNotifications = data['notifications'];
           if (mounted) {
             setState(() {
+              // Combine real alerts with mock alerts
               final realAlerts = fetchedNotifications.map((json) => LocalAlert.fromJson(json)).toList();
               _alerts = [...realAlerts, ..._mockAlerts];
             });
@@ -213,6 +214,72 @@ class HomeState extends State<Home> {
 
   void _getAIAdvice() {
     debugPrint("AI Advice requested");
+  }
+
+  void _showReportDialog(LatLng location) {
+    final titleController = TextEditingController();
+    final messageController = TextEditingController();
+    String selectedType = 'general';
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Report Danger at This Location'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: titleController,
+                decoration: const InputDecoration(hintText: 'Alert Title (e.g. Fire)'),
+              ),
+              const SizedBox(height: 10),
+              TextField(
+                controller: messageController,
+                decoration: const InputDecoration(hintText: 'Description'),
+              ),
+              const SizedBox(height: 10),
+              DropdownButton<String>(
+                value: selectedType,
+                isExpanded: true,
+                items: const [
+                  DropdownMenuItem(value: 'general', child: Text('General')),
+                  DropdownMenuItem(value: 'wildfire', child: Text('Fire')),
+                  DropdownMenuItem(value: 'police_activity', child: Text('Police')),
+                  DropdownMenuItem(value: 'medical_emergency', child: Text('Medical')),
+                ],
+                onChanged: (val) => setDialogState(() => selectedType = val!),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: () async {
+                if (titleController.text.isEmpty || messageController.text.isEmpty) return;
+
+                final success = await ApiService.reportAlert(
+                  title: titleController.text,
+                  message: messageController.text,
+                  hazardType: selectedType, // FIXED: Added missing hazardType argument
+                  lat: location.latitude,
+                  lng: location.longitude,
+                );
+
+                if (mounted) {
+                  Navigator.pop(context);
+                  if (success) {
+                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Alert reported!")));
+                    _fetchAlerts();
+                  }
+                }
+              },
+              child: const Text('Report'),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showAlertDetails(LocalAlert alert) {
@@ -252,6 +319,9 @@ class HomeState extends State<Home> {
                         initialCenter: _currentP ?? const LatLng(44.5646, -123.2620),
                         initialZoom: 14.0,
                         interactionOptions: const InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
+                        onLongPress: (tapPosition, latLng) {
+                          _showReportDialog(latLng);
+                        },
                       ),
                       children: [
                         TileLayer(

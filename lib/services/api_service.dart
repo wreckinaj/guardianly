@@ -7,8 +7,6 @@ import 'package:flutter/foundation.dart';
 class ApiService {
   // Use 10.0.2.2 for Android Emulator, localhost for iOS Simulator
   static const String baseUrl = 'https://guardianly-backend-34405523525.us-west1.run.app';
-  // static const String baseUrl = 'http://localhost:5000'; // Use this for iOS
-  // static const String baseUrl = 'http://127.0.0.1:5000';
 
   // Helper to get the current user's token
   static Future<String?> _getAuthToken() async {
@@ -29,13 +27,11 @@ class ApiService {
       );
 
       if (response.statusCode == 200) {
-        // Success
         return {
           'success': true,
           'data': jsonDecode(response.body),
         };
       } else {
-        // Failed login
         final error = jsonDecode(response.body);
         return {
           'success': false,
@@ -98,7 +94,7 @@ class ApiService {
         Uri.parse('$baseUrl/api/generate_prompt'),
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': 'Bearer $token', // Pass the token here
+          'Authorization': 'Bearer $token',
         },
         body: jsonEncode({
           'hazard': hazardType,
@@ -112,8 +108,6 @@ class ApiService {
         if (data['status'] == 'success' || data['status'] == 'warning') {
           return SafetyRecommendation.fromJson(data['recommendation']);
         }
-      } else {
-        debugPrint('Server Error: ${response.body}');
       }
     } catch (e) {
       debugPrint('Network Error: $e');
@@ -121,33 +115,36 @@ class ApiService {
     return null;
   }
 
-  // --- Create a New Alert in Firestore ---
-  static Future<bool> createAlert({
+  // --- Report a New Alert ---
+  static Future<bool> reportAlert({
     required String title,
-    required String description,
+    required String message,
     required String hazardType,
     required double lat,
     required double lng,
   }) async {
-    final url = Uri.parse('$baseUrl/api/alerts');
+    final url = Uri.parse('$baseUrl/api/notifications');
     
     try {
+      final token = await _getAuthToken();
+      if (token == null) return false;
+
       final response = await http.post(
         url,
         headers: {
           'Content-Type': 'application/json',
-          // 'Authorization': 'Bearer YOUR_TOKEN_HERE', // Uncomment when you add Auth0!
+          'Authorization': 'Bearer $token',
         },
-        body: json.encode({
+        body: jsonEncode({
           'title': title,
-          'message': description, // Server expects 'message'
+          'message': message,
           'hazardType': hazardType,
           'lat': lat,
           'lng': lng,
         }),
       );
 
-      if (response.statusCode == 201) {
+      if (response.statusCode == 201 || response.statusCode == 200) {
         debugPrint('Success: Alert saved to database!');
         return true;
       } else {
