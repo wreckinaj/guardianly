@@ -8,7 +8,7 @@ import json
 from functools import wraps
 from marshmallow import ValidationError
 import firebase_admin
-from firebase_admin import credentials, auth, messaging, firestore # <-- Added firestore
+from firebase_admin import credentials, auth, messaging, firestore
 from schemas import GeneratePromptRequestSchema, AlertRecommendationSchema
 from pinecone import Pinecone
 from openai import OpenAI
@@ -36,7 +36,7 @@ MAPBOX_ACCESS_TOKEN = os.environ.get('MAPBOX_ACCESS_TOKEN', 'your_mapbox_token_h
 try:
     cred = credentials.Certificate("admin_key.json")
     firebase_admin.initialize_app(cred)
-    db = firestore.client() # <-- Initialize Firestore
+    db = firestore.client()
     print("Firebase Admin & Firestore Initialized")
 except Exception as e:
     print(f"Warning: Firebase Admin failed to initialize. Error: {e}")
@@ -52,7 +52,7 @@ def check_token(f):
         try:
             token = auth_header.split('Bearer ')[1]
             decoded_token = auth.verify_id_token(token)
-            request.uid = decoded_token['uid'] # Attach the secure UID to the request
+            request.uid = decoded_token['uid'] 
         except Exception as e:
             return jsonify({'status': 'error', 'message': f'Invalid token: {str(e)}'}), 401
             
@@ -75,7 +75,6 @@ def home():
     })
 
 # --- User & Profile Endpoints ---
-
 @app.route('/api/profile', methods=['GET'])
 @check_token
 def get_profile():
@@ -85,10 +84,7 @@ def get_profile():
         user_doc = user_doc_ref.get()
         
         if user_doc.exists:
-            return jsonify({
-                'status': 'success',
-                'profile': user_doc.to_dict()
-            }), 200
+            return jsonify({'status': 'success', 'profile': user_doc.to_dict()}), 200
         else:
             return jsonify({'status': 'error', 'message': 'User profile not found'}), 404
             
@@ -96,7 +92,6 @@ def get_profile():
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 # --- Alert & Notification Endpoints ---
-
 @app.route('/api/alerts', methods=['POST'])
 def save_alert():
     try:
@@ -114,11 +109,7 @@ def save_alert():
         
         new_alert_ref.set(alert_payload)
         
-        return jsonify({
-            'status': 'success', 
-            'message': 'Alert saved to Firestore!',
-            'id': new_alert_ref.id
-        }), 201
+        return jsonify({'status': 'success', 'message': 'Alert saved to Firestore!', 'id': new_alert_ref.id}), 201
         
     except Exception as e:
         print(f"Error saving alert: {e}")
@@ -129,8 +120,6 @@ def save_alert():
 def get_notifications():
     try:
         user_uid = request.uid
-        print(f"Securely fetching alerts for user: {user_uid}")
-        
         alerts_ref = db.collection('alerts')
         docs = alerts_ref.order_by('timestamp', direction=firestore.Query.DESCENDING).stream()
         
@@ -143,16 +132,13 @@ def get_notifications():
             notifications.append(alert_data)
             
         return jsonify({'status': 'success', 'notifications': notifications}), 200
-        
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
 @app.route('/api/push', methods=['POST'])
 @check_token
 def push_endpoint():
-    """Send a real Push Notification via Firebase Cloud Messaging"""
     data = request.get_json()
-    
     if not data or not data.get("title") or not data.get("message"):
         return jsonify({"error": "Title and message are required"}), 400
     
@@ -181,9 +167,6 @@ def push_endpoint():
 
     try:
         response = messaging.send(message)
-        print(f"[Notification] Sent to {request.uid}: {response}")
-        
-        # Also save this push notification to Firestore
         db.collection('alerts').add({
             "user": request.uid,
             "title": data["title"],
@@ -194,24 +177,17 @@ def push_endpoint():
             "timestamp": firestore.SERVER_TIMESTAMP,
             "message_id": response
         })
-
-        return jsonify({
-            "status": "success", 
-            "message_id": response
-        }), 201
+        return jsonify({"status": "success", "message_id": response}), 201
 
     except Exception as e:
-        print(f"[Notification Error] {str(e)}")
         return jsonify({"error": str(e)}), 500
 
-# --- Mapbox Endpoints ---
-
+# --- Mapbox Endpoints & Helpers ---
 @app.route('/geocode')
 def geocode():
     place = request.args.get('place', 'Corvallis OR')
     url = f'https://api.mapbox.com/geocoding/v5/mapbox.places/{place}.json'
     params = {'access_token': MAPBOX_ACCESS_TOKEN, 'limit': 5}
-    
     try:
         response = requests.get(url, params=params)
         response.raise_for_status()
@@ -225,7 +201,6 @@ def reverse_geocode():
     lat = request.args.get('lat', '44.565')
     url = f'https://api.mapbox.com/geocoding/v5/mapbox.places/{lng},{lat}.json'
     params = {'access_token': MAPBOX_ACCESS_TOKEN}
-    
     try:
         response = requests.get(url, params=params)
         response.raise_for_status()
@@ -238,7 +213,6 @@ def directions():
     start = request.args.get('start', 'Corvallis,OR')
     end = request.args.get('end', 'Albany,OR')
     profile = request.args.get('profile', 'driving')
-    
     try:
         url = f'https://api.mapbox.com/directions/v5/mapbox/{profile}/{start};{end}'
         params = {'access_token': MAPBOX_ACCESS_TOKEN, 'geometries': 'geojson', 'steps': 'true'}
@@ -248,11 +222,34 @@ def directions():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+def get_human_readable_location(lat, lng):
+    """Helper function to get spatial context before hitting the LLM"""
+    url = f'https://api.mapbox.com/geocoding/v5/mapbox.places/{lng},{lat}.json'
+    params = {'access_token': MAPBOX_ACCESS_TOKEN}
+    try:
+        response = requests.get(url, params=params, timeout=3)
+        if response.status_code == 200:
+            features = response.json().get('features', [])
+            if features:
+                # Return the most relevant local place name (e.g., street or neighborhood)
+                return features[0].get('place_name', f"coordinates {lat}, {lng}")
+    except Exception:
+        pass
+    return f"coordinates {lat}, {lng}"
+
 # --- AI & RAG Logic ---
 
+# 1. Enforce strict Supported Hazards Whitelist
+SUPPORTED_HAZARDS = {
+    "flood", "building_fire", "wildfire", "hurricane", 
+    "tornado", "active_shooter", "police_activity", 
+    "road_closure", "severe_weather", "earthquake", 
+    "hazmat_spill", "gas_leak", "volcanic_eruption", "tsunami"
+}
+
 @cache.memoize(timeout=86400) 
-def get_retrieved_context(hazard_key, user_lat_rounded, user_lng_rounded):
-    query_text = f"Procedures for {hazard_key} hazard near {user_lat_rounded}, {user_lng_rounded}"
+def get_retrieved_context(hazard_key):
+    query_text = f"Standard operating procedures and protocols for a {hazard_key} emergency."
     
     try:
         response = openai_client.embeddings.create(
@@ -263,49 +260,73 @@ def get_retrieved_context(hazard_key, user_lat_rounded, user_lng_rounded):
 
         search_results = index.query(
             vector=query_vector,
-            top_k=2,
-            include_metadata=True
+            top_k=1, 
+            include_metadata=True,
+            filter={"hazard": {"$eq": hazard_key}} 
         )
 
-        context_parts = [match['metadata']['text'] for match in search_results['matches']]
-        return "\n---\n".join(context_parts) if context_parts else "No specific playbook found."
+        # 1. Pinecone v3 requires dot notation
+        matches = search_results.matches
+        
+        if not matches:
+            print(f"RAG Warning: No playbooks found matching filter '{hazard_key}'")
+            return None 
+            
+        top_match = matches[0]
+        score = top_match.score
+        
+        # Log the score so you can tune your threshold
+        print(f"RAG Success: Found playbook for '{hazard_key}' with similarity score: {score}")
+
+        # 2. Adjusted threshold. Text-embedding-3-small cosine scores 
+        # often hover between 0.40 and 0.60 for related concepts.
+        SIMILARITY_THRESHOLD = 0.40 
+        
+        if score < SIMILARITY_THRESHOLD:
+            print(f"RAG Warning: Match rejected. Score {score} is below threshold {SIMILARITY_THRESHOLD}")
+            return None
+
+        return top_match.metadata.get('text', '')
+        
     except Exception as e:
-        print(f"RAG Retrieval Error: {e}")
-        return "Context retrieval failed."
+        # Ensures Python errors aren't silently swallowed
+        print(f"RAG Retrieval Critical Error: {type(e).__name__} - {str(e)}") 
+        return None
 
 @cache.memoize(timeout=3600) 
-def generate_ai_recommendation(hazard_display, retrieved_context, lat_rounded, lng_rounded):
+def generate_ai_recommendation(hazard_display, event_description, retrieved_context, location_string):
     system_prompt = """
     You are Guardianly, an advanced safety AI. 
-    Your goal is to analyze a hazard and provided safety context to generate a structured alert.
+    Your goal is to analyze a specific hazard event and provided safety context to generate a structured alert.
 
     You must output a VALID JSON object with exactly these keys:
-    - "severity": "High", "Moderate", or "Low"
-    - "message": A concise, reassuring summary of the situation (1-2 sentences).
-    - "actions": A list of 2-3 specific, actionable steps the user should take immediately.
+    - "severity": "High", "Moderate", "Low", or "Unknown"
+    - "message": A concise summary tailoring the playbook to the Specific Event Details.
+    - "actions": A list of 2-3 specific, actionable steps.
     - "source": "Guardianly AI Agent"
 
-    Base your advice strictly on the provided Context. If the Context is insufficient, provide general safety best practices.
+    CRITICAL RULE: You must adapt the 'Context from Playbooks' to fit the 'Specific Event Details'. If the playbook mentions 'Heavy Rain' but the specific event is just 'Slippery Conditions', focus your advice on the slippery conditions while using the playbook's broader procedures (like finding safe parking).
     """
 
     user_message = f"""
     Hazard Type: {hazard_display}
-    User Location: {lat_rounded}, {lng_rounded}
+    Specific Event Details: {event_description}
+    User Location: {location_string}
 
     Context from Playbooks:
-    {retrieved_context}
+    {retrieved_context if retrieved_context else "None available."}
 
     Generate the safety recommendation now.
     """
     
     completion = openai_client.chat.completions.create(
-        model="gpt-3.5-turbo",
+        model="gpt-4o-mini", # Upgraded model for better JSON adherence
         messages=[
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_message}
         ],
         response_format={"type": "json_object"},
-        temperature=0.3
+        temperature=0.0 # Set to 0 to eliminate creative hallucination
     )
 
     llm_response_text = completion.choices[0].message.content
@@ -315,50 +336,70 @@ def generate_ai_recommendation(hazard_display, retrieved_context, lat_rounded, l
 @app.route('/api/generate_prompt', methods=['POST'])
 @check_token
 def generate_prompt_endpoint():
+    # 1. Validate incoming request data from the frontend
     try:
         data = GeneratePromptRequestSchema().load(request.get_json())
     except ValidationError as err:
         return jsonify({"error": "Invalid input data", "messages": err.messages}), 400
 
-    raw_hazard = data['hazard']
+    raw_hazard = data['hazard'].lower()
     user_lat = data['user_lat']
     user_lng = data['user_lng']
-    
-    lat_rounded = round(float(user_lat), 2)
-    lng_rounded = round(float(user_lng), 2)
+    event_description = data.get('event_description', 'No specific details provided.')
     
     hazard_display = raw_hazard.replace("_", " ").title()
-    
-    try:
-        retrieved_context = get_retrieved_context(raw_hazard, lat_rounded, lng_rounded)
 
+    # 2. Pre-Flight Whitelist Check
+    if raw_hazard not in SUPPORTED_HAZARDS:
+        return jsonify({
+            "status": "warning",
+            "hazard": hazard_display,
+            "message": "Hazard type not recognized by standard playbooks.",
+            "recommendation": {
+                "severity": "Unknown",
+                "message": f"Caution: {hazard_display} reported. No specific procedures available.",
+                "actions": ["Stay alert", "Monitor local news channels"],
+                "source": "Guardianly System (Fallback)"
+            }
+        }), 200
+    
+    # 3. Main RAG and AI Generation Flow
+    try:
+        # Convert coordinates into localized context via Mapbox
+        location_string = get_human_readable_location(user_lat, user_lng)
+
+        # Retrieve Context (with threshold and filters applied)
+        retrieved_context = get_retrieved_context(raw_hazard)
+
+        # Generate structured recommendation via GPT-4o-mini
         final_recommendation = generate_ai_recommendation(
-            hazard_display, 
+            hazard_display,
+            event_description, 
             retrieved_context, 
-            lat_rounded, 
-            lng_rounded
+            location_string
         )
         
         return jsonify({
             "status": "success",
             "hazard": hazard_display,
-            "retrieved_context": retrieved_context,
+            "location_context": location_string,
+            "retrieved_context": retrieved_context or "No matching playbook met the confidence threshold.",
             "recommendation": final_recommendation
         }), 200
 
-    except Exception as e:
-        print(f"AI Generation Error: {e}")
+    except ValidationError as err:
+        # This catches instances where the LLM breaks the JSON schema constraints
+        print(f"LLM Schema Validation Error: {err.messages}")
         return jsonify({
-            "status": "warning",
-            "hazard": hazard_display,
-            "message": "AI generation unavailable, providing default safety tips.",
-            "recommendation": {
-                "severity": "Unknown",
-                "message": f"Caution: {hazard_display} reported. Please proceed with care.",
-                "actions": ["Stay alert", "Check local news", "Move to safety if unsure"],
-                "source": "Guardianly System (Fallback)"
-            }
-        }), 200
+            'status': 'error', 
+            'message': 'AI generated an invalid response format.', 
+            'details': err.messages
+        }), 500
+        
+    except Exception as e:
+        # This catches general Python/API errors, timeouts, etc.
+        print(f"AI Generation Error: {e}")
+        return jsonify({'status': 'error', 'message': 'Internal Server Error processing RAG flow.'}), 500
 
 if __name__ == "__main__":
     app.run(port=5000, debug=True)

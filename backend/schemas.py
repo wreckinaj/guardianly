@@ -27,7 +27,7 @@ class AlertRecommendationSchema(Schema):
     The structured recommendation output to be sent to the client.
     """
     # The calculated severity (e.g., 'High', 'Moderate')
-    severity = fields.Str(required=True, validate=validate.OneOf(["High", "Moderate", "Low"]))
+    severity = fields.Str(required=True, validate=validate.OneOf(["High", "Moderate", "Low", "Unknown"]))
     # The primary recommendation message
     message = fields.Str(required=True)
     # A list of actionable steps for the user
@@ -44,3 +44,4 @@ class GeneratePromptRequestSchema(Schema):
     hazard = fields.Str(required=True)
     user_lat = fields.Float(required=True)
     user_lng = fields.Float(required=True)
+    event_description = fields.Str(required=False, load_default="No specific details provided.")
