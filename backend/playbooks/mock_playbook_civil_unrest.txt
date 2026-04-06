@@ -1,0 +1,4 @@
+HAZARD: Civil Unrest / Large Crowd.
+Context: High-density crowds, potential for rapid escalation, and restricted pedestrian movement. 
+Recomm: Avoid the immediate area. Do not attempt to walk through the crowd.
+Action: Alter your walking route to maintain at least a 2-block perimeter. If caught in a moving crowd, move perpendicular to the flow to reach a building or alleyway.

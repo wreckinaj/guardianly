@@ -1,0 +1,4 @@
+HAZARD: Power Outage.
+Context: Traffic signals may be non-functional and street lighting is reduced or entirely offline.
+Recomm: Treat all dark intersections as four-way stops. Proceed with extreme caution.
+Action: Reduce speed by 10mph below the posted limit, increase following distance, and watch for pedestrians in unlit areas.

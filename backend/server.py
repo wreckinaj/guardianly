@@ -244,7 +244,12 @@ SUPPORTED_HAZARDS = {
     "flood", "building_fire", "wildfire", "hurricane", 
     "tornado", "active_shooter", "police_activity", 
     "road_closure", "severe_weather", "earthquake", 
-    "hazmat_spill", "gas_leak", "volcanic_eruption", "tsunami"
+    "hazmat_spill", "gas_leak", "volcanic_eruption", "tsunami",
+    "power_outage", "icy_roads", "heavy_traffic", 
+    "construction_zone", "low_visibility", "wildlife",
+    "civil_unrest", "transit_disruption", "extreme_heat", "air_quality",
+    "blizzard", "flooded_pathway",
+    "suspicious_package", "sinkhole", "downed_power_lines"
 }
 
 @cache.memoize(timeout=86400) 
