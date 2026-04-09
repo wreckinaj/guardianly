@@ -1,0 +1,4 @@
+HAZARD: Construction Zone.
+Context: Uneven pavement, narrowed lane widths, shifted alignments, and/or active road workers present.
+Recomm: Strictly obey posted reduced speed limits and merge early if a lane closure is indicated.
+Action: Maintain your lane position and double your following distance. Remain alert for sudden stops from heavy machinery.

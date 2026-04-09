@@ -1,0 +1,4 @@
+HAZARD: Hazardous Air Quality (AQI).
+Context: High concentrations of particulate matter (PM2.5) from smoke, smog, or chemical release. Dangerous for outdoor breathing.
+Recomm: Cancel all outdoor activities and seek indoor shelter with an HVAC system.
+Action: If you must be outside, wear an N95 or KN95 mask. Keep all windows and doors closed at your destination.

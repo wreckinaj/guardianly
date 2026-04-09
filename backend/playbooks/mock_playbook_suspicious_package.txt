@@ -1,0 +1,4 @@
+HAZARD: Suspicious Package / Bomb Threat.
+Context: Unattended item identified as a potential explosive or localized hazard. Law enforcement is establishing a hard perimeter.
+Recomm: Do not approach, touch, or use cellular devices or radio equipment within 300 feet of the object.
+Action: Evacuate the immediate area moving behind solid cover. Reroute all travel to maintain at least a 2-block distance from the affected zone.
