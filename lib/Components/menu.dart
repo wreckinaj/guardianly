@@ -1,13 +1,12 @@
 // https://youtu.be/kL5WrxyexzA?si=eKY34nKAVH7SC9hY
 
 import 'package:flutter/material.dart';
-
+import 'package:firebase_auth/firebase_auth.dart';
 
 class Menu extends StatelessWidget implements PreferredSizeWidget {
   const Menu({super.key});
 
-
-  // definition of the dialog
+  // definition of the dialog with the new formatting
   void _showDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -17,44 +16,99 @@ class Menu extends StatelessWidget implements PreferredSizeWidget {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
           ),
-          
-          title: const Text("Verification"),
-          content: const Text("You have pressed the logout button. Are you sure you want to logout?"),
-          
-          actions: [
-            // cancel button
-            TextButton(
-              style: TextButton.styleFrom(
-                foregroundColor: const Color.fromARGB(255, 109, 106, 106),
-              ),
-              child: const Text("Cancel"),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
+          title: const Text(
+            "Are you sure you want to logout?",
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 20,
             ),
-
-            //logout button
-            TextButton(
-              style: TextButton.styleFrom(
-                foregroundColor: const Color.fromARGB(255, 215, 32, 19),
+          ),
+          actions: [
+            const Divider(height: 1, thickness: 1),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                          side: BorderSide(color: Colors.grey.shade300),
+                        ),
+                      ),
+                      child: const Text(
+                        "Cancel",
+                        style: TextStyle(
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: TextButton(
+                      onPressed: () async {
+                        // Add Firebase logout authentication here
+                        try {
+                          await FirebaseAuth.instance.signOut();
+                          
+                          // Close the dialog
+                          if (context.mounted) {
+                            Navigator.of(context).pop();
+                            
+                            // Navigate to login page and remove all previous routes
+                            Navigator.pushNamedAndRemoveUntil(
+                              context, 
+                              '/login', 
+                              (route) => false,
+                            );
+                          }
+                        } catch (e) {
+                          // Handle error if sign out fails
+                          if (context.mounted) {
+                            Navigator.of(context).pop(); // Close dialog
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text('Error signing out: $e')),
+                            );
+                          }
+                        }
+                      },
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.red,
+                        backgroundColor: Colors.red.withValues(alpha: 0.1),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text(
+                        "Logout",
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              child: const Text("Logout"),
-              onPressed: () {
-                // add logout authentication here
-                Navigator.of(context).pop();
-              },
-            ), 
+            ),
           ],
         );
       },
     );
   }
 
-
   @override
   Widget build(BuildContext context) {
     return AppBar(
-
       backgroundColor: Colors.white,
       title: GestureDetector(
         onTap: () {
@@ -122,6 +176,7 @@ class Menu extends StatelessWidget implements PreferredSizeWidget {
       ],
     );
   }
+  
   // Required because AppBar implements PreferredSizeWidget
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);

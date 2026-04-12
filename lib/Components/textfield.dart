@@ -7,13 +7,18 @@ class MyTextField extends StatelessWidget {
   final String hintText;
   // hide characters when inputting sensitive info
   final bool obscureText;
-  
+  // Callback for text changes
+  final Function(String)? onChanged;
+  // Focus node for keyboard management
+  final FocusNode? focusNode;
 
   const MyTextField({
     super.key,
     required this.controller,
     required this.hintText,
     required this.obscureText,
+    this.onChanged,
+    this.focusNode,
   });
 
   @override
@@ -23,6 +28,8 @@ class MyTextField extends StatelessWidget {
       child: TextField(
         controller: controller,
         obscureText: obscureText,
+        onChanged: onChanged,
+        focusNode: focusNode,
         decoration: InputDecoration(
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
