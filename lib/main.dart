@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:provider/provider.dart';
 import 'firebase_options.dart';
 import 'login.dart';
 import 'signup.dart';
@@ -13,6 +14,7 @@ import 'alertdetails.dart';
 import 'forgot_pw.dart';
 import 'reset_pw.dart';
 import 'fromto.dart';
+import 'saved_alerts_provider.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -151,28 +153,34 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      debugShowCheckedModeBanner: false,
-      home: LoginPage(),
-      routes: {
-        '/signup': (context) => SignUpPage(),
-        '/forgot_pw': (context) => const ForgotPW(),
-        '/reset_pw': (context) => const ResetPW(),
-        '/login': (context) => LoginPage(),
-        '/home': (context) => const Home(),
-        '/profile': (context) => const Profile(),
-        '/alertlist': (context) => const Alert(),
-        '/settings': (context) => const Settings(),
-        '/saved': (context) => const SavedAlerts(),
-        '/alertdetails': (context) => const AlertDetails(
-          hazardType: 'building_fire',
-          lat: 44.5646,
-          lng: -123.2620,
-          title: 'Building Fire',
-          locationName: 'Amazon Warehouse - South Side',
-        ),
-        '/fromto': (context) => const FromTo(),
-      },
+
+    return MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => SavedAlertsProvider()),
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: LoginPage(),
+        routes: {
+          '/signup': (context) => SignUpPage(),
+          '/forgot_pw': (context) => const ForgotPW(),
+          '/reset_pw': (context) => const ResetPW(),
+          '/login': (context) => LoginPage(),
+          '/home': (context) => const Home(),
+          '/profile': (context) => const Profile(),
+          '/alertlist': (context) => const Alert(),
+          '/settings': (context) => const Settings(),
+          '/saved': (context) => const SavedAlerts(),
+          '/alertdetails': (context) => const AlertDetails(
+            hazardType: 'building_fire',
+            lat: 44.5646,
+            lng: -123.2620,
+            title: 'Building Fire',
+            locationName: 'Amazon Warehouse - South Side',
+          ),
+          '/fromto': (context) => const FromTo(),
+        },
+      ),
     );
   }
 }
