@@ -14,6 +14,7 @@ Before starting, ensure you have the following installed:
 2. Python (v3.10+)
 3. Google Cloud CLI (gcloud) - See "Google Cloud Setup" below.
 4. An invite to the project's Firebase / Google Cloud console (ask the admin).
+5. Firebase CLI - See "Web Deployment Guide" below.
 
 ---------------------------------------------------------
 PART 2: BACKEND SETUP (Flask & Firebase Admin)
@@ -73,7 +74,7 @@ PART 3: FRONTEND SETUP (Flutter)
    flutter run
 
 ---------------------------------------------------------
-PART 4: GOOGLE CLOUD CLI SETUP (For Deployment)
+PART 4: GOOGLE CLOUD CLI SETUP (For Backend Deployment)
 ---------------------------------------------------------
 If you are authorized to push updates to the live server on Google Cloud Run, follow these steps:
 
@@ -87,8 +88,36 @@ To deploy backend updates to production, run this from inside the `backend/` dir
 gcloud run deploy guardianly-backend --source .
 
 ---------------------------------------------------------
+PART 5: WEB DEPLOYMENT (Firebase Hosting on Web)
+---------------------------------------------------------
+The web version of Guardianly is hosted via Firebase Hosting. If you are authorized to push updates to the live website, follow these steps:
+
+1. Install Prerequisites:
+   - Ensure you have Node.js installed.
+   - Install the Firebase CLI globally: 
+     npm install -g firebase-tools
+   - Log in to your authorized Google account: 
+     firebase login
+
+2. Prepare for Production:
+   - Verify that your API base URL (e.g., inside your root `.env` or `api_service.dart`) is pointing to the live Google Cloud Run backend URL, NOT `http://localhost:5000`.
+
+3. Build the Web App:
+   - Open a terminal in the root `guardianly/` directory.
+   - Run the Flutter build command:
+     flutter build web
+   - This compiles the Dart code into optimized HTML/JS/CSS assets inside the `build/web/` directory.
+
+4. Deploy to Firebase:
+   - From the root directory, run:
+     firebase deploy --only hosting
+   - (Ensure your `firebase.json` has "public": "build/web" configured).
+   - Once complete, the CLI will output the live web app URL.
+
+---------------------------------------------------------
 TROUBLESHOOTING
 ---------------------------------------------------------
 - "Firebase Admin failed to initialize": You forgot to place `admin_key.json` in the `backend/` folder, or it's named incorrectly.
 - "Connection Refused" in Flutter: Make sure your Flask server is running. If on Android, ensure your root `.env` uses `http://10.0.2.2:5000`.
 - "Mapbox / Maps not loading": Check that your `MAPBOX_ACCESS_TOKEN` is correct in BOTH the root `.env` and `backend/.env`.
+- "Firebase deployment shows a blank screen or default welcome page": Ensure you ran `flutter build web` before deploying, and verify that your `firebase.json` file is pointing to `"public": "build/web"` rather than the default `"public"`.
