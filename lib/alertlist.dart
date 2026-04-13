@@ -1,59 +1,20 @@
 import 'package:flutter/material.dart';
-import 'package:latlong2/latlong.dart'; // <-- Added this for coordinates
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'Components/searchbar.dart';
 import '/Components/menu.dart';
 import 'alertdetails.dart';
-import '/models/local_alert.dart'; // <-- Using the shared model now
+import 'models/local_alert.dart';
 
-class Alert extends StatelessWidget {
+class Alert extends StatefulWidget {
   const Alert({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    // Shared mock data updated to match the new LocalAlert model
-    final List<LocalAlert> mockAlerts = [
-      LocalAlert(
-        position: const LatLng(44.567, -123.278), // Added
-        hazardType: "wildfire",                   // Added
-        title: "Fire Alert",
-        description: "Small brush fire reported near the stadium. Emergency services are on site.",
-        icon: Icons.local_fire_department,
-        color: Colors.red,
-      ),
-      LocalAlert(
-        position: const LatLng(44.564, -123.261), // Added
-        hazardType: "police_activity",            // Added
-        title: "Police Presence",
-        description: "Police investigating a minor incident downtown. Area remains open but use caution.",
-        icon: Icons.security,
-        color: Colors.blue,
-      ),
-      LocalAlert(
-        position: const LatLng(44.566, -123.270), // Added
-        hazardType: "medical_emergency",          // Added
-        title: "Medical Emergency",
-        description: "Ambulance on site near the medical center responding to a reported accident.",
-        icon: Icons.add_box,
-        color: Colors.green,
-      ),
-      LocalAlert(
-        position: const LatLng(44.558, -123.265), // Added
-        hazardType: "severe_weather",             // Added
-        title: "General Warning",
-        description: "Caution: Slippery conditions in Avery Park due to recent weather.",
-        icon: Icons.warning,
-        color: Colors.amber,
-      ),
-      LocalAlert(
-        position: const LatLng(44.560, -123.255), // Added
-        hazardType: "road_closure",               // Added
-        title: "Traffic Incident",
-        description: "Road work causing delays on Highway 99. Expect 10-15 minute delays.",
-        icon: Icons.directions_car,
-        color: Colors.purple,
-      ),
-    ];
+  State<Alert> createState() => _AlertState();
+}
 
+class _AlertState extends State<Alert> {
+  @override
+  Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.grey[100],
       appBar: const Menu(),
@@ -61,110 +22,153 @@ class Alert extends StatelessWidget {
         children: [
           const SearchBarApp(isOnAlertPage: true),
           const SizedBox(height: 16),
-          // Alert list with individual cards
+          // Real-time Database List
           Expanded(
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: mockAlerts.length,
-              itemBuilder: (context, index) {
-                final alert = mockAlerts[index];
-                bool isSaved = false;
+            child: StreamBuilder<QuerySnapshot>(
+              // Removed .orderBy('timestamp') because some documents might be missing that field,
+              // which causes them to be hidden when sorting is applied.
+              stream: FirebaseFirestore.instance
+                  .collection('alerts')
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  debugPrint("Firestore Error: ${snapshot.error}");
+                  return const Center(child: Text("Error loading alerts"));
+                }
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-                return StatefulBuilder(
-                  builder: (context, setState) {
-                    return Container(
-                      margin: const EdgeInsets.symmetric(vertical: 8),
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.grey.withValues(alpha: 0.2), 
-                            blurRadius: 5,
-                            offset: const Offset(0, 3),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Dynamic icon and color based on alert type
-                          Container(
-                            width: 40,
-                            height: 40,
-                            margin: const EdgeInsets.only(top: 4, right: 12),
-                            decoration: BoxDecoration(
-                              color: alert.color.withValues(alpha: 0.1), 
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(alert.icon, color: alert.color, size: 24),
-                          ),
+                final docs = snapshot.data!.docs;
+                if (docs.isEmpty) {
+                  return const Center(child: Text("No active alerts found."));
+                }
 
-                          // Alert text
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  alert.title,
-                                  style: const TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black87,
+                // Sort manually in memory to handle missing timestamps gracefully
+                final sortedDocs = List.from(docs);
+                sortedDocs.sort((a, b) {
+                  final aData = a.data() as Map<String, dynamic>;
+                  final bData = b.data() as Map<String, dynamic>;
+                  final aTime = aData['timestamp'] as Timestamp?;
+                  final bTime = bData['timestamp'] as Timestamp?;
+                  if (aTime == null) return 1;
+                  if (bTime == null) return -1;
+                  return bTime.compareTo(aTime);
+                });
+
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  itemCount: sortedDocs.length,
+                  itemBuilder: (context, index) {
+                    final data = sortedDocs[index].data() as Map<String, dynamic>;
+                    final alert = LocalAlert.fromJson(data);
+                    bool isSaved = false;
+
+                    return StatefulBuilder(
+                      builder: (context, setState) {
+                        return Container(
+                          margin: const EdgeInsets.symmetric(vertical: 8),
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withValues(alpha: 0.2),
+                                blurRadius: 5,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    width: 40,
+                                    height: 40,
+                                    margin: const EdgeInsets.only(top: 4, right: 12),
+                                    decoration: BoxDecoration(
+                                      color: alert.color.withValues(alpha: 0.1),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Icon(alert.icon, color: alert.color, size: 24),
                                   ),
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  alert.description,
-                                  style: const TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.black54,
-                                  ),
-                                ),
-                                const SizedBox(height: 6),
-                                GestureDetector(
-                                  onTap: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => AlertDetails(
-                                          hazardType: alert.hazardType,        
-                                          lat: alert.position.latitude,       
-                                          lng: alert.position.longitude,      
-                                          title: alert.title,                 
-                                          locationName: alert.description,    
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          alert.title,
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.black87,
+                                          ),
                                         ),
-                                      ),
-                                    );
-                                  },
-                                  child: const Text(
-                                    'Read more',
-                                    style: TextStyle(
-                                      fontSize: 14,
-                                      color: Colors.blue,
-                                      decoration: TextDecoration.underline,
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          alert.description,
+                                          style: const TextStyle(
+                                            fontSize: 14,
+                                            color: Colors.black54,
+                                          ),
+                                        ),
+                                      ],
                                     ),
                                   ),
-                                ),
-                              ],
-                            ),
+                                  IconButton(
+                                    icon: Icon(
+                                      isSaved ? Icons.bookmark : Icons.bookmark_border,
+                                      color: isSaved ? Colors.black : Colors.grey,
+                                    ),
+                                    onPressed: () {
+                                      setState(() => isSaved = !isSaved);
+                                    },
+                                  ),
+                                ],
+                              ),
+                              const Divider(height: 24),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  TextButton.icon(
+                                    onPressed: () {
+                                      Navigator.pushNamedAndRemoveUntil(
+                                        context,
+                                        '/home',
+                                        (route) => false,
+                                        arguments: alert.position,
+                                      );
+                                    },
+                                    icon: const Icon(Icons.map, size: 18),
+                                    label: const Text("VIEW ON MAP"),
+                                  ),
+                                  TextButton.icon(
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) => AlertDetails(
+                                            hazardType: alert.hazardType,
+                                            lat: alert.position.latitude,
+                                            lng: alert.position.longitude,
+                                            title: alert.title,
+                                            locationName: alert.title,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    icon: const Icon(Icons.info_outline, size: 18),
+                                    label: const Text("DETAILS"),
+                                  ),
+                                ],
+                              ),
+                            ],
                           ),
-
-                          // Save/bookmark button
-                          IconButton(
-                            icon: Icon(
-                              isSaved ? Icons.bookmark : Icons.bookmark_border,
-                              color: isSaved ? Colors.black : Colors.grey,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                isSaved = !isSaved;
-                              });
-                            },
-                          ),
-                        ],
-                      ),
+                        );
+                      },
                     );
                   },
                 );
