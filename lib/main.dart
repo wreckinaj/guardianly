@@ -40,36 +40,18 @@ class _AppInitializerState extends State<AppInitializer> {
   }
 
   Future<void> _initializeApp() async {
-  try {
-    debugPrint('📱 Starting app initialization...');
-    
-    // Load environment variables
-    await dotenv.load(fileName: ".env");
-    debugPrint('✅ .env loaded');
-    
-    // Try with a named app first (this worked in the test!)
-    debugPrint('🔥 Initializing Firebase with named app...');
-    await Firebase.initializeApp(
-      name: 'guardianly',
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    debugPrint('✅ Firebase initialized successfully WITH named app!');
-    
-    if (mounted) {
-      setState(() {
-        _isInitialized = true;
-      });
-    }
-  } catch (e) {
-    debugPrint('❌ Named app initialization failed: $e');
-    
-    // Try without name as fallback
     try {
-      debugPrint('🔥 Trying without name...');
+      debugPrint('📱 Starting app initialization...');
+      
+      // Load environment variables
+      await dotenv.load(fileName: ".env");
+      debugPrint('✅ .env loaded');
+      
+      debugPrint('🔥 Initializing Firebase...');
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
-      debugPrint('✅ Firebase initialized successfully WITHOUT name');
+      debugPrint('✅ Firebase initialized successfully!');
       
       if (mounted) {
         setState(() {
@@ -77,7 +59,7 @@ class _AppInitializerState extends State<AppInitializer> {
         });
       }
     } catch (e) {
-      debugPrint('❌ Both initialization attempts failed: $e');
+      debugPrint('❌ Initialization failed: $e');
       
       if (mounted) {
         setState(() {
@@ -87,7 +69,6 @@ class _AppInitializerState extends State<AppInitializer> {
       }
     }
   }
-}
 
   @override
   Widget build(BuildContext context) {
