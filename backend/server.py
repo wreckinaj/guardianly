@@ -5,6 +5,8 @@ import requests
 import os
 import datetime
 import json
+import csv
+import io
 from functools import wraps
 from marshmallow import ValidationError
 import firebase_admin
@@ -14,9 +16,17 @@ from pinecone import Pinecone
 from openai import OpenAI
 from dotenv import load_dotenv
 
+# Load .env file
 load_dotenv()
 
 app = Flask(__name__)
+
+# --- Debug: Print found keys (Masked for safety) ---
+firms_key = os.environ.get('NASA_FIRMS_KEY')
+if firms_key:
+    print(f"✅ NASA_FIRMS_KEY found: {firms_key[:4]}...{firms_key[-4:]}")
+else:
+    print("❌ NASA_FIRMS_KEY NOT FOUND in environment.")
 
 # --- Cache Configuration ---
 app.config['CACHE_TYPE'] = 'SimpleCache'
@@ -48,14 +58,14 @@ def check_token(f):
         auth_header = request.headers.get('Authorization')
         if not auth_header or not auth_header.startswith('Bearer '):
             return jsonify({'status': 'error', 'message': 'Missing or invalid token'}), 401
-        
+
         try:
             token = auth_header.split('Bearer ')[1]
             decoded_token = auth.verify_id_token(token)
             request.uid = decoded_token['uid'] 
         except Exception as e:
             return jsonify({'status': 'error', 'message': f'Invalid token: {str(e)}'}), 401
-            
+
         return f(*args, **kwargs)
     return wrap
 
@@ -71,6 +81,10 @@ def home():
             'update_alert': '/api/alerts/<id> (PUT)',
             'delete_alert': '/api/alerts/<id> (DELETE)',
             'sync_usgs': '/api/sync/usgs (POST)',
+            'sync_nws': '/api/sync/nws (POST)',
+            'sync_gdacs': '/api/sync/gdacs (POST)',
+            'sync_eonet': '/api/sync/eonet (POST)',
+            'sync_firms': '/api/sync/firms (POST)',
             'generate_prompt': '/api/generate_prompt (POST, requires auth)',
             'geocoding': '/geocode?place=Corvallis',
             'directions': '/directions?start=Corvallis,OR&end=Albany,OR'
@@ -85,12 +99,12 @@ def get_profile():
         user_uid = request.uid 
         user_doc_ref = db.collection('users').document(user_uid)
         user_doc = user_doc_ref.get()
-        
+
         if user_doc.exists:
             return jsonify({'status': 'success', 'profile': user_doc.to_dict()}), 200
         else:
             return jsonify({'status': 'error', 'message': 'User profile not found'}), 404
-            
+
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
@@ -102,7 +116,7 @@ def create_alert():
     try:
         data = request.get_json()
         new_alert_ref = db.collection('alerts').document()
-        
+
         alert_payload = {
             'title': data.get('title', 'System Alert'),
             'message': data.get('message', ''),
@@ -112,7 +126,7 @@ def create_alert():
             'timestamp': firestore.SERVER_TIMESTAMP,
             'source': 'User'
         }
-        
+
         new_alert_ref.set(alert_payload)
         return jsonify({'status': 'success', 'message': 'Alert created!', 'id': new_alert_ref.id}), 201
 
@@ -126,7 +140,7 @@ def get_notifications():
     try:
         alerts_ref = db.collection('alerts')
         docs = alerts_ref.order_by('timestamp', direction=firestore.Query.DESCENDING).limit(50).stream()
-        
+
         notifications = []
         for doc in docs:
             alert_data = doc.to_dict()
@@ -134,17 +148,16 @@ def get_notifications():
             if 'timestamp' in alert_data and alert_data['timestamp'] is not None:
                 alert_data['timestamp'] = alert_data['timestamp'].isoformat()
             notifications.append(alert_data)
-            
+
         return jsonify({'status': 'success', 'notifications': notifications}), 200
     except Exception as e:
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
-# --- External API Sync: USGS Earthquakes ---
+# --- External API Sync Endpoints ---
 
 @app.route('/api/sync/usgs', methods=['POST'])
 def sync_usgs():
     """FETCH: Pull real-time earthquake data from USGS and save as alerts"""
-    # Summary of all M1.0+ earthquakes in the last hour
     url = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson"
 
     try:
@@ -158,11 +171,9 @@ def sync_usgs():
             props = feature['properties']
             geom = feature['geometry']
 
-            # Filter: only significant earthquakes
             if props['mag'] < 1.0:
                 continue
 
-            # Use unique ID to prevent duplicates
             doc_id = f"usgs_{eq_id}"
             alert_ref = db.collection('alerts').document(doc_id)
 
@@ -171,7 +182,7 @@ def sync_usgs():
                     'title': f"Earthquake: M{props['mag']}",
                     'message': f"Significant activity recorded at {props['place']}.",
                     'hazardType': 'earthquake',
-                    'lat': geom['coordinates'][1], # GeoJSON uses [lng, lat]
+                    'lat': geom['coordinates'][1],
                     'lng': geom['coordinates'][0],
                     'timestamp': firestore.SERVER_TIMESTAMP,
                     'external_id': eq_id,
@@ -180,18 +191,233 @@ def sync_usgs():
                 })
                 new_count += 1
 
-        return jsonify({
-            'status': 'success',
-            'message': f'USGS sync complete. Added {new_count} new alerts.',
-            'total_checked': len(data.get('features', []))
-        }), 200
+        return jsonify({'status': 'success', 'message': f'USGS sync complete. Added {new_count} new alerts.'}), 200
 
     except Exception as e:
         print(f"USGS Sync Error: {e}")
         return jsonify({'status': 'error', 'message': str(e)}), 500
 
-# --- Mapbox Endpoints & AI Logic (Existing) ---
-# ... (rest of the file remains unchanged)
+@app.route('/api/sync/nws', methods=['POST'])
+def sync_nws():
+    """FETCH: Pull active weather alerts from National Weather Service (US Only)"""
+    url = "https://api.weather.gov/alerts/active?status=actual&message_type=alert"
+    headers = {"User-Agent": "(guardianly.app, contact@guardianly.app)"}
+
+    try:
+        response = requests.get(url, headers=headers, timeout=10)
+        response.raise_for_status()
+        data = response.json()
+
+        new_count = 0
+        for feature in data.get('features', []):
+            props = feature['properties']
+            alert_id = props['id']
+
+            severity = props.get('severity', 'Unknown')
+            if severity not in ['Extreme', 'Severe']:
+                continue
+
+            doc_id = f"nws_{alert_id}"
+            alert_ref = db.collection('alerts').document(doc_id)
+
+            if not alert_ref.get().exists:
+                geom = feature.get('geometry')
+                lat, lng = 0.0, 0.0
+
+                if geom:
+                    if geom['type'] == 'Point':
+                        lng, lat = geom['coordinates']
+                    elif geom['type'] in ['Polygon', 'MultiPolygon']:
+                        coords = geom['coordinates'][0]
+                        while isinstance(coords[0], list):
+                            coords = coords[0]
+                        lng, lat = coords
+
+                alert_ref.set({
+                    'title': props.get('event', 'Weather Alert'),
+                    'message': props.get('headline', 'Severe weather warning issued.'),
+                    'hazardType': 'severe_weather',
+                    'lat': lat,
+                    'lng': lng,
+                    'timestamp': firestore.SERVER_TIMESTAMP,
+                    'external_id': alert_id,
+                    'source': 'NWS',
+                    'severity': severity
+                })
+                new_count += 1
+
+        return jsonify({'status': 'success', 'message': f'NWS sync complete. Added {new_count} severe weather alerts.'}), 200
+
+    except Exception as e:
+        print(f"NWS Sync Error: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/api/sync/eonet', methods=['POST'])
+def sync_eonet():
+    """FETCH: Pull natural events from NASA EONET v3 (Limited to last 7 days)"""
+    # Added ?days=7 to reduce the amount of data processed
+    url = "https://eonet.gsfc.nasa.gov/api/v3/events?days=7&status=open"
+
+    try:
+        print(f"Connecting to NASA EONET...")
+        response = requests.get(url, timeout=25)
+        response.raise_for_status()
+        data = response.json()
+
+        category_mapping = {
+            'wildfires': 'wildfire',
+            'volcanoes': 'volcanic_eruption',
+            'severeStorms': 'severe_weather',
+            'floods': 'flood',
+            'tempExtremes': 'extreme_heat'
+        }
+
+        new_count = 0
+        events = data.get('events', [])
+        print(f"Processing {len(events)} NASA EONET events...")
+
+        for event in events:
+            event_id = event['id']
+            title = event['title']
+            categories = event.get('categories', [])
+            if not categories: continue
+
+            eonet_cat = categories[0]['id']
+            internal_type = category_mapping.get(eonet_cat)
+            if not internal_type: continue
+
+            doc_id = f"eonet_{event_id}"
+            alert_ref = db.collection('alerts').document(doc_id)
+
+            if not alert_ref.get().exists:
+                geoms = event.get('geometries', [])
+                if not geoms: continue
+                lng, lat = geoms[0]['coordinates']
+
+                alert_ref.set({
+                    'title': title,
+                    'message': f"Global event reported: {title}",
+                    'hazardType': internal_type,
+                    'lat': lat,
+                    'lng': lng,
+                    'timestamp': firestore.SERVER_TIMESTAMP,
+                    'external_id': event_id,
+                    'source': 'NASA EONET'
+                })
+                new_count += 1
+
+        return jsonify({'status': 'success', 'message': f'NASA EONET synced {new_count} events.'}), 200
+    except Exception as e:
+        print(f"NASA EONET Sync Error: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/api/sync/gdacs', methods=['POST'])
+def sync_gdacs():
+    """FETCH: Pull global disaster alerts from GDACS robustly"""
+    url = "https://www.gdacs.org/xml/gdacs.geojson"
+
+    try:
+        print(f"Connecting to GDACS...")
+        response = requests.get(url, stream=True, timeout=30)
+        response.raise_for_status()
+        data = json.loads(response.content)
+
+        type_mapping = {
+            'TC': 'hurricane',
+            'EQ': 'earthquake',
+            'FL': 'flood',
+            'VO': 'volcanic_eruption',
+            'WF': 'wildfire',
+            'DR': 'extreme_heat'
+        }
+
+        new_count = 0
+        features = data.get('features', [] )
+        print(f"Processing {len(features)} GDACS features...")
+
+        for feature in features:
+            props = feature['properties']
+            event_id = props.get('eventid')
+            event_type = props.get('eventtype')
+
+            alert_level = props.get('alertlevel', 'Green')
+            if alert_level not in ['Orange', 'Red']:
+                continue
+
+            internal_type = type_mapping.get(event_type, 'general')
+            doc_id = f"gdacs_{event_type}_{event_id}"
+            alert_ref = db.collection('alerts').document(doc_id)
+
+            if not alert_ref.get().exists:
+                geom = feature.get('geometry')
+                if geom and geom['type'] == 'Point':
+                    lng, lat = geom['coordinates']
+
+                    alert_ref.set({
+                        'title': f"{alert_level} Alert: {props.get('eventname', 'Global Disaster')}",
+                        'message': props.get('description', 'High-impact disaster event reported.'),
+                        'hazardType': internal_type,
+                        'lat': lat,
+                        'lng': lng,
+                        'timestamp': firestore.SERVER_TIMESTAMP,
+                        'external_id': str(event_id),
+                        'source': 'GDACS',
+                        'alertlevel': alert_level
+                    })
+                    new_count += 1
+
+        return jsonify({'status': 'success', 'message': f'GDACS sync complete. Added {new_count} alerts.'}), 200
+    except Exception as e:
+        print(f"GDACS Sync Error: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+@app.route('/api/sync/firms', methods=['POST'])
+def sync_firms():
+    """FETCH: Pull fire hotspot data from NASA FIRMS (Global)"""
+    map_key = os.environ.get('NASA_FIRMS_KEY')
+    if not map_key:
+        return jsonify({'status': 'error', 'message': 'NASA_FIRMS_KEY missing from .env'}), 400
+
+    url = f"https://firms.modaps.eosdis.nasa.gov/api/area/csv/{map_key}/VIIRS_SNPP_NRT/-125,32,-114,49/1"
+
+    try:
+        print(f"Connecting to NASA FIRMS...")
+        response = requests.get(url, timeout=15)
+        if response.status_code != 200:
+            return jsonify({'status': 'error', 'message': 'Failed to fetch NASA FIRMS data.'}), response.status_code
+
+        new_count = 0
+        f = io.StringIO(response.text)
+        reader = csv.DictReader(f)
+        for row in reader:
+            lat = float(row['latitude'])
+            lng = float(row['longitude'])
+            acq_date = row['acq_date']
+            confidence = row.get('confidence', 'n/a')
+
+            doc_id = f"firms_{lat}_{lng}_{acq_date}".replace('.', '_')
+            alert_ref = db.collection('alerts').document(doc_id)
+
+            if not alert_ref.get().exists:
+                alert_ref.set({
+                    'title': "Active Fire Hotspot",
+                    'message': f"Satellite detected thermal anomaly with {confidence} confidence.",
+                    'hazardType': 'wildfire',
+                    'lat': lat,
+                    'lng': lng,
+                    'timestamp': firestore.SERVER_TIMESTAMP,
+                    'source': 'NASA FIRMS',
+                    'acq_date': acq_date
+                })
+                new_count += 1
+
+        return jsonify({'status': 'success', 'message': f'NASA FIRMS synced {new_count} hotspots.'}), 200
+    except Exception as e:
+        print(f"NASA FIRMS Sync Error: {e}")
+        return jsonify({'status': 'error', 'message': str(e)}), 500
+
+# --- Mapbox Endpoints & AI Logic ---
+
 @app.route('/api/push', methods=['POST'])
 @check_token
 def push_endpoint():
@@ -274,11 +500,11 @@ def get_human_readable_location(lat, lng):
     return f"coordinates {lat}, {lng}"
 
 SUPPORTED_HAZARDS = {
-    "flood", "building_fire", "wildfire", "hurricane", 
-    "tornado", "active_shooter", "police_activity", 
-    "road_closure", "severe_weather", "earthquake", 
+    "flood", "building_fire", "wildfire", "hurricane",
+    "tornado", "active_shooter", "police_activity",
+    "road_closure", "severe_weather", "earthquake",
     "hazmat_spill", "gas_leak", "volcanic_eruption", "tsunami",
-    "power_outage", "icy_roads", "heavy_traffic", 
+    "power_outage", "icy_roads", "heavy_traffic",
     "construction_zone", "low_visibility", "wildlife",
     "civil_unrest", "transit_disruption", "extreme_heat", "air_quality",
     "blizzard", "flooded_pathway",
@@ -301,7 +527,7 @@ def get_retrieved_context(hazard_key):
         print(f"RAG Retrieval Critical Error: {type(e).__name__} - {str(e)}")
         return None
 
-@cache.memoize(timeout=3600) 
+@cache.memoize(timeout=3600)
 def generate_ai_recommendation(hazard_display, event_description, retrieved_context, location_string):
     system_prompt = """
     You are Guardianly, an advanced safety AI. Your goal is to analyze a specific hazard event and provided safety context to generate a structured alert.
