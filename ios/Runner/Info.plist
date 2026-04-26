@@ -47,5 +47,14 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
+
+	<!-- LOCATION PERMISSION KEYS - ADD THESE -->
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Guardianly needs your location to show nearby alerts and hazards in real-time</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Guardianly needs your location to send you proximity alerts even when the app is in background</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Guardianly needs your location to monitor alerts in the background</string>
+	
 </dict>
 </plist>
