@@ -149,7 +149,7 @@ class HomeState extends State<Home> {
 
     showDialog(
       context: context,
-      builder: (context) => StatefulBuilder(
+      builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: const Text('Report Danger'),
           content: SingleChildScrollView(
@@ -185,9 +185,12 @@ class HomeState extends State<Home> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancel')),
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
             ElevatedButton(
               onPressed: () async {
+                final messenger = ScaffoldMessenger.of(dialogContext);
+                final navigator = Navigator.of(dialogContext);
+                
                 String alertTitle = selectedType.replaceAll('_', ' ').toUpperCase();
                 
                 await FirebaseFirestore.instance.collection('alerts').add({
@@ -199,8 +202,10 @@ class HomeState extends State<Home> {
                   'timestamp': FieldValue.serverTimestamp(),
                   'reportedBy': FirebaseAuth.instance.currentUser?.uid,
                 });
-                if (mounted) {
-                  Navigator.pop(context);
+                
+                if (navigator.mounted) {
+                  navigator.pop();
+                  messenger.showSnackBar(const SnackBar(content: Text("Alert reported!")));
                 }
               },
               child: const Text('Report'),
