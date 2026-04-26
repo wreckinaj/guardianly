@@ -47,3 +47,4 @@ app.*.map.json
 # enviorment variables
 #.envvideos/*.mp4
 videos/
+landing/videos/
