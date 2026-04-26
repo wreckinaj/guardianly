@@ -139,7 +139,6 @@ By using Guardianly, you agree to these Terms of Service.
 
 Acceptable Use:
 • Use the app for lawful purposes only
-• Respect other users and their privacy
 • Do not attempt to circumvent security measures
 • Provide accurate location information
 
@@ -151,34 +150,6 @@ We strive to provide reliable service but do not guarantee uninterrupted access.
 
 Limitation of Liability:
 Guardianly is not liable for indirect damages arising from use of our services. We are not responsible for third-party content or services.
-''',
-                    ),
-                    
-                    // Community Guidelines
-                    buildPolicySection(
-                      id: 'community',
-                      icon: Icons.people,
-                      iconColor: Colors.purple,
-                      title: 'Community Guidelines',
-                      subtitle: 'Be kind, be respectful, be safe',
-                      lastUpdated: 'Updated: Dec 5, 2025',
-                      content: '''
-Our community is built on respect and helpfulness. Follow these guidelines:
-
-Do:
-• Share accurate and helpful information
-• Report safety concerns immediately
-• Respect diverse perspectives
-• Keep discussions constructive
-
-Don't:
-• Post inappropriate or harmful content
-• Harass or bully other users
-• Share false or misleading information
-• Violate others' privacy
-
-Enforcement:
-Violations may result in content removal, account suspension, or permanent ban depending on severity.
 ''',
                     ),
                     
@@ -196,16 +167,10 @@ Guardianly is committed to user safety.
 Emergency Features:
 • Emergency alerts are prioritized
 • Location sharing is always opt-in
-• Panic button for immediate assistance
-
-Reporting:
-Users can report safety concerns directly through the app. All reports are reviewed within 24 hours.
 
 Safe Navigation:
 Always pay attention to your surroundings. Do not use the app while driving. Navigation instructions are for reference only.
 
-Child Safety:
-Users under 13 require parental consent. We comply with COPPA regulations.
 ''',
                     ),
                     
@@ -227,13 +192,8 @@ Data Collection:
 • App usage statistics
 
 Data Retention:
-Location data is retained for 30 days. Account information is retained until account deletion. Anonymized data may be kept longer for analytics.
+Account information is retained until account deletion. Anonymized data may be kept longer for analytics.
 
-Security:
-We use industry-standard encryption. Regular security audits are performed. Access to personal data is strictly limited.
-
-Data Portability:
-You can export your data at any time through account settings.
 ''',
                     ),
                     
@@ -251,14 +211,24 @@ Respecting intellectual property is important to us.
 Our Content:
 Map data © Mapbox. Guardianly logo and branding are trademarks. App design and code are protected by copyright.
 
+MIT License
+
+Copyright (c) 2025 Guardianly Team
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation
+files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, 
+modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software 
+is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES 
+OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE 
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR 
+IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
 User Content:
 Users retain ownership of content they create. By posting, you grant us license to display and share content within the app.
-
-DMCA Compliance:
-We respond to valid copyright infringement notices. Submit takedown requests through our designated agent.
-
-Fair Use:
-Limited use of copyrighted material for commentary, criticism, or education may be considered fair use.
 ''',
                     ),
                     
