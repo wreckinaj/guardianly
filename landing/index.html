@@ -1,0 +1,1279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardianly - Your Personal Safety Companion</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            scroll-behavior: smooth;
+            background: #0a0a2a;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(10, 10, 42, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-text {
+            font-size: 2.2rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: #ddd;
+            padding: 0.5rem 1rem;
+            transition: color 0.3s;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: #667eea;
+        }
+
+        .btn-outline {
+            border: 2px solid #667eea;
+            background: transparent;
+            padding: 0.5rem 1.5rem;
+            border-radius: 25px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-outline:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.5rem 1.5rem;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102,126,234,0.4);
+        }
+
+        /* Hero */
+        .hero {
+            background: linear-gradient(135deg, #0a0a2a 0%, #1a1a4a 100%);
+            padding: 120px 2rem 80px;
+            margin-top: 60px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 20% 50%, rgba(102,126,234,0.15) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .hero-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-title {
+            font-size: 3rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #fff 0%, #a8b3ff 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .hero-subtitle {
+            font-size: 1.125rem;
+            color: rgba(255,255,255,0.8);
+            margin: 1rem 0 2rem;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn-white {
+            background: white;
+            color: #667eea;
+            padding: 0.75rem 2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .btn-white:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255,255,255,0.2);
+        }
+
+        .btn-outline-white {
+            border: 2px solid white;
+            color: white;
+            padding: 0.75rem 2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .btn-outline-white:hover {
+            background: white;
+            color: #667eea;
+        }
+
+        /* Video Container */
+        .video-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .video-box {
+            width: 300px;
+            height: 580px;
+            background: linear-gradient(135deg, #1a1a3a 0%, #2a2a4a 100%);
+            border-radius: 32px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            position: relative;
+            border: 1px solid rgba(102,126,234,0.3);
+        }
+
+        .video-placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            background: linear-gradient(135deg, #1a1a3a 0%, #2a2a4a 100%);
+            width: 100%;
+            height: 100%;
+            color: #667eea;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .placeholder-icon {
+            font-size: 48px;
+        }
+
+        .upload-video-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            margin: 5px;
+        }
+
+        .upload-video-btn:hover {
+            transform: scale(1.02);
+        }
+
+        .upload-video-btn.secondary {
+            background: transparent;
+            border: 1px solid #667eea;
+            color: #667eea;
+        }
+
+        .upload-video-btn.secondary:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .uploaded-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .video-controls {
+            text-align: center;
+            margin-top: 12px;
+        }
+
+        .change-video-btn {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            color: white;
+            padding: 6px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 11px;
+            transition: all 0.3s;
+            margin: 0 4px 8px;
+        }
+
+        .change-video-btn:hover {
+            background: rgba(102,126,234,0.5);
+            border-color: #667eea;
+        }
+
+        .video-caption {
+            text-align: center;
+            font-size: 11px;
+            color: rgba(255,255,255,0.5);
+            margin-top: 6px;
+        }
+
+        /* YouTube popup */
+        .youtube-prompt-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.9);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 2000;
+        }
+
+        .youtube-prompt-card {
+            background: linear-gradient(135deg, #1a1a3a 0%, #2a2a4a 100%);
+            border-radius: 24px;
+            padding: 2rem;
+            max-width: 400px;
+            width: 90%;
+            text-align: center;
+            border: 1px solid #667eea;
+        }
+
+        .youtube-prompt-card h3 {
+            margin-bottom: 1rem;
+            color: white;
+        }
+
+        .youtube-prompt-card p {
+            color: rgba(255,255,255,0.7);
+            font-size: 0.875rem;
+        }
+
+        .youtube-prompt-card input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #667eea;
+            border-radius: 12px;
+            margin: 1rem 0;
+            font-size: 14px;
+            background: #0a0a2a;
+            color: white;
+        }
+
+        .youtube-prompt-card button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            margin: 0 8px;
+        }
+
+        .youtube-prompt-card .cancel-btn {
+            background: #333;
+        }
+
+        /* Problem Section */
+        .problem-section {
+            padding: 4rem 2rem;
+            background: linear-gradient(135deg, #0f0f2a 0%, #151535 100%);
+            border-top: 1px solid rgba(102,126,234,0.2);
+            border-bottom: 1px solid rgba(102,126,234,0.2);
+        }
+
+        .content-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .section-label {
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .problem-title {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: white;
+        }
+
+        .highlight-box {
+            background: rgba(102,126,234,0.1);
+            border-left: 4px solid #667eea;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 12px;
+        }
+
+        .highlight-box strong {
+            color: #667eea;
+        }
+
+        .highlight-box, .problem-section p {
+            color: rgba(255,255,255,0.8);
+        }
+
+        /* Comparison Section */
+        .comparison-section {
+            padding: 4rem 2rem;
+            background: linear-gradient(135deg, #0a0a2a 0%, #12122e 100%);
+        }
+
+        .comparison-grid {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .comparison-card {
+            background: rgba(26, 26, 58, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            text-align: center;
+            border: 1px solid rgba(102,126,234,0.2);
+        }
+
+        .comparison-card.traditional {
+            border-top: 6px solid #666;
+        }
+
+        .comparison-card.guardianly {
+            border-top: 6px solid #667eea;
+        }
+
+        .comparison-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1.5rem;
+            color: white;
+        }
+
+        .comparison-feature {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            text-align: left;
+            color: rgba(255,255,255,0.8);
+        }
+
+        .check-no {
+            font-size: 1.25rem;
+            min-width: 32px;
+        }
+
+        .check-yes {
+            font-size: 1.25rem;
+            min-width: 32px;
+            color: #667eea;
+        }
+
+        /* How It Works */
+        .how-it-works {
+            padding: 4rem 2rem;
+            background: linear-gradient(135deg, #0f0f2a 0%, #151535 100%);
+        }
+
+        .diagram-flow {
+            max-width: 1000px;
+            margin: 2rem auto 0;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .flow-step {
+            background: rgba(26, 26, 58, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+            min-width: 180px;
+            flex: 1;
+            transition: all 0.3s;
+            border: 1px solid rgba(102,126,234,0.2);
+        }
+
+        .flow-step:hover {
+            transform: translateY(-5px);
+            border-color: #667eea;
+        }
+
+        .flow-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .flow-title {
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            color: #667eea;
+        }
+
+        .flow-step div {
+            color: rgba(255,255,255,0.7);
+        }
+
+        .flow-arrow {
+            font-size: 2rem;
+            color: #667eea;
+        }
+
+        .flow-result {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+            min-width: 200px;
+        }
+
+        /* ========== INTEGRATED FEATURES + GALLERY ========== */
+        .integrated-features-section {
+            padding: 5rem 2rem;
+            background: linear-gradient(180deg, #0a0a2a 0%, #050515 100%);
+            position: relative;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: white;
+        }
+
+        .section-subtitle {
+            text-align: center;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 3rem;
+        }
+
+        /* Gallery Styles */
+        .collage-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .collage-wrapper {
+            position: relative;
+            overflow-x: auto;
+            overflow-y: visible;
+            padding: 2rem 0;
+            cursor: grab;
+            scroll-behavior: smooth;
+        }
+
+        .collage-wrapper:active {
+            cursor: grabbing;
+        }
+
+        .collage-grid {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem 4rem;
+            min-width: max-content;
+        }
+
+        .collage-item {
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transition: all 0.3s;
+            cursor: pointer;
+            border: 1px solid rgba(102,126,234,0.2);
+        }
+
+        .collage-item:hover {
+            transform: scale(1.02);
+            box-shadow: 0 15px 40px rgba(102,126,234,0.3);
+            border-color: #667eea;
+        }
+
+        .collage-item.large {
+            width: 280px;
+            height: 500px;
+        }
+
+        .collage-item.medium {
+            width: 220px;
+            height: 380px;
+        }
+
+        .collage-item.small {
+            width: 180px;
+            height: 280px;
+        }
+
+        .collage-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: top;
+        }
+
+        .collage-label {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.9));
+            color: white;
+            padding: 1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-align: center;
+            z-index: 2;
+        }
+
+        /* Feature Description Overlay */
+        .feature-description-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(26, 26, 58, 0.95) 0%, rgba(42, 42, 74, 0.95) 100%);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 10;
+            padding: 1rem;
+        }
+
+        .collage-item:hover .feature-description-overlay {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .feature-description-content {
+            text-align: center;
+            color: white;
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+        }
+
+        .collage-item:hover .feature-description-content {
+            transform: translateY(0);
+        }
+
+        .feature-desc-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .feature-description-content h4 {
+            font-size: 1.1rem;
+            margin-bottom: 0.75rem;
+            color: #667eea;
+        }
+
+        .feature-description-content p {
+            font-size: 0.75rem;
+            line-height: 1.4;
+            margin-bottom: 0.75rem;
+            color: rgba(255,255,255,0.9);
+        }
+
+        .feature-tag {
+            font-size: 0.65rem;
+            color: rgba(102,126,234,0.8);
+            letter-spacing: 0.5px;
+            border-top: 1px solid rgba(102,126,234,0.3);
+            padding-top: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        /* Video styles for collage items */
+        .collage-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: top;
+        }
+
+        .collage-item .video-play-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50px;
+            height: 50px;
+            background: rgba(0,0,0,0.6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 3;
+        }
+
+        .collage-item:hover .video-play-indicator {
+            opacity: 1;
+        }
+
+        .collage-item .video-play-indicator::after {
+            content: '▶';
+            color: white;
+            font-size: 20px;
+            margin-left: 4px;
+        }
+
+        /* Edge fade overlays - WIDER VERSION */
+        .fade-overlay {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 200px;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .fade-overlay.left {
+            left: 0;
+            background: linear-gradient(to right, 
+                #0a0a2a 0%, 
+                rgba(10, 10, 42, 0.95) 30%,
+                rgba(10, 10, 42, 0.7) 60%,
+                transparent 100%
+            );
+        }
+
+        .fade-overlay.right {
+            right: 0;
+            background: linear-gradient(to left, 
+                #0a0a2a 0%, 
+                rgba(10, 10, 42, 0.95) 30%,
+                rgba(10, 10, 42, 0.7) 60%,
+                transparent 100%
+            );
+        }
+
+        /* Scrollbar */
+        .collage-wrapper::-webkit-scrollbar {
+            height: 6px;
+        }
+
+        .collage-wrapper::-webkit-scrollbar-track {
+            background: #1a1a3a;
+            border-radius: 10px;
+        }
+
+        .collage-wrapper::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 10px;
+        }
+
+        .collage-note {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: rgba(255,255,255,0.5);
+            font-size: 0.875rem;
+        }
+
+        .collage-upload {
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        .collage-upload-btn {
+            background: rgba(102,126,234,0.1);
+            border: 2px dashed #667eea;
+            color: #667eea;
+            padding: 0.75rem 1.5rem;
+            border-radius: 40px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .collage-upload-btn:hover {
+            background: #667eea;
+            color: white;
+            border: 2px solid #667eea;
+        }
+
+        /* Team */
+        .team {
+            padding: 5rem 2rem;
+            background: linear-gradient(135deg, #0a0a2a 0%, #0f0f2a 100%);
+        }
+
+        .team-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .team-card {
+            text-align: center;
+            padding: 2rem;
+            border-radius: 16px;
+            background: rgba(26, 26, 58, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(102,126,234,0.2);
+            transition: all 0.3s;
+        }
+
+        .team-card:hover {
+            transform: translateY(-5px);
+            border-color: #667eea;
+        }
+
+        .team-avatar {
+            width: 150px;
+            height: 150px;
+            background: linear-gradient(135deg, rgba(102,126,234,0.2) 0%, rgba(118,75,162,0.2) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            overflow: hidden;
+            border: 3px solid rgba(102,126,234,0.3);
+        }
+
+        .avatar-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .team-card h3 {
+            color: white;
+        }
+
+        .team-card p {
+            color: rgba(255,255,255,0.7);
+        }
+
+        .github-btn {
+            background: #333;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            transition: background 0.3s;
+        }
+
+        .github-btn:hover {
+            background: #667eea;
+        }
+
+        /* Contact */
+        .contact {
+            padding: 5rem 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .contact-container {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .contact-options {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .contact-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 2rem;
+            border-radius: 16px;
+            text-decoration: none;
+            transition: all 0.3s;
+            flex: 1;
+            min-width: 200px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .contact-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255,255,255,0.2);
+        }
+
+        .contact-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .contact-card h3 {
+            margin-bottom: 0.5rem;
+            color: white;
+        }
+
+        .contact-card p {
+            color: rgba(255,255,255,0.8);
+            font-size: 0.875rem;
+        }
+
+        /* Footer */
+        .footer {
+            background: #050515;
+            color: rgba(255,255,255,0.6);
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+
+        /* Animation */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s cubic-bezier(0.2, 0.9, 0.4, 1.1), transform 0.8s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+        }
+
+        .fade-up.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .team-card:nth-child(1) { transition-delay: 0s; }
+        .team-card:nth-child(2) { transition-delay: 0.1s; }
+        .team-card:nth-child(3) { transition-delay: 0.2s; }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-container {
+                grid-template-columns: 1fr;
+            }
+            .hero-title {
+                font-size: 2rem;
+            }
+            .nav-links {
+                display: none;
+            }
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+            .diagram-flow {
+                flex-direction: column;
+            }
+            .flow-arrow {
+                transform: rotate(90deg);
+            }
+            .collage-item.large {
+                width: 200px;
+                height: 380px;
+            }
+            .collage-item.medium {
+                width: 160px;
+                height: 280px;
+            }
+            .collage-item.small {
+                width: 130px;
+                height: 200px;
+            }
+            .fade-overlay {
+                width: 100px;
+            }
+            .logo-text {
+                font-size: 1.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="nav-container">
+            <div class="logo-text">Guardianly</div>
+            <div class="nav-links">
+                <a href="#problem" class="nav-link">Problem</a>
+                <a href="#comparison" class="nav-link">How We're Different</a>
+                <a href="#features" class="nav-link">Key Features</a>
+                <a href="#team" class="nav-link">Team</a>
+                <a href="https://github.com/wreckinaj/guardianly" target="_blank" class="btn-outline">GitHub</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-container">
+            <div>
+                <h1 class="hero-title">Navigate Smarter</h1>
+                <h1 class="hero-title">Avoid Danger</h1>
+                <h1 class="hero-title">Arrive Safer</h1>
+                <p class="hero-subtitle">Guardianly is a mobile navigation safety app that delivers real-time hazard alerts, safer alternate routes, and personalized safety guidance for commuters, travelers, and at-risk individuals.</p>
+                <div class="hero-buttons">
+                    <a href="https://guardianly-auth.web.app/#/home" class="btn-white" target="_blank" rel="noopener noreferrer">Get Started →</a>
+                </div>
+            </div>
+
+            <div class="video-container">
+                <div class="video-box" id="videoBox">
+                    <video id="heroVideo" class="uploaded-video" autoplay loop muted playsinline>
+                        <source src="videos/Simulator%20Screen%20Recording%20-%20iPhone%2017%20-%202026-04-25%20at%2018.46.48.mp4" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                </div>
+                <p class="video-caption">Guardianly in action - Real-time safety alerts and navigation</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Problem -->
+    <section id="problem" class="problem-section fade-up">
+        <div class="content-container">
+            <div class="section-label">The Problem</div>
+            <h2 class="problem-title">Most tools prioritize speed and efficiency over user safety.</h2>
+            <div class="highlight-box">
+                <strong>⚠️ Why this matters:</strong> Current navigation systems lack real-time integration of dynamic risk factors, leaving users vulnerable to rapidly changing conditions. 
+                Individuals are forced to rely on fragmented sources of information such as news reports, social media, or delayed alerts, which are often incomplete or outdated.
+                This gap presents a critical issue: there is no centralized, user-friendly platform that actively guides individuals away from danger while adapting to real time 
+                environmental conditions. As a result, users face unnecessary exposure to preventable risks during everyday travel.
+            </div>
+            <p>Guardianly closes this gap by combining live hazard data with your real-time location and preferences — so you get <strong>actionable</strong> advice, not just noise.</p>
+        </div>
+    </section>
+
+    <!-- Comparison -->
+    <section id="comparison" class="comparison-section fade-up">
+        <div class="content-container">
+            <div class="section-label" style="text-align: center;">What Makes Us Different</div>
+            <h2 class="section-title" style="font-size: 1.8rem;">See the difference for yourself</h2>
+            <div class="comparison-grid">
+                <div class="comparison-card traditional">
+                    <div class="comparison-title">Typical Safety App</div>
+                    <div class="comparison-feature"><span class="check-no">❌</span><span>Generic alerts for everyone</span></div>
+                    <div class="comparison-feature"><span class="check-no">❌</span><span>Reacts after danger occurs</span></div>
+                    <div class="comparison-feature"><span class="check-no">❌</span><span>No solution for personal safety</span></div>
+                    <div class="comparison-feature"><span class="check-no">❌</span><span>One-size-fits-all warnings</span></div>
+                </div>
+                <div class="comparison-card guardianly">
+                    <div class="comparison-title">Guardianly</div>
+                    <div class="comparison-feature"><span class="check-yes">✅</span><span>Differentiated icons for certain hazards</span></div>
+                    <div class="comparison-feature"><span class="check-yes">✅</span><span>Predictive — alerts you before danger</span></div>
+                    <div class="comparison-feature"><span class="check-yes">✅</span><span>Safer alternate routes in real time</span></div>
+                    <div class="comparison-feature"><span class="check-yes">✅</span><span>AI-powered, context-aware guidance</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- INTEGRATED FEATURES + GALLERY -->
+    <section id="features" class="integrated-features-section fade-up">
+        <h2 class="section-title">Key Features <span style="font-size: 1rem; color: #667eea;">✨ Hover any screenshot to learn more</span></h2>
+        <p class="section-subtitle">Each screenshot reveals its feature — just hover to see details</p>
+        
+        <div class="collage-container">
+            <div class="collage-wrapper" id="collageWrapperIntegrated">
+                <div class="fade-overlay left"></div>
+                <div class="collage-grid" id="collageGridIntegrated">
+                    <!-- Feature 1: Real-Time Alerts -->
+                    <div class="collage-item large">
+                        <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2018.16.40.jpeg" 
+                             alt="Home screen" 
+                             onerror="this.src='https://placehold.co/400x600/667eea/white?text=Map+View'">
+                        <div class="collage-label">Map View</div>
+                        <div class="feature-description-overlay">
+                            <div class="feature-description-content">
+                                <div class="feature-desc-icon">🚨</div>
+                                <h4>Real-Time Alerts</h4>
+                                <p>Live hazard notifications appear directly on your map as you navigate. Get instant updates about emergencies in your area — floods, fires, police activity, and more.</p>
+                                <div class="feature-tag">Instant • Local • Actionable</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Feature 2: Saved Alerts - VIDEO VERSION -->
+                    <div class="collage-item medium">
+                        <video class="collage-video" autoplay loop muted playsinline>
+                            <source src="videos/Simulator%20Screen%20Recording%20-%20iPhone%2017%20-%202026-04-20%20at%2021.13.19.mp4" 
+                            type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                        <div class="collage-label">Saved Alerts</div>
+                        <div class="feature-description-overlay">
+                            <div class="feature-description-content">
+                                <div class="feature-desc-icon">🔖</div>
+                                <h4>Saved Alerts</h4>
+                                <p>Save alerts for future awareness. Bookmark important safety information and monitor situations that matter to you.</p>
+                                <div class="feature-tag">Bookmark • Monitor • Protect</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Feature 3: AI-Powered -->
+                    <div class="collage-item medium">
+                        <video class="collage-video" autoplay loop muted playsinline>
+                            <source src="videos/Simulator%20Screen%20Recording%20-%20iPhone%2017%20-%202026-04-25%20at%2018.17.59.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                        <div class="collage-label">AI Alert</div>
+                        <div class="feature-description-overlay">
+                            <div class="feature-description-content">
+                                <div class="feature-desc-icon">🤖</div>
+                                <h4>AI-Powered Analysis</h4>
+                                <p>Smart AI analyzes threats and provides intelligent, context-aware recommendations. Our RAG engine cross-references live data with safety playbooks.</p>
+                                <div class="feature-tag">Smart • Predictive • Adaptive</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Feature 4: Navigation -->
+                    <div class="collage-item small">
+                        <video class="collage-video" autoplay loop muted playsinline>
+                            <source src="videos/Simulator%20Screen%20Recording%20-%20iPhone%2017%20-%202026-04-25%20at%2018.21.57.mp4" type="video/mp4">
+                            Your browser does not support the video tag.
+                        </video>
+                        <div class="collage-label">Safe Route</div>
+                        <div class="feature-description-overlay">
+                            <div class="feature-description-content">
+                                <div class="feature-desc-icon">🧭</div>
+                                <h4>Smart Navigation</h4>
+                                <p>Navigate anywhere in the US with confidence. Automatically suggests safer alternatives when hazards appear on your path.</p>
+                                <div class="feature-tag">Turn-by-turn • Safe Routing • Real-time</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="fade-overlay right"></div>
+            </div>
+        </div>
+        
+        <p class="collage-note">← Drag to explore → &nbsp;&nbsp;|&nbsp;&nbsp; <strong>Hover over any screenshot</strong> to see detailed feature information &nbsp;&nbsp;|&nbsp;&nbsp; Each screenshot = one key feature</p>
+    </section>
+
+    <!-- Team -->
+    <section id="team" class="team">
+        <h2 class="section-title">Meet the Team</h2>
+        <div class="team-grid">
+            <div class="team-card fade-up">
+                <div class="team-avatar">A</div>
+                <h3>Anthony Silva</h3>
+                <p>Project Lead & Developer</p>
+                <a href="https://github.com/wreckinaj" target="_blank" class="github-btn">GitHub</a>
+            </div>
+            <div class="team-card fade-up">
+                <div class="team-avatar">D</div>
+                <h3>Devin Shook</h3>
+                <p>UX/UI & Backend</p>
+                <a href="https://github.com/dshook55" target="_blank" class="github-btn">GitHub</a>
+            </div>
+            <div class="team-card fade-up">
+                <div class="team-avatar">
+                    <img src="pictures/1735431796836_copy.jpeg" alt="Feifei Huang" class="avatar-img">
+                </div>
+                <h3>Feifei Huang</h3>
+                <p>UX/UI & Frontend</p>
+                <a href="https://github.com/MoonyMochiey" target="_blank" class="github-btn">GitHub</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact -->
+    <section id="contact" class="contact">
+        <div class="contact-container">
+            <h2 class="section-title" style="color: white;">Get in Touch</h2>
+            <div class="contact-options">
+                <a href="https://github.com/wreckinaj/guardianly/issues" target="_blank" class="contact-card fade-up">
+                    <div class="contact-icon">📝</div>
+                    <h3>GitHub Issues</h3>
+                    <p>Report bugs or request features</p>
+                </a>
+                <a href="mailto:guardianly@example.com" class="contact-card fade-up">
+                    <div class="contact-icon">📧</div>
+                    <h3>Email Us</h3>
+                    <p>guardianlycs@gmail.com</p>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <p>© 2025 Guardianly</p>
+    </footer>
+
+    <script>
+        // Video functions
+        function previewVideo(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const videoElement = document.getElementById('uploadedVideo');
+                const videoSource = document.getElementById('videoSource');
+                const placeholder = document.getElementById('videoPlaceholder');
+                const youtubeEmbed = document.getElementById('youtubeEmbed');
+                youtubeEmbed.style.display = 'none';
+                videoSource.src = URL.createObjectURL(file);
+                videoElement.load();
+                videoElement.style.display = 'block';
+                placeholder.style.display = 'none';
+            }
+        }
+
+        function showYouTubePrompt() {
+            const existingOverlay = document.querySelector('.youtube-prompt-overlay');
+            if (existingOverlay) existingOverlay.remove();
+            const overlay = document.createElement('div');
+            overlay.className = 'youtube-prompt-overlay';
+            overlay.innerHTML = `
+                <div class="youtube-prompt-card">
+                    <h3>📺 Embed YouTube Video</h3>
+                    <p>Paste a YouTube link</p>
+                    <input type="text" id="youtubeUrlInput" placeholder="https://youtu.be/..." autocomplete="off">
+                    <div>
+                        <button onclick="embedYouTubeFromPrompt()">Embed</button>
+                        <button class="cancel-btn" onclick="this.closest('.youtube-prompt-overlay').remove()">Cancel</button>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(overlay);
+            setTimeout(() => { const input = document.getElementById('youtubeUrlInput'); if (input) input.focus(); }, 100);
+        }
+
+        function embedYouTubeFromPrompt() {
+            const urlInput = document.getElementById('youtubeUrlInput');
+            let url = urlInput.value.trim();
+            if (!url) return;
+            let videoId = null;
+            const patterns = [/(?:youtu\.be\/)([a-zA-Z0-9_-]+)/, /(?:youtube\.com\/watch\?v=)([a-zA-Z0-9_-]+)/, /(?:youtube\.com\/embed\/)([a-zA-Z0-9_-]+)/];
+            for (const pattern of patterns) {
+                const match = url.match(pattern);
+                if (match) { videoId = match[1]; break; }
+            }
+            if (videoId) { embedYouTube(videoId); } 
+            else { alert('Invalid YouTube URL'); }
+        }
+
+        function embedYouTube(videoId) {
+            const videoElement = document.getElementById('uploadedVideo');
+            const placeholder = document.getElementById('videoPlaceholder');
+            const youtubeEmbed = document.getElementById('youtubeEmbed');
+            const youtubeFrame = document.getElementById('youtubeFrame');
+            videoElement.style.display = 'none';
+            placeholder.style.display = 'none';
+            youtubeFrame.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&controls=1&rel=0`;
+            youtubeEmbed.style.display = 'block';
+            const overlay = document.querySelector('.youtube-prompt-overlay');
+            if (overlay) overlay.remove();
+        }
+
+        // Integrated Gallery drag
+        const integratedWrapper = document.getElementById('collageWrapperIntegrated');
+        let isDownIntegrated = false;
+        let startXIntegrated, scrollLeftIntegrated;
+        if (integratedWrapper) {
+            integratedWrapper.addEventListener('mousedown', (e) => {
+                isDownIntegrated = true;
+                integratedWrapper.style.cursor = 'grabbing';
+                startXIntegrated = e.pageX - integratedWrapper.offsetLeft;
+                scrollLeftIntegrated = integratedWrapper.scrollLeft;
+            });
+            integratedWrapper.addEventListener('mouseleave', () => { isDownIntegrated = false; integratedWrapper.style.cursor = 'grab'; });
+            integratedWrapper.addEventListener('mouseup', () => { isDownIntegrated = false; integratedWrapper.style.cursor = 'grab'; });
+            integratedWrapper.addEventListener('mousemove', (e) => {
+                if (!isDownIntegrated) return;
+                e.preventDefault();
+                const x = e.pageX - integratedWrapper.offsetLeft;
+                const walk = (x - startXIntegrated) * 1.5;
+                integratedWrapper.scrollLeft = scrollLeftIntegrated - walk;
+            });
+        }
+
+        // Scroll animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+        }, { threshold: 0.15 });
+        document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+    </script>
+</body>
+</html>
