@@ -164,29 +164,8 @@
             box-shadow: 0 5px 15px rgba(255,255,255,0.2);
         }
 
-        .btn-outline-white {
-            border: 2px solid white;
-            color: white;
-            padding: 0.75rem 2rem;
-            border-radius: 50px;
-            text-decoration: none;
-            font-weight: bold;
-            transition: all 0.3s;
-        }
-
-        .btn-outline-white:hover {
-            background: white;
-            color: #667eea;
-        }
-
-        /* Video Container */
-        .video-container {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .video-box {
+        /* Slideshow Container */
+        .slideshow-container {
             width: 300px;
             height: 580px;
             background: linear-gradient(135deg, #1a1a3a 0%, #2a2a4a 100%);
@@ -197,144 +176,66 @@
             border: 1px solid rgba(102,126,234,0.3);
         }
 
-        .video-placeholder {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 16px;
-            background: linear-gradient(135deg, #1a1a3a 0%, #2a2a4a 100%);
+        .slideshow {
+            position: relative;
             width: 100%;
             height: 100%;
-            color: #667eea;
-            text-align: center;
-            padding: 20px;
         }
 
-        .placeholder-icon {
-            font-size: 48px;
+        .slide {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            object-fit: cover;
+            object-position: top;
         }
 
-        .upload-video-btn {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 25px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: 600;
-            transition: all 0.3s;
-            margin: 5px;
+        .slide.active {
+            opacity: 1;
         }
 
-        .upload-video-btn:hover {
-            transform: scale(1.02);
-        }
-
-        .upload-video-btn.secondary {
-            background: transparent;
-            border: 1px solid #667eea;
-            color: #667eea;
-        }
-
-        .upload-video-btn.secondary:hover {
-            background: #667eea;
-            color: white;
-        }
-
-        .uploaded-video {
+        .slide img {
             width: 100%;
             height: 100%;
             object-fit: cover;
+            object-position: top;
         }
 
-        .video-controls {
-            text-align: center;
-            margin-top: 12px;
+        .slideshow-controls {
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            z-index: 10;
+            flex-wrap: wrap;
+            padding: 0 5px;
         }
 
-        .change-video-btn {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            color: white;
-            padding: 6px 12px;
-            border-radius: 20px;
+        .slide-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.5);
             cursor: pointer;
-            font-size: 11px;
             transition: all 0.3s;
-            margin: 0 4px 8px;
         }
 
-        .change-video-btn:hover {
-            background: rgba(102,126,234,0.5);
-            border-color: #667eea;
+        .slide-dot.active {
+            background: #667eea;
+            width: 16px;
+            border-radius: 4px;
         }
 
         .video-caption {
             text-align: center;
             font-size: 11px;
             color: rgba(255,255,255,0.5);
-            margin-top: 6px;
-        }
-
-        /* YouTube popup */
-        .youtube-prompt-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.9);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 2000;
-        }
-
-        .youtube-prompt-card {
-            background: linear-gradient(135deg, #1a1a3a 0%, #2a2a4a 100%);
-            border-radius: 24px;
-            padding: 2rem;
-            max-width: 400px;
-            width: 90%;
-            text-align: center;
-            border: 1px solid #667eea;
-        }
-
-        .youtube-prompt-card h3 {
-            margin-bottom: 1rem;
-            color: white;
-        }
-
-        .youtube-prompt-card p {
-            color: rgba(255,255,255,0.7);
-            font-size: 0.875rem;
-        }
-
-        .youtube-prompt-card input {
-            width: 100%;
-            padding: 12px;
-            border: 1px solid #667eea;
-            border-radius: 12px;
-            margin: 1rem 0;
-            font-size: 14px;
-            background: #0a0a2a;
-            color: white;
-        }
-
-        .youtube-prompt-card button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 25px;
-            cursor: pointer;
-            margin: 0 8px;
-        }
-
-        .youtube-prompt-card .cancel-btn {
-            background: #333;
+            margin-top: 12px;
         }
 
         /* Problem Section */
@@ -442,68 +343,6 @@
             color: #667eea;
         }
 
-        /* How It Works */
-        .how-it-works {
-            padding: 4rem 2rem;
-            background: linear-gradient(135deg, #0f0f2a 0%, #151535 100%);
-        }
-
-        .diagram-flow {
-            max-width: 1000px;
-            margin: 2rem auto 0;
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: center;
-            align-items: center;
-            gap: 0.5rem;
-        }
-
-        .flow-step {
-            background: rgba(26, 26, 58, 0.8);
-            backdrop-filter: blur(10px);
-            border-radius: 16px;
-            padding: 1.5rem;
-            text-align: center;
-            min-width: 180px;
-            flex: 1;
-            transition: all 0.3s;
-            border: 1px solid rgba(102,126,234,0.2);
-        }
-
-        .flow-step:hover {
-            transform: translateY(-5px);
-            border-color: #667eea;
-        }
-
-        .flow-icon {
-            font-size: 2.5rem;
-            margin-bottom: 0.75rem;
-        }
-
-        .flow-title {
-            font-weight: bold;
-            margin-bottom: 0.5rem;
-            color: #667eea;
-        }
-
-        .flow-step div {
-            color: rgba(255,255,255,0.7);
-        }
-
-        .flow-arrow {
-            font-size: 2rem;
-            color: #667eea;
-        }
-
-        .flow-result {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border-radius: 16px;
-            padding: 1.5rem;
-            text-align: center;
-            min-width: 200px;
-        }
-
         /* ========== INTEGRATED FEATURES + GALLERY ========== */
         .integrated-features-section {
             padding: 5rem 2rem;
@@ -521,14 +360,34 @@
         .section-subtitle {
             text-align: center;
             color: rgba(255,255,255,0.6);
-            margin-bottom: 3rem;
+            margin-bottom: 2rem;
         }
 
-        /* Gallery Styles */
+        /* Gallery Styles - FIXED SCROLLING */
         .collage-container {
             max-width: 1400px;
             margin: 0 auto;
             position: relative;
+        }
+
+        /* Scroll indicators */
+        .scroll-indicator {
+            text-align: center;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            color: rgba(255,255,255,0.5);
+            font-size: 0.8rem;
+        }
+
+        .scroll-hint {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            background: rgba(102,126,234,0.2);
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
         }
 
         .collage-wrapper {
@@ -538,6 +397,8 @@
             padding: 2rem 0;
             cursor: grab;
             scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: auto;
         }
 
         .collage-wrapper:active {
@@ -548,9 +409,55 @@
             display: flex;
             gap: 1.5rem;
             align-items: center;
-            justify-content: center;
-            padding: 1rem 4rem;
+            justify-content: flex-start;
+            padding: 0.5rem 5rem;
             min-width: max-content;
+        }
+
+        .fade-overlay {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 120px;
+            pointer-events: none;
+            z-index: 15;
+        }
+
+        .fade-overlay.left {
+            left: 0;
+            background: linear-gradient(to right, 
+                #0a0a2a 0%, 
+                rgba(10, 10, 42, 0.9) 40%,
+                transparent 100%
+            );
+        }
+
+        .fade-overlay.right {
+            right: 0;
+            background: linear-gradient(to left, 
+                #0a0a2a 0%, 
+                rgba(10, 10, 42, 0.9) 40%,
+                transparent 100%
+            );
+        }
+
+        .collage-wrapper::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .collage-wrapper::-webkit-scrollbar-track {
+            background: #1a1a3a;
+            border-radius: 10px;
+            margin: 0 20px;
+        }
+
+        .collage-wrapper::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 10px;
+        }
+
+        .collage-wrapper::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #7b8ef0, #8b5db8);
         }
 
         .collage-item {
@@ -561,6 +468,7 @@
             transition: all 0.3s;
             cursor: pointer;
             border: 1px solid rgba(102,126,234,0.2);
+            flex-shrink: 0;
         }
 
         .collage-item:hover {
@@ -605,7 +513,6 @@
             z-index: 2;
         }
 
-        /* Feature Description Overlay */
         .feature-description-overlay {
             position: absolute;
             top: 0;
@@ -667,88 +574,6 @@
             margin-top: 0.5rem;
         }
 
-        /* Video styles for collage items */
-        .collage-video {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            object-position: top;
-        }
-
-        .collage-item .video-play-indicator {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 50px;
-            height: 50px;
-            background: rgba(0,0,0,0.6);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.3s;
-            z-index: 3;
-        }
-
-        .collage-item:hover .video-play-indicator {
-            opacity: 1;
-        }
-
-        .collage-item .video-play-indicator::after {
-            content: '▶';
-            color: white;
-            font-size: 20px;
-            margin-left: 4px;
-        }
-
-        /* Edge fade overlays - WIDER VERSION */
-        .fade-overlay {
-            position: absolute;
-            top: 0;
-            bottom: 0;
-            width: 200px;
-            pointer-events: none;
-            z-index: 10;
-        }
-
-        .fade-overlay.left {
-            left: 0;
-            background: linear-gradient(to right, 
-                #0a0a2a 0%, 
-                rgba(10, 10, 42, 0.95) 30%,
-                rgba(10, 10, 42, 0.7) 60%,
-                transparent 100%
-            );
-        }
-
-        .fade-overlay.right {
-            right: 0;
-            background: linear-gradient(to left, 
-                #0a0a2a 0%, 
-                rgba(10, 10, 42, 0.95) 30%,
-                rgba(10, 10, 42, 0.7) 60%,
-                transparent 100%
-            );
-        }
-
-        /* Scrollbar */
-        .collage-wrapper::-webkit-scrollbar {
-            height: 6px;
-        }
-
-        .collage-wrapper::-webkit-scrollbar-track {
-            background: #1a1a3a;
-            border-radius: 10px;
-        }
-
-        .collage-wrapper::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            border-radius: 10px;
-        }
-
         .collage-note {
             text-align: center;
             margin-top: 1.5rem;
@@ -756,27 +581,27 @@
             font-size: 0.875rem;
         }
 
-        .collage-upload {
-            text-align: center;
-            margin-top: 2rem;
+        .gallery-nav {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1rem;
         }
 
-        .collage-upload-btn {
-            background: rgba(102,126,234,0.1);
-            border: 2px dashed #667eea;
+        .gallery-nav-btn {
+            background: rgba(102,126,234,0.2);
+            border: 1px solid rgba(102,126,234,0.4);
             color: #667eea;
-            padding: 0.75rem 1.5rem;
-            border-radius: 40px;
-            font-size: 0.875rem;
-            font-weight: 600;
+            padding: 0.5rem 1rem;
+            border-radius: 30px;
             cursor: pointer;
             transition: all 0.3s;
+            font-size: 0.8rem;
         }
 
-        .collage-upload-btn:hover {
+        .gallery-nav-btn:hover {
             background: #667eea;
             color: white;
-            border: 2px solid #667eea;
         }
 
         /* Team */
@@ -926,10 +751,6 @@
             transform: translateY(0);
         }
 
-        .team-card:nth-child(1) { transition-delay: 0s; }
-        .team-card:nth-child(2) { transition-delay: 0.1s; }
-        .team-card:nth-child(3) { transition-delay: 0.2s; }
-
         /* Responsive */
         @media (max-width: 768px) {
             .hero-container {
@@ -944,12 +765,6 @@
             .comparison-grid {
                 grid-template-columns: 1fr;
             }
-            .diagram-flow {
-                flex-direction: column;
-            }
-            .flow-arrow {
-                transform: rotate(90deg);
-            }
             .collage-item.large {
                 width: 200px;
                 height: 380px;
@@ -963,10 +778,31 @@
                 height: 200px;
             }
             .fade-overlay {
-                width: 100px;
+                width: 60px;
             }
             .logo-text {
                 font-size: 1.8rem;
+            }
+            .slideshow-container {
+                width: 280px;
+                height: 540px;
+                margin: 0 auto;
+            }
+            .collage-grid {
+                padding: 0.5rem 2rem;
+            }
+            .scroll-hint {
+                font-size: 0.7rem;
+            }
+            .slideshow-controls {
+                bottom: 5px;
+            }
+            .slide-dot {
+                width: 4px;
+                height: 4px;
+            }
+            .slide-dot.active {
+                width: 10px;
             }
         }
     </style>
@@ -999,11 +835,57 @@
             </div>
 
             <div class="video-container">
-                <div class="video-box" id="videoBox">
-                    <video id="heroVideo" class="uploaded-video" autoplay loop muted playsinline>
-                        <source src="videos/Simulator%20Screen%20Recording%20-%20iPhone%2017%20-%202026-04-25%20at%2018.46.48.mp4" type="video/mp4">
-                        Your browser does not support the video tag.
-                    </video>
+                <div class="slideshow-container">
+                    <div class="slideshow" id="heroSlideshow">
+                        <!-- Original 9 screenshots -->
+                        <div class="slide active">
+                            <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.08.21.png" alt="Guardianly Login Screen">
+                        </div>
+                        <div class="slide">
+                            <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.08.25.png" alt="Guardianly Map View">
+                        </div>
+                        <div class="slide">
+                            <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.08.30.png" alt="Guardianly Map Legend">
+                        </div>
+                        <div class="slide">
+                            <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.08.49.png" alt="Guardianly Alerts">
+                        </div>
+                        <div class="slide">
+                            <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.09.06.png" alt="Guardianly AI Analysis">
+                        </div>
+                        <div class="slide">
+                            <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.09.23.png" alt="Guardianly Account Settings">
+                        </div>
+                        <div class="slide">
+                            <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.09.31.png" alt="Guardianly Saved Alerts">
+                        </div>
+                        <div class="slide">
+                            <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.09.37.png" alt="Guardianly Privacy Settings">
+                        </div>
+                        <div class="slide">
+                            <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.09.42.png" alt="Guardianly Policies">
+                        </div>
+                        <!-- NEW screenshots added -->
+                        <div class="slide">
+                            <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.10.01.png" alt="Guardianly Profile Menu">
+                        </div>
+                        <div class="slide">
+                            <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.10.22.png" alt="Guardianly Address Search">
+                        </div>
+                        <div class="slide">
+                            <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.10.31.png" alt="Guardianly Directions">
+                        </div>
+                        <div class="slide">
+                            <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.10.43.png" alt="Guardianly Route Results Map">
+                        </div>
+                        <div class="slide">
+                            <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.10.46.png" alt="Guardianly Turn by Turn">
+                        </div>
+                        <div class="slide">
+                            <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.11.13.png" alt="Guardianly Sign Up">
+                        </div>
+                    </div>
+                    <div class="slideshow-controls" id="slideshowControls"></div>
                 </div>
                 <p class="video-caption">Guardianly in action - Real-time safety alerts and navigation</p>
             </div>
@@ -1054,83 +936,126 @@
         <h2 class="section-title">Key Features <span style="font-size: 1rem; color: #667eea;">✨ Hover any screenshot to learn more</span></h2>
         <p class="section-subtitle">Each screenshot reveals its feature — just hover to see details</p>
         
+        <div class="scroll-indicator">
+            <span class="scroll-hint">← Drag or scroll to explore →</span>
+        </div>
+        
         <div class="collage-container">
+            <div class="fade-overlay left"></div>
             <div class="collage-wrapper" id="collageWrapperIntegrated">
-                <div class="fade-overlay left"></div>
                 <div class="collage-grid" id="collageGridIntegrated">
-                    <!-- Feature 1: Real-Time Alerts -->
+                    
+                    
+                    <!-- Feature 3: Map View -->
                     <div class="collage-item large">
-                        <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2018.16.40.jpeg" 
-                             alt="Home screen" 
-                             onerror="this.src='https://placehold.co/400x600/667eea/white?text=Map+View'">
-                        <div class="collage-label">Map View</div>
+                        <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.08.25.png" alt="Map View">
+                        <div class="collage-label">Interactive Map</div>
+                        <div class="feature-description-overlay">
+                            <div class="feature-description-content">
+                                <div class="feature-desc-icon">🗺️</div>
+                                <h4>Interactive Map</h4>
+                                <p>Real-time hazard visualization on an interactive map. See nearby incidents, police activity, and emergency situations instantly.</p>
+                                <div class="feature-tag">Real-time • Visual • Accurate</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Feature 4: Map Legend -->
+                    <div class="collage-item large">
+                        <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.08.30.png" alt="Map Legend">
+                        <div class="collage-label">Color-Coded Legend</div>
+                        <div class="feature-description-overlay">
+                            <div class="feature-description-content">
+                                <div class="feature-desc-icon">🎨</div>
+                                <h4>Color-Coded Hazards</h4>
+                                <p>Easy-to-understand color coding for different hazard types: Fire (Red), Police (Blue), Medical (Green), Warnings (Yellow).</p>
+                                <div class="feature-tag">Visual • Intuitive • Clear</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Feature 5: Alert Details -->
+                    <div class="collage-item large">
+                        <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.08.49.png" alt="Alert Details">
+                        <div class="collage-label">Alert Details</div>
                         <div class="feature-description-overlay">
                             <div class="feature-description-content">
                                 <div class="feature-desc-icon">🚨</div>
-                                <h4>Real-Time Alerts</h4>
-                                <p>Live hazard notifications appear directly on your map as you navigate. Get instant updates about emergencies in your area — floods, fires, police activity, and more.</p>
-                                <div class="feature-tag">Instant • Local • Actionable</div>
+                                <h4>Detailed Alerts</h4>
+                                <p>Comprehensive alert information including type, severity, location, and recommended actions. View on map or get more details.</p>
+                                <div class="feature-tag">Detailed • Actionable • Clear</div>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Feature 2: Saved Alerts - VIDEO VERSION -->
-                    <div class="collage-item medium">
-                        <video class="collage-video" autoplay loop muted playsinline>
-                            <source src="videos/Simulator%20Screen%20Recording%20-%20iPhone%2017%20-%202026-04-20%20at%2021.13.19.mp4" 
-                            type="video/mp4">
-                            Your browser does not support the video tag.
-                        </video>
-                        <div class="collage-label">Saved Alerts</div>
-                        <div class="feature-description-overlay">
-                            <div class="feature-description-content">
-                                <div class="feature-desc-icon">🔖</div>
-                                <h4>Saved Alerts</h4>
-                                <p>Save alerts for future awareness. Bookmark important safety information and monitor situations that matter to you.</p>
-                                <div class="feature-tag">Bookmark • Monitor • Protect</div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- Feature 3: AI-Powered -->
-                    <div class="collage-item medium">
-                        <video class="collage-video" autoplay loop muted playsinline>
-                            <source src="videos/Simulator%20Screen%20Recording%20-%20iPhone%2017%20-%202026-04-25%20at%2018.17.59.mp4" type="video/mp4">
-                            Your browser does not support the video tag.
-                        </video>
-                        <div class="collage-label">AI Alert</div>
+                    <!-- Feature 6: AI Analysis -->
+                    <div class="collage-item large">
+                        <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.09.06.png" alt="AI Analysis">
+                        <div class="collage-label">AI Analysis</div>
                         <div class="feature-description-overlay">
                             <div class="feature-description-content">
                                 <div class="feature-desc-icon">🤖</div>
                                 <h4>AI-Powered Analysis</h4>
-                                <p>Smart AI analyzes threats and provides intelligent, context-aware recommendations. Our RAG engine cross-references live data with safety playbooks.</p>
+                                <p>Smart AI analyzes threats and provides intelligent, context-aware recommendations. Get personalized safety guidance based on real-time data.</p>
                                 <div class="feature-tag">Smart • Predictive • Adaptive</div>
                             </div>
                         </div>
                     </div>
                     
-                    <!-- Feature 4: Navigation -->
-                    <div class="collage-item small">
-                        <video class="collage-video" autoplay loop muted playsinline>
-                            <source src="videos/Simulator%20Screen%20Recording%20-%20iPhone%2017%20-%202026-04-25%20at%2018.21.57.mp4" type="video/mp4">
-                            Your browser does not support the video tag.
-                        </video>
-                        <div class="collage-label">Safe Route</div>
+                    <!-- Feature 7: Navigation / Directions -->
+                    <div class="collage-item large">
+                        <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.10.31.png" alt="Directions">
+                        <div class="collage-label">Smart Navigation</div>
                         <div class="feature-description-overlay">
                             <div class="feature-description-content">
                                 <div class="feature-desc-icon">🧭</div>
                                 <h4>Smart Navigation</h4>
-                                <p>Navigate anywhere in the US with confidence. Automatically suggests safer alternatives when hazards appear on your path.</p>
-                                <div class="feature-tag">Turn-by-turn • Safe Routing • Real-time</div>
+                                <p>Get turn-by-turn directions with multiple transport modes: Walk, Drive, Transit, or Bike.</p>
+                                <div class="feature-tag">Multi-modal • Safe Routes • Real-time</div>
                             </div>
                         </div>
                     </div>
+                    
+                    <!-- Feature 8: Route Results with Map -->
+                    <div class="collage-item large">
+                        <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.10.43.png" alt="Route Results">
+                        <div class="collage-label">Route Planning</div>
+                        <div class="feature-description-overlay">
+                            <div class="feature-description-content">
+                                <div class="feature-desc-icon">📍</div>
+                                <h4>Route Planning</h4>
+                                <p>View detailed route results with duration and arrival time.</p>
+                                <div class="feature-tag">Efficient • Clear • Detailed</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Feature 9: Turn by Turn Directions -->
+                    <div class="collage-item large">
+                        <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.10.46.png" alt="Turn by Turn">
+                        <div class="collage-label">Turn by Turn</div>
+                        <div class="feature-description-overlay">
+                            <div class="feature-description-content">
+                                <div class="feature-desc-icon">🚗</div>
+                                <h4>Step-by-Step Directions</h4>
+                                <p>Follow precise turn-by-turn instructions with distance tracking. Never miss a turn with clear, easy-to-follow guidance.</p>
+                                <div class="feature-tag">Precise • Reliable • Easy</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    
                 </div>
-                <div class="fade-overlay right"></div>
             </div>
+            <div class="fade-overlay right"></div>
         </div>
         
-        <p class="collage-note">← Drag to explore → &nbsp;&nbsp;|&nbsp;&nbsp; <strong>Hover over any screenshot</strong> to see detailed feature information &nbsp;&nbsp;|&nbsp;&nbsp; Each screenshot = one key feature</p>
+        <div class="gallery-nav">
+            <button class="gallery-nav-btn" id="scrollLeftBtn">← Scroll Left</button>
+            <button class="gallery-nav-btn" id="scrollRightBtn">Scroll Right →</button>
+        </div>
+        
+        <p class="collage-note"><strong>💡 Tip:</strong> Drag horizontally with your mouse, use the scrollbar, or click the buttons above to see all 12+ features</p>
     </section>
 
     <!-- Team -->
@@ -1138,17 +1063,23 @@
         <h2 class="section-title">Meet the Team</h2>
         <div class="team-grid">
             <div class="team-card fade-up">
-                <div class="team-avatar">A</div>
+                <div class="team-avatar">
+                    <img src="pictures/unnamed_5.jpeg" alt="Anthony Silva" class="avatar-img">
+                </div>
                 <h3>Anthony Silva</h3>
                 <p>Project Lead & Developer</p>
                 <a href="https://github.com/wreckinaj" target="_blank" class="github-btn">GitHub</a>
             </div>
+            
             <div class="team-card fade-up">
-                <div class="team-avatar">D</div>
+                <div class="team-avatar">
+                    <img src="pictures/image.jpeg" alt="Devin Shook" class="avatar-img">
+                </div>
                 <h3>Devin Shook</h3>
                 <p>UX/UI & Backend</p>
                 <a href="https://github.com/dshook55" target="_blank" class="github-btn">GitHub</a>
             </div>
+            
             <div class="team-card fade-up">
                 <div class="team-avatar">
                     <img src="pictures/1735431796836_copy.jpeg" alt="Feifei Huang" class="avatar-img">
@@ -1170,7 +1101,7 @@
                     <h3>GitHub Issues</h3>
                     <p>Report bugs or request features</p>
                 </a>
-                <a href="mailto:guardianly@example.com" class="contact-card fade-up">
+                <a href="mailto:guardianlycs@gmail.com" class="contact-card fade-up">
                     <div class="contact-icon">📧</div>
                     <h3>Email Us</h3>
                     <p>guardianlycs@gmail.com</p>
@@ -1184,73 +1115,64 @@
     </footer>
 
     <script>
-        // Video functions
-        function previewVideo(event) {
-            const file = event.target.files[0];
-            if (file) {
-                const videoElement = document.getElementById('uploadedVideo');
-                const videoSource = document.getElementById('videoSource');
-                const placeholder = document.getElementById('videoPlaceholder');
-                const youtubeEmbed = document.getElementById('youtubeEmbed');
-                youtubeEmbed.style.display = 'none';
-                videoSource.src = URL.createObjectURL(file);
-                videoElement.load();
-                videoElement.style.display = 'block';
-                placeholder.style.display = 'none';
-            }
+        // Slideshow functionality
+        const slides = document.querySelectorAll('.slide');
+        const controlsContainer = document.getElementById('slideshowControls');
+        let currentSlide = 0;
+        let slideInterval;
+
+        // Create dots
+        if (slides.length > 0 && controlsContainer) {
+            slides.forEach((_, index) => {
+                const dot = document.createElement('div');
+                dot.classList.add('slide-dot');
+                if (index === 0) dot.classList.add('active');
+                dot.addEventListener('click', () => goToSlide(index));
+                controlsContainer.appendChild(dot);
+            });
         }
 
-        function showYouTubePrompt() {
-            const existingOverlay = document.querySelector('.youtube-prompt-overlay');
-            if (existingOverlay) existingOverlay.remove();
-            const overlay = document.createElement('div');
-            overlay.className = 'youtube-prompt-overlay';
-            overlay.innerHTML = `
-                <div class="youtube-prompt-card">
-                    <h3>📺 Embed YouTube Video</h3>
-                    <p>Paste a YouTube link</p>
-                    <input type="text" id="youtubeUrlInput" placeholder="https://youtu.be/..." autocomplete="off">
-                    <div>
-                        <button onclick="embedYouTubeFromPrompt()">Embed</button>
-                        <button class="cancel-btn" onclick="this.closest('.youtube-prompt-overlay').remove()">Cancel</button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(overlay);
-            setTimeout(() => { const input = document.getElementById('youtubeUrlInput'); if (input) input.focus(); }, 100);
+        const dots = document.querySelectorAll('.slide-dot');
+
+        function goToSlide(index) {
+            if (!slides.length) return;
+            slides[currentSlide].classList.remove('active');
+            if (dots[currentSlide]) dots[currentSlide].classList.remove('active');
+            currentSlide = index;
+            slides[currentSlide].classList.add('active');
+            if (dots[currentSlide]) dots[currentSlide].classList.add('active');
         }
 
-        function embedYouTubeFromPrompt() {
-            const urlInput = document.getElementById('youtubeUrlInput');
-            let url = urlInput.value.trim();
-            if (!url) return;
-            let videoId = null;
-            const patterns = [/(?:youtu\.be\/)([a-zA-Z0-9_-]+)/, /(?:youtube\.com\/watch\?v=)([a-zA-Z0-9_-]+)/, /(?:youtube\.com\/embed\/)([a-zA-Z0-9_-]+)/];
-            for (const pattern of patterns) {
-                const match = url.match(pattern);
-                if (match) { videoId = match[1]; break; }
-            }
-            if (videoId) { embedYouTube(videoId); } 
-            else { alert('Invalid YouTube URL'); }
+        function nextSlide() {
+            if (!slides.length) return;
+            let next = (currentSlide + 1) % slides.length;
+            goToSlide(next);
         }
 
-        function embedYouTube(videoId) {
-            const videoElement = document.getElementById('uploadedVideo');
-            const placeholder = document.getElementById('videoPlaceholder');
-            const youtubeEmbed = document.getElementById('youtubeEmbed');
-            const youtubeFrame = document.getElementById('youtubeFrame');
-            videoElement.style.display = 'none';
-            placeholder.style.display = 'none';
-            youtubeFrame.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&controls=1&rel=0`;
-            youtubeEmbed.style.display = 'block';
-            const overlay = document.querySelector('.youtube-prompt-overlay');
-            if (overlay) overlay.remove();
+        // Start slideshow
+        function startSlideshow() {
+            if (slides.length <= 1) return;
+            slideInterval = setInterval(nextSlide, 3000);
         }
 
-        // Integrated Gallery drag
+        // Stop slideshow on hover
+        const slideshowContainer = document.querySelector('.slideshow-container');
+        if (slideshowContainer) {
+            slideshowContainer.addEventListener('mouseenter', () => {
+                clearInterval(slideInterval);
+            });
+            slideshowContainer.addEventListener('mouseleave', () => {
+                startSlideshow();
+            });
+        }
+
+        startSlideshow();
+
+        // Integrated Gallery drag and scroll functionality
         const integratedWrapper = document.getElementById('collageWrapperIntegrated');
         let isDownIntegrated = false;
         let startXIntegrated, scrollLeftIntegrated;
+        
         if (integratedWrapper) {
             integratedWrapper.addEventListener('mousedown', (e) => {
                 isDownIntegrated = true;
@@ -1258,14 +1180,36 @@
                 startXIntegrated = e.pageX - integratedWrapper.offsetLeft;
                 scrollLeftIntegrated = integratedWrapper.scrollLeft;
             });
-            integratedWrapper.addEventListener('mouseleave', () => { isDownIntegrated = false; integratedWrapper.style.cursor = 'grab'; });
-            integratedWrapper.addEventListener('mouseup', () => { isDownIntegrated = false; integratedWrapper.style.cursor = 'grab'; });
+            integratedWrapper.addEventListener('mouseleave', () => { 
+                isDownIntegrated = false; 
+                integratedWrapper.style.cursor = 'grab'; 
+            });
+            integratedWrapper.addEventListener('mouseup', () => { 
+                isDownIntegrated = false; 
+                integratedWrapper.style.cursor = 'grab'; 
+            });
             integratedWrapper.addEventListener('mousemove', (e) => {
                 if (!isDownIntegrated) return;
                 e.preventDefault();
                 const x = e.pageX - integratedWrapper.offsetLeft;
                 const walk = (x - startXIntegrated) * 1.5;
                 integratedWrapper.scrollLeft = scrollLeftIntegrated - walk;
+            });
+        }
+
+        // Navigation buttons for gallery
+        const scrollLeftBtn = document.getElementById('scrollLeftBtn');
+        const scrollRightBtn = document.getElementById('scrollRightBtn');
+        
+        if (scrollLeftBtn && integratedWrapper) {
+            scrollLeftBtn.addEventListener('click', () => {
+                integratedWrapper.scrollBy({ left: -300, behavior: 'smooth' });
+            });
+        }
+        
+        if (scrollRightBtn && integratedWrapper) {
+            scrollRightBtn.addEventListener('click', () => {
+                integratedWrapper.scrollBy({ left: 300, behavior: 'smooth' });
             });
         }
 
