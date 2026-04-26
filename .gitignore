@@ -45,4 +45,5 @@ app.*.map.json
 /android/app/release
 
 # enviorment variables
-#.env
+#.envvideos/*.mp4
+videos/
