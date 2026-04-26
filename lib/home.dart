@@ -29,7 +29,6 @@ class HomeState extends State<Home> {
   
   LatLng? _currentP;
   List<LocalAlert> _alerts = [];
-  bool _isLoading = false; 
   
   StreamSubscription<Position>? _positionStream;
   StreamSubscription<QuerySnapshot>? _alertsSubscription;
@@ -64,6 +63,7 @@ class HomeState extends State<Home> {
       _listenToDatabaseAlerts();
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
         final LatLng? navTarget = ModalRoute.of(context)?.settings.arguments as LatLng?;
         if (navTarget != null) {
           mapController.move(navTarget, 15.0);
@@ -88,7 +88,7 @@ class HomeState extends State<Home> {
         .snapshots()
         .listen((snapshot) {
       final dbAlerts = snapshot.docs.map((doc) {
-        return LocalAlert.fromJson(doc.data() as Map<String, dynamic>);
+        return LocalAlert.fromJson(doc.data());
       }).toList();
 
       if (mounted) {
@@ -143,7 +143,7 @@ class HomeState extends State<Home> {
 
   void _showReportDialog(LatLng location) {
     final messageController = TextEditingController();
-    String selectedType = _hazardOptions[0]; // Default to first hazard
+    String selectedType = _hazardOptions[0]; 
 
     showDialog(
       context: context,
@@ -197,7 +197,9 @@ class HomeState extends State<Home> {
                   'timestamp': FieldValue.serverTimestamp(),
                   'reportedBy': FirebaseAuth.instance.currentUser?.uid,
                 });
-                if (mounted) Navigator.pop(context);
+                if (mounted) {
+                  Navigator.pop(context);
+                }
               },
               child: const Text('Report'),
             ),

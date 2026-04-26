@@ -4,13 +4,6 @@ import 'Components/searchbar.dart';
 import '/Components/menu.dart';
 import 'alertdetails.dart';
 import 'models/local_alert.dart';
-import 'package:provider/provider.dart';
-import 'package:latlong2/latlong.dart';
-import 'Components/searchbar.dart';
-import '/Components/menu.dart';
-import 'alertdetails.dart';
-import '/models/local_alert.dart';
-import 'saved_alerts_provider.dart';
 
 class Alert extends StatefulWidget {
   const Alert({super.key});
