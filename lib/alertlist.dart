@@ -25,14 +25,11 @@ class _AlertState extends State<Alert> {
           // Real-time Database List
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
-              // Removed .orderBy('timestamp') because some documents might be missing that field,
-              // which causes them to be hidden when sorting is applied.
               stream: FirebaseFirestore.instance
                   .collection('alerts')
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
-                  debugPrint("Firestore Error: ${snapshot.error}");
                   return const Center(child: Text("Error loading alerts"));
                 }
                 if (snapshot.connectionState == ConnectionState.waiting) {
