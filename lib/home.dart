@@ -132,8 +132,10 @@ class HomeState extends State<Home> {
             content: Text("WARNING: Approaching ${alert.title}"),
             backgroundColor: alert.color,
             action: SnackBarAction(label: 'VIEW', textColor: Colors.white, onPressed: () {
-              mapController.move(alert.position, 15.0);
-              _showAlertDetails(alert);
+              if (mounted) {
+                mapController.move(alert.position, 15.0);
+                _showAlertDetails(alert);
+              }
             }),
           ),
         );
