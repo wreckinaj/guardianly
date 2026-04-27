@@ -4,13 +4,12 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
-import '/alertdetails.dart';
-import '/models/local_alert.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'alertdetails.dart';
+import 'models/local_alert.dart';
 import '/services/notification_service.dart';
-// import '/services/api_service.dart';
 
 // Components
 import '/Components/searchbar.dart';
@@ -25,241 +24,208 @@ class Home extends StatefulWidget {
 }
 
 class HomeState extends State<Home> {
-  // --- State Variables ---
   final MapController mapController = MapController();
   final String mapboxToken = dotenv.env['MAPBOX_ACCESS_TOKEN'] ?? '';
   
   LatLng? _currentP;
   List<LocalAlert> _alerts = [];
   
-  // Async & Streams
   StreamSubscription<Position>? _positionStream;
-  Timer? _pollingTimer;
+  StreamSubscription<QuerySnapshot>? _alertsSubscription;
 
-  // --- Mock Data (Fallback) ---
-  final List<LocalAlert> _mockAlerts = [
-    LocalAlert(
-      position: const LatLng(44.567, -123.278),
-      title: "Fire Alert",
-      description: "Small brush fire reported near the stadium.",
-      hazardType: "wildfire",
-      icon: Icons.local_fire_department,
-      color: Colors.red,
-    ),
-    LocalAlert(
-      position: const LatLng(44.564, -123.261),
-      title: "Police Presence",
-      description: "Police investigating a minor incident downtown.",
-      hazardType: "police_activity",
-      icon: Icons.security,
-      color: Colors.blue,
-    ),
-    LocalAlert(
-      position: const LatLng(44.588, -123.275),
-      title: "Medical Emergency",
-      description: "Ambulance on site near the medical center.",
-      hazardType: "severe_weather",
-      icon: Icons.add_box,
-      color: Colors.green,
-    ),
-    LocalAlert(
-      position: const LatLng(44.553, -123.270),
-      title: "General Warning",
-      description: "Caution: Slippery conditions in Avery Park.",
-      hazardType: "road_closure",
-      icon: Icons.warning,
-      color: Colors.amber,
-    ),
+  // List of hazards derived from mock_playbook filenames for the dropdown
+  final List<String> _hazardOptions = [
+    "flood", "building_fire", "wildfire", "hurricane", 
+    "tornado", "active_shooter", "police_activity", 
+    "road_closure", "severe_weather", "earthquake", 
+    "hazmat_spill", "gas_leak", "volcanic_eruption", "tsunami",
+    "power_outage", "icy_roads", "heavy_traffic", 
+    "construction_zone", "low_visibility", "wildlife",
+    "civil_unrest", "transit_disruption", "extreme_heat", "air_quality",
+    "blizzard", "flooded_pathway",
+    "suspicious_package", "sinkhole", "downed_power_lines"
   ];
 
   @override
   void initState() {
     super.initState();
-    
-    // 1. Initialize data
-    _alerts = _mockAlerts; 
+    _initAsync();
+  }
 
-    // 2. Request Push Notification permissions & save token
-    NotificationService().initialize(); 
-    
-    // 3. Start GPS tracking
-    _startLocationUpdates();
-    
-    // 4. Fetch the live hazards from backend
-    _fetchAlerts(); 
-    
-    // 5. Set up Polling (every 60 seconds)
-    _pollingTimer = Timer.periodic(const Duration(seconds: 60), (_) => _fetchAlerts());
+  Future<void> _initAsync() async {
+    try {
+      if (Firebase.apps.isEmpty) {
+        await Firebase.initializeApp();
+      }
+      
+      NotificationService().initialize(); 
+      _startLocationUpdates();
+      _listenToDatabaseAlerts();
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        final LatLng? navTarget = ModalRoute.of(context)?.settings.arguments as LatLng?;
+        if (navTarget != null) {
+          mapController.move(navTarget, 15.0);
+        }
+      });
+    } catch (e) {
+      debugPrint("Initialization failed: $e");
+    }
   }
 
   @override
   void dispose() {
     _positionStream?.cancel();
-    _pollingTimer?.cancel();
+    _alertsSubscription?.cancel();
     mapController.dispose();
     super.dispose();
   }
 
-  // --- Logic: Location Tracking ---
-  Future<void> _startLocationUpdates() async {
-    bool serviceEnabled;
-    LocationPermission permission;
+  void _listenToDatabaseAlerts() {
+    _alertsSubscription = FirebaseFirestore.instance
+        .collection('alerts')
+        .snapshots()
+        .listen((snapshot) {
+      final dbAlerts = snapshot.docs.map((doc) {
+        return LocalAlert.fromJson(doc.data());
+      }).toList();
 
-    // Check Service
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (mounted) {
+        setState(() {
+          _alerts = dbAlerts;
+        });
+      }
+    });
+  }
+
+  Future<void> _startLocationUpdates() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) return;
 
-    // Check Permissions
-    permission = await Geolocator.checkPermission();
+    LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
       if (permission == LocationPermission.denied) return;
     }
-    if (permission == LocationPermission.deniedForever) return;
 
-    // Start Stream
-    const LocationSettings locationSettings = LocationSettings(
-      accuracy: LocationAccuracy.high,
-      distanceFilter: 10, // Only update if moved 10 meters
-    );
-
-    _positionStream = Geolocator.getPositionStream(locationSettings: locationSettings)
-        .listen((Position position) {
-      
-      setState(() {
-        _currentP = LatLng(position.latitude, position.longitude);
-      });
-
-      // Move map only on first fix or valid update (optional)
-      // mapController.move(_currentP!, 15.0); 
-
-      // Check proximity to any active alerts
-      _checkProximityToHazards(position);
+    _positionStream = Geolocator.getPositionStream(
+      locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 10)
+    ).listen((Position position) {
+      if (mounted) {
+        setState(() => _currentP = LatLng(position.latitude, position.longitude));
+        _checkProximityToHazards(position);
+      }
     });
   }
 
-  // --- Logic: Alert Proximity ---
   void _checkProximityToHazards(Position userPos) {
     for (var alert in _alerts) {
-      double distanceInMeters = Geolocator.distanceBetween(
-        userPos.latitude,
-        userPos.longitude,
-        alert.position.latitude,
-        alert.position.longitude,
+      double distance = Geolocator.distanceBetween(
+        userPos.latitude, userPos.longitude,
+        alert.position.latitude, alert.position.longitude,
       );
 
-      // Warning Threshold: 500 meters
-      if (distanceInMeters < 500) {
-        // Debounce logic could go here to prevent spamming
+      if (distance < 500) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              "WARNING: Approaching ${alert.title} (${distanceInMeters.toStringAsFixed(0)}m)",
-              style: const TextStyle(fontWeight: FontWeight.bold),
-            ),
+            content: Text("WARNING: Approaching ${alert.title}"),
             backgroundColor: alert.color,
-            duration: const Duration(seconds: 4),
-            action: SnackBarAction(
-              label: 'VIEW',
-              textColor: Colors.white,
-              onPressed: () => _showAlertDetails(alert),
-            ),
+            action: SnackBarAction(label: 'VIEW', textColor: Colors.white, onPressed: () {
+              if (mounted) {
+                mapController.move(alert.position, 15.0);
+                _showAlertDetails(alert);
+              }
+            }),
           ),
         );
       }
     }
   }
 
-  // --- Logic: Fetch Alerts from Backend ---
-   Future<void> _fetchAlerts() async {
-      // Get the base URL from your .env file (e.g., your Cloud Run URL or http://10.0.2.2:5000 for local Android)
-      final String baseUrl = 'https://guardianly-backend-34405523525.us-west1.run.app';
-      // final String baseUrl = ApiService.baseUrl;
-      if (baseUrl.isEmpty) {
-        debugPrint("Warning: API_URL not found");
-        return;
-      }
+  void _showReportDialog(LatLng location) {
+    final messageController = TextEditingController();
+    String selectedType = _hazardOptions[0]; 
 
-      final String apiUrl = "$baseUrl/api/notifications";
-
-      try {
-        // 1. Get the current user's Firebase token
-        final user = FirebaseAuth.instance.currentUser;
-        if (user == null) {
-          debugPrint("User not logged in, cannot fetch alerts.");
-          return;
-        }
-        final token = await user.getIdToken();
-
-        // 2. Make the authenticated GET request
-        final response = await http.get(
-          Uri.parse(apiUrl),
-          headers: {
-            'Authorization': 'Bearer $token', // Required by server.py @token_required
-            'Content-Type': 'application/json',
-          },
-        );
-
-      // 3. Parse and map the response
-      if (response.statusCode == 200) {
-          final Map<String, dynamic> data = json.decode(response.body);
-
-          if (data['status'] == 'success') {
-            final List<dynamic> fetchedNotifications = data['notifications'];
-            if (mounted) {
-              setState(() {
-                _alerts = fetchedNotifications.map((json) {
-                  // Map the backend JSON to your LocalAlert model
-                  return LocalAlert(
-                    // NOTE: Your backend doesn't save lat/lng yet, using fallback coordinates
-                    position: LatLng(json['lat'] ?? 44.564, json['lng'] ?? -123.261), 
-                    title: json['title'] ?? 'Alert',
-                    description: json['message'] ?? '',
-                    hazardType: json['hazardType'] ?? 'general',
-                    icon: Icons.warning, 
-                    color: Colors.red,
-                  );
-                }).toList();
-              });
-            }
-          }
-      } else {
-        debugPrint("Failed to fetch alerts. Status Code: ${response.statusCode}");
-        _fallbackToMocks();
-      }
-    } catch (e) {
-      debugPrint("Error fetching alerts: $e");
-      _fallbackToMocks();
-    }
-  }
-
-  // Helper method to keep your map populated if the server is offline during dev
-  void _fallbackToMocks() {
-    if (mounted) {
-      setState(() {
-        _alerts = _mockAlerts; 
-      });
-    }
-  }
-
-  // --- UI: Alert Modal ---
-  void _showAlertDetails(LocalAlert alert) {
-    // Instead of a simple bottom sheet, push the full AlertDetails screen!
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => AlertDetails(
-          hazardType: alert.hazardType, // Passes 'wildfire', etc. to the AI
-          lat: alert.position.latitude,
-          lng: alert.position.longitude,
-          title: alert.title,
-          locationName: alert.description, 
+    showDialog(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Report Danger'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text("Select Danger Type:", style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                DropdownButton<String>(
+                  value: selectedType,
+                  isExpanded: true,
+                  items: _hazardOptions.map((String value) {
+                    return DropdownMenuItem<String>(
+                      value: value,
+                      child: Text(value.replaceAll('_', ' ').toUpperCase()),
+                    );
+                  }).toList(),
+                  onChanged: (val) => setDialogState(() => selectedType = val!),
+                ),
+                const SizedBox(height: 16),
+                const Text("Description (Optional):", style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                TextField(
+                  controller: messageController,
+                  decoration: const InputDecoration(
+                    hintText: 'e.g. Near the main entrance',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 3,
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: () async {
+                final messenger = ScaffoldMessenger.of(dialogContext);
+                final navigator = Navigator.of(dialogContext);
+                
+                String alertTitle = selectedType.replaceAll('_', ' ').toUpperCase();
+                
+                await FirebaseFirestore.instance.collection('alerts').add({
+                  'title': alertTitle,
+                  'message': messageController.text,
+                  'hazardType': selectedType,
+                  'lat': location.latitude,
+                  'lng': location.longitude,
+                  'timestamp': FieldValue.serverTimestamp(),
+                  'reportedBy': FirebaseAuth.instance.currentUser?.uid,
+                });
+                
+                if (navigator.mounted) {
+                  navigator.pop();
+                  messenger.showSnackBar(const SnackBar(content: Text("Alert reported!")));
+                }
+              },
+              child: const Text('Report'),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  // --- UI: Build ---
+  void _showAlertDetails(LocalAlert alert) {
+    Navigator.push(context, MaterialPageRoute(builder: (context) => AlertDetails(
+      hazardType: alert.hazardType,
+      lat: alert.position.latitude,
+      lng: alert.position.longitude,
+      title: alert.title,
+      locationName: alert.description, 
+    )));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -281,80 +247,43 @@ class HomeState extends State<Home> {
                       options: MapOptions(
                         initialCenter: _currentP ?? const LatLng(44.5646, -123.2620),
                         initialZoom: 14.0,
-                        // Prevent rotation for simpler navigation UI
                         interactionOptions: const InteractionOptions(flags: InteractiveFlag.all & ~InteractiveFlag.rotate),
+                        onLongPress: (tapPosition, latLng) => _showReportDialog(latLng),
                       ),
                       children: [
                         TileLayer(
-                          urlTemplate:
-                              'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token={accessToken}',
-                          additionalOptions: {
-                            'accessToken': mapboxToken,
-                          },
+                          urlTemplate: 'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token={accessToken}',
+                          additionalOptions: {'accessToken': mapboxToken},
                         ),
-                        // User Location Marker
                         if (_currentP != null)
-                          MarkerLayer(
-                            markers: [
-                              Marker(
-                                point: _currentP!,
-                                width: 40,
-                                height: 40,
-                                child: const Icon(Icons.person_pin_circle, color: Colors.blue, size: 40),
-                              ),
-                            ],
-                          ),
-                        // Hazard Markers
+                          MarkerLayer(markers: [
+                            Marker(point: _currentP!, width: 40, height: 40, child: const Icon(Icons.person_pin_circle, color: Colors.blue, size: 40)),
+                          ]),
                         MarkerLayer(
-                          markers: _alerts.map((alert) {
-                            return Marker(
-                              point: alert.position,
-                              width: 40,
-                              height: 40,
-                              child: GestureDetector(
-                                onTap: () => _showAlertDetails(alert),
-                                child: Container(
-                                  decoration: BoxDecoration(
-                                    color: Colors.white,
-                                    shape: BoxShape.circle,
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withValues(alpha: 0.2),
-                                        blurRadius: 4,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
-                                  child: Icon(alert.icon, color: alert.color, size: 28),
+                          markers: _alerts.map((alert) => Marker(
+                            point: alert.position,
+                            width: 40, height: 40,
+                            child: GestureDetector(
+                              onTap: () => _showAlertDetails(alert),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  shape: BoxShape.circle,
+                                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 4, offset: const Offset(0, 2))],
                                 ),
+                                child: Icon(alert.icon, color: alert.color, size: 28),
                               ),
-                            );
-                          }).toList(),
+                            ),
+                          )).toList(),
                         ),
                       ],
                     ),
                   ),
-                  // Map Legend / Key
-                  const Positioned(
-                    bottom: 16,
-                    left: 16,
-                    child: MapKey(),
-                  ),
-                  // Recenter Button
-                  Positioned(
-                    bottom: 16,
-                    right: 16,
-                    child: FloatingActionButton(
-                      mini: true,
-                      onPressed: () {
-                         if (_currentP != null) {
-                           mapController.move(_currentP!, 15.0);
-                         }
-                      },
-                      backgroundColor: Colors.white,
-                      child: const Icon(Icons.my_location, color: Colors.blue),
-                    ),
-                  ),
+                  const Positioned(bottom: 16, left: 16, child: MapKey()),
+                  Positioned(bottom: 16, right: 16, child: FloatingActionButton(
+                    mini: true, onPressed: () { if (_currentP != null) mapController.move(_currentP!, 15.0); },
+                    backgroundColor: Colors.white, child: const Icon(Icons.my_location, color: Colors.blue),
+                  )),
                 ],
               ),
             ),

@@ -1,4 +1,3 @@
-// lib/models/local_alert.dart
 import 'package:flutter/material.dart';
 import 'package:latlong2/latlong.dart';
 
@@ -20,13 +19,49 @@ class LocalAlert {
   });
 
   factory LocalAlert.fromJson(Map<String, dynamic> json) {
+    // Correctly parse backend fields 'lat' and 'lng'
+    double lat = (json['lat'] as num?)?.toDouble() ?? 0.0;
+    double lng = (json['lng'] as num?)?.toDouble() ?? 0.0;
+    
+    String type = json['hazardType'] ?? 'general';
+    
+    // Map the string type to real Icons and Colors for the Map
+    IconData icon;
+    Color color;
+    
+    switch (type) {
+      case 'wildfire':
+        icon = Icons.local_fire_department;
+        color = Colors.red;
+        break;
+      case 'police_activity':
+        icon = Icons.security;
+        color = Colors.blue;
+        break;
+      case 'medical_emergency':
+        icon = Icons.add_box;
+        color = Colors.green;
+        break;
+      case 'severe_weather':
+        icon = Icons.warning;
+        color = Colors.amber;
+        break;
+      case 'road_closure':
+        icon = Icons.directions_car;
+        color = Colors.purple;
+        break;
+      default:
+        icon = Icons.warning_amber_rounded;
+        color = Colors.orange;
+    }
+
     return LocalAlert(
-      position: LatLng(json['lat'] ?? 0.0, json['lng'] ?? 0.0),
+      position: LatLng(lat, lng),
       title: json['title'] ?? 'Alert',
-      description: json['message'] ?? '',
-      hazardType: json['hazardType'] ?? 'general', 
-      icon: Icons.warning,
-      color: Colors.red,
+      description: json['message'] ?? '', // Backend uses 'message'
+      hazardType: type,
+      icon: icon,
+      color: color,
     );
   }
 }
