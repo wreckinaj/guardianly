@@ -1,4 +1,8 @@
-HAZARD: Icy Roads (Black Ice).
-Context: Extremely slippery conditions. Surface traction is significantly reduced, increasing stopping distance.
-Recomm: Avoid sudden braking, hard acceleration, or sharp steering movements.
-Action: Reduce speed to half the posted limit. If sliding occurs, steer gently into the skid and avoid slamming on the brakes.
+HAZARD: Icy Roads (Black Ice)
+AI EVALUATION INSTRUCTIONS:
+1. Check details for specific slippery conditions or reports of accidents.
+2. ACTIONABLE DIRECTIVES:
+   - Severity: Moderate
+   - Recomm: Advise avoiding sudden braking, hard acceleration, or sharp steering movements. Reduce speed to half the posted limit.
+3. CONTINGENCY (If sliding/skidding is a high risk):
+   - Action: Instruct the user that if sliding occurs, they should steer gently into the skid and avoid slamming on the brakes.

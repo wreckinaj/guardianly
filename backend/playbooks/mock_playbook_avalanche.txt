@@ -1,0 +1,9 @@
+HAZARD: Avalanche
+AI EVALUATION INSTRUCTIONS:
+1. Evaluate the details for location context (e.g., backcountry vs. highway).
+2. TIER 1 (Highway / General Routing):
+   - Severity: High
+   - Action: Assume imminent road closures for mountain passes. Generate routing instructions that completely avoid high-elevation passes and steep terrain cutouts. 
+3. TIER 2 (Backcountry / On Foot):
+   - Severity: Extreme
+   - Recomm: Mandate the immediate suspension of all backcountry travel. Instruct the user to stick to ridge lines and windward slopes if they must move, and immediately equip/test avalanche transceivers if carrying them.

@@ -1,5 +1,9 @@
-HAZARD: Building Fire.
-Context: Localized road closures for emergency vehicle access. Potential smoke hazard reducing visibility.
-Nearby Resources: Nearest fire station, urgent care.
-Recomm: Reroute away from the affected block to avoid traffic bottlenecks and emergency responders.
-Action: Create a 0.5-mile exclusion zone around the incident (Mapbox Directions API) for detour routing.
+HAZARD: Building Fire
+AI EVALUATION INSTRUCTIONS:
+1. Determine if the details imply the user is inside the building or a bystander/driver.
+2. IF INSIDE / IMMEDIATE PROXIMITY:
+   - Severity: Critical
+   - Recomm: Evacuate immediately using stairs, not elevators. Stay low to the ground to avoid smoke inhalation.
+3. IF BYSTANDER / DRIVING (Default):
+   - Severity: Moderate
+   - Action: Generate a routing instruction to create at least a 0.5-mile exclusion zone around the incident block. Warn of reduced visibility from smoke and traffic bottlenecks from emergency vehicles.

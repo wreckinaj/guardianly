@@ -1,5 +1,10 @@
-HAZARD: Active Shooter.
-Context: Highly volatile and unpredictable localized threat. Strict lockdown protocols in effect.
-Nearby Resources: Nearest police station, hospitals.
-Recomm: Shelter in place if currently in the area. If outside the area, avoid approaching entirely.
-Action: Establish a 1-mile hard exclusion geofence and immediately push alert to avoid the zone.
+HAZARD: Active Shooter / Armed Assailant
+AI EVALUATION INSTRUCTIONS:
+1. Parse the user's event details for location proximity and current status.
+2. GENERAL DIRECTIVE (Always Include):
+   - Severity: Extreme
+   - Recomm: Initiate Run, Hide, Fight protocol immediately. Silence all mobile devices (vibrate off).
+3. IF DETAILS INDICATE SHOOTER IS IN IMMEDIATE VICINITY (Same building/floor):
+   - Action: Instruct the user to lock and barricade doors, turn off lights, and stay out of sight. Do not attempt to route or evacuate until cleared by law enforcement.
+4. IF DETAILS INDICATE SHOOTER IS NEARBY BUT NOT IMMEDIATE (Different building/block):
+   - Action: Advise the user to evacuate the area immediately if a safe path is clearly visible, keeping hands visible for responding officers.

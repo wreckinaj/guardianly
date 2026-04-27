@@ -1,5 +1,8 @@
-HAZARD: Road Closure.
-Context: Check Mapbox API for 'road-closure' impact.
-Nearby Resources: Nearest police station.
-Recomm: Suggest detour route (Mapbox Directions API).
-Action: Confirm new route is 100% clear.
+HAZARD: Road Closure
+AI EVALUATION INSTRUCTIONS:
+1. Parse the details for the *cause* of the closure (e.g., accident, weather, construction).
+2. GENERAL DIRECTIVE:
+   - Severity: Low / Moderate (depending on cause)
+   - Recomm: Generate a detour routing instruction to circumvent the closed path.
+3. SECONDARY HAZARD CHECK:
+   - Action: If the details indicate the closure is due to a secondary hazard (like flooding or downed lines), append a strict warning to not bypass barricades or attempt to cross the closed section under any circumstances.

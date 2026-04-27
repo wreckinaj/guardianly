@@ -1,4 +1,8 @@
-HAZARD: Flooded Pathway / Flash Flood.
-Context: Standing or moving water covers the walking path. Water depth is deceptive and often hides open manholes, downed power lines, or sharp debris.
-Recomm: Never walk through moving water. Just six inches of fast-moving water can knock an adult off their feet.
-Action: Turn around and move to higher ground immediately. Reroute your walk to completely avoid the flooded zone.
+HAZARD: Flooded Pathway / Flash Flood
+AI EVALUATION INSTRUCTIONS:
+1. Evaluate details for water movement and pedestrian status.
+2. GENERAL DIRECTIVE:
+   - Severity: High
+   - Recomm: Explicitly warn that water depth is deceptive and often hides open manholes, downed power lines, or sharp debris.
+3. ACTIONABLE DIRECTIVES:
+   - Action: Instruct the user to never walk through moving water (just six inches of fast-moving water can knock an adult off their feet). Turn around, move to higher ground immediately, and reroute to completely avoid the flooded zone.

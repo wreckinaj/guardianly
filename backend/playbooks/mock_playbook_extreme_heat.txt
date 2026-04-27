@@ -1,4 +1,7 @@
-HAZARD: Extreme Heat Warning.
-Context: Dangerously high temperatures increasing the risk of heatstroke and rapid dehydration, especially for pedestrians and cyclists.
-Recomm: Seek air-conditioned shelter immediately. Limit all strenuous outdoor activity.
-Action: Locate the nearest cooling center, library, or public indoor space (Mapbox POI search). Drink water even if you do not feel thirsty.
+HAZARD: Extreme Heat
+AI EVALUATION INSTRUCTIONS:
+1. Read the event description and alert level.
+2. ACTIONABLE DIRECTIVES:
+   - Severity: Watch / High (depending on duration mentioned).
+   - Recomm: Instruct the user to stay hydrated, avoid strenuous outdoor activity during peak sun hours (10 AM - 4 PM), and locate local air-conditioned cooling centers if they lack power or AC.
+   - Cross-Hazard Warning: If the region is also prone to wildfires (check for NASA FIRMS data), append a warning that heat and dry conditions elevate fire risks.

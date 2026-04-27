@@ -1,4 +1,8 @@
-HAZARD: Suspicious Package / Bomb Threat.
-Context: Unattended item identified as a potential explosive or localized hazard. Law enforcement is establishing a hard perimeter.
-Recomm: Do not approach, touch, or use cellular devices or radio equipment within 300 feet of the object.
-Action: Evacuate the immediate area moving behind solid cover. Reroute all travel to maintain at least a 2-block distance from the affected zone.
+HAZARD: Suspicious Package / Bomb Threat
+AI EVALUATION INSTRUCTIONS:
+1. Parse the event details for the exact location of the threat.
+2. GENERAL DIRECTIVE:
+   - Severity: Extreme
+   - Recomm: Instruct the user NOT to approach or touch the item. Add a critical warning: Do NOT use cellular devices or radio equipment within 300 feet of the object to prevent accidental detonation.
+3. ACTIONABLE DIRECTIVES:
+   - Action: Evacuate the immediate area by moving behind solid, structural cover. Generate a routing instruction to reroute all travel to maintain at least a 2-block distance from the affected zone.
