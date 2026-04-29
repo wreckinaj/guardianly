@@ -1,4 +1,8 @@
-HAZARD: Blizzard / Whiteout Conditions.
-Context: Visibility is near zero, and extreme cold brings a rapid risk of frostbite. Snowdrifts obscure the boundaries between sidewalks and active roadways.
-Recomm: Seek indoor shelter immediately. Do not attempt long walks, as disorientation occurs quickly in whiteout conditions.
-Action: Cover all exposed skin. If you cannot find shelter, stay near main roads and building lines to avoid wandering into traffic. Locate the nearest open commercial building (Mapbox POI search).
+HAZARD: Blizzard / Whiteout Conditions
+AI EVALUATION INSTRUCTIONS:
+1. Check NWS severity metrics or user descriptions for visibility status.
+2. GENERAL DIRECTIVE:
+   - Severity: Extreme
+   - Recomm: Seek indoor shelter immediately. Warn that extreme cold brings a rapid risk of frostbite and all exposed skin must be covered.
+3. PEDESTRIAN ACTION (If details indicate the user is on foot):
+   - Action: Explicitly instruct the user NOT to attempt long walks due to rapid disorientation. Advise staying near main roads and building lines to avoid wandering into active roadways obscured by snowdrifts. Route to the nearest open commercial building.

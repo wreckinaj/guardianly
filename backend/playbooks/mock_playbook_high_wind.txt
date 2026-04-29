@@ -1,0 +1,8 @@
+HAZARD: High Wind Warning / Microburst
+AI EVALUATION INSTRUCTIONS:
+1. Parse the NWS severity and wind speed details.
+2. IF DRIVING:
+   - Severity: Moderate / High
+   - Recomm: Instruct the user to grip the steering wheel firmly. Explicitly warn against driving high-profile vehicles (box trucks, RVs) or towing trailers, and advise creating a wide buffer around commercial semi-trucks, which are prone to tipping.
+3. IF PEDESTRIAN / GENERAL:
+   - Action: Advise the user to avoid walking directly under large trees, power lines, or scaffolding, as falling debris is the primary hazard.

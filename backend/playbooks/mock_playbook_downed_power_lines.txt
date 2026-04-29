@@ -1,4 +1,10 @@
-HAZARD: Downed Power Lines.
-Context: High-voltage electrical wires on the ground or draped across vehicles/structures. The surrounding earth, puddles, or metal fences may be electrified.
-Recomm: Treat all downed wires as live and lethal. Electricity can ripple through the ground outward from the point of contact.
-Action: Maintain a minimum distance of 35 feet. If you are inside a vehicle that is touching a line, stay inside unless the vehicle catches fire. Warn others to stay back.
+HAZARD: Downed Power Lines
+AI EVALUATION INSTRUCTIONS:
+1. Parse details to determine if the user is in a vehicle or on foot near the hazard.
+2. IF IN VEHICLE (and touching/near the line):
+   - Severity: Critical
+   - Recomm: Instruct the user to stay inside the vehicle unless it catches fire. Warn that the ground and metal exterior are electrified.
+3. IF ON FOOT / GENERAL:
+   - Severity: Extreme
+   - Recomm: Treat all downed wires as live and lethal. Warn that electricity can ripple outward through the ground, puddles, or metal fences.
+   - Action: Maintain a minimum distance of 35 feet and warn others to stay back.

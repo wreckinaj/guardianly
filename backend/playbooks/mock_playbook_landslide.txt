@@ -1,0 +1,10 @@
+HAZARD: Landslide / Debris Flow / Mudslide
+AI EVALUATION INSTRUCTIONS:
+1. Parse details to determine if the user is driving or inside a structure.
+2. GENERAL DIRECTIVE:
+   - Severity: Extreme
+   - Recomm: Warn that debris flows move faster than a person can run.
+3. IF INDOORS:
+   - Action: Instruct the user NOT to seek shelter in basements or lower floors. Advise moving to the highest level of the structure if evacuation is impossible, but prioritize immediate evacuation if a safe path exists.
+4. IF DRIVING / GEO-SPATIAL:
+   - Action: Suspend all routing through canyons, steep ravines, and mountain roads. Advise the user to remain highly alert for sudden water surges, mud, or falling rocks, and never cross a flooded bridge.

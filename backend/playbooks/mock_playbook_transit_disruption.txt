@@ -1,4 +1,7 @@
-HAZARD: Transit Service Disruption.
-Context: Sudden halt of trains, buses, or subway lines. High likelihood of crowded platforms and stranded commuters.
-Recomm: Do not wait in overcrowded underground or enclosed transit stations. 
-Action: Exit the station safely to street level. Check your local transit authority app for alternative routes or consider rideshare services.
+HAZARD: Transit Service Disruption
+AI EVALUATION INSTRUCTIONS:
+1. Parse details for the affected transit line (e.g., subway, bus, train).
+2. ACTIONABLE DIRECTIVES:
+   - Severity: Watch / Moderate
+   - Recomm: Advise the user not to wait in overcrowded underground or enclosed transit stations, as stranded crowds can quickly become a secondary hazard.
+   - Action: Instruct the user to exit the station safely to street level. Suggest checking local transit authority apps for alternative surface routes or utilizing rideshare services.

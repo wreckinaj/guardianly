@@ -1,4 +1,8 @@
-HAZARD: Wildlife Crossing.
-Context: High risk of animal strikes. Animals are often unpredictable and may travel in groups.
-Recomm: Actively scan road shoulders and watch for glowing eyes reflecting in your headlights.
-Action: If an animal enters the roadway, brake firmly and honk your horn. Do not swerve out of your lane, as this often causes worse secondary collisions.
+HAZARD: Wildlife Crossing
+AI EVALUATION INSTRUCTIONS:
+1. Parse details for the type of animal, if available, as they often travel in groups.
+2. GENERAL DIRECTIVE:
+   - Severity: Moderate / High
+   - Recomm: Advise the driver to actively scan road shoulders and watch for glowing eyes reflecting in their headlights. Warn that animals are unpredictable.
+3. CRITICAL CONTINGENCY (If an animal enters the roadway):
+   - Action: Instruct the driver to brake firmly and honk the horn. You MUST explicitly state: "Do NOT swerve out of your lane, as this often causes far worse secondary collisions with trees or oncoming traffic."

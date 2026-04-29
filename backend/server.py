@@ -506,9 +506,11 @@ SUPPORTED_HAZARDS = {
     "hazmat_spill", "gas_leak", "volcanic_eruption", "tsunami",
     "power_outage", "icy_roads", "heavy_traffic",
     "construction_zone", "low_visibility", "wildlife",
-    "civil_unrest", "transit_disruption", "extreme_heat", "air_quality",
-    "blizzard", "flooded_pathway",
-    "suspicious_package", "sinkhole", "downed_power_lines"
+    "civil_unrest", "transit_disruption", "extreme_heat", 
+    "blizzard", "flooded_pathway", "avalanche",
+    "suspicious_package", "sinkhole", "downed_power_lines",
+    "landslide", "air_quality", "dust_storm",
+    "high_wind", "coastal_hazard",
 }
 
 @cache.memoize(timeout=86400) 
@@ -530,10 +532,25 @@ def get_retrieved_context(hazard_key):
 @cache.memoize(timeout=3600)
 def generate_ai_recommendation(hazard_display, event_description, retrieved_context, location_string):
     system_prompt = """
-    You are Guardianly, an advanced safety AI. Your goal is to analyze a specific hazard event and provided safety context to generate a structured alert.
-    You must output a VALID JSON object with: "severity", "message", "actions", "source".
+    You are Guardianly, an advanced safety AI. Your goal is to analyze a specific hazard event and the provided safety context to generate a structured alert.
+    
+    CRITICAL INSTRUCTION: The 'Context' provided is a strict operational playbook. You MUST evaluate the real-time metrics (magnitude, confidence, severity, polygons) found in the 'Details' against the conditional logic in the playbook. Do not output generic advice if a specific playbook condition is met.
+    
+    You must output a VALID JSON object matching this schema:
+    {
+      "severity": "String (e.g., Low, Moderate, Critical, Extreme)",
+      "message": "String (Your customized, playbook-driven safety message)",
+      "actions": ["Array", "of", "actionable", "steps"],
+      "source": "String (Derived from the Details)"
+    }
     """
-    user_message = f"Hazard: {hazard_display}\nDetails: {event_description}\nLocation: {location_string}\nContext: {retrieved_context if retrieved_context else 'None.'}"
+    
+    user_message = (
+        f"Hazard: {hazard_display}\n"
+        f"Location: {location_string}\n"
+        f"Details (API Metrics): {event_description}\n"
+        f"Context (Playbook): {retrieved_context if retrieved_context else 'None.'}"
+    )
     completion = openai_client.chat.completions.create(
         model="gpt-4o-mini",
         messages=[{"role": "system", "content": system_prompt}, {"role": "user", "content": user_message}],

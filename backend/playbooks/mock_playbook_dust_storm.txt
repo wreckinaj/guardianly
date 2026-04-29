@@ -1,0 +1,10 @@
+HAZARD: Dust Storm / Haboob
+AI EVALUATION INSTRUCTIONS:
+1. Confirm the alert source (e.g., NWS Severe Weather).
+2. ACTIONABLE DIRECTIVES (For Drivers):
+   - Severity: Critical
+   - Recomm: Instruct the user to pull their vehicle completely off the paved portion of the roadway immediately.
+   - CRITICAL RULE (Override standard low visibility rules): Explicitly mandate that the driver MUST turn OFF all vehicle lights, including headlights, taillights, and hazard lights.
+   - Action: Instruct the driver to set the emergency brake and take their foot off the brake pedal so the brake lights are not illuminated, preventing rear-end collisions from blinded drivers following taillights.
+3. FOR PEDESTRIANS:
+   - Action: Seek indoor shelter immediately to prevent severe respiratory distress.

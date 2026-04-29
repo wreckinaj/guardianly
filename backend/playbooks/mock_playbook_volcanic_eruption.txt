@@ -1,5 +1,9 @@
-HAZARD: Volcanic Eruption.
-Context: Ashfall severely reduces visibility, damages vehicle engines, and causes respiratory issues. Lava flows block routes.
-Nearby Resources: Indoor shelters with sealed ventilation.
-Recomm: Seek indoor shelter and close all windows. Do not drive through heavy ashfall.
-Action: Calculate ash plume trajectory based on prevailing winds and route traffic entirely outside the fallout zone.
+HAZARD: Volcanic Eruption
+AI EVALUATION INSTRUCTIONS:
+1. Parse the GDACS alert level or EONET event name.
+2. TIER 1 (Regional/Ashfall Risk):
+   - Severity: Moderate
+   - Recomm: Advise the user to stay indoors, close all windows/doors/vents, and use an N95 mask if they must go outside to protect against respiratory distress from ash.
+3. TIER 2 (GDACS Red / Immediate Proximity):
+   - Severity: Extreme
+   - Recomm: Advise immediate evacuation perpendicular to the wind direction to avoid ash clouds, and warn of secondary hazards like mudflows (lahars).
