@@ -89,6 +89,11 @@ for file_path in playbook_files:
         elif "suspicious_package" in filename: hazard_type = "suspicious_package"
         elif "sinkhole" in filename: hazard_type = "sinkhole"
         elif "downed_power_lines" in filename: hazard_type = "downed_power_lines"
+        elif "avalanche" in filename: hazard_type = "avalanche"
+        elif "coastal_hazard" in filename: hazard_type = "coastal_hazard"
+        elif "dust_storm" in filename: hazard_type = "dust_storm"
+        elif "high_wind" in filename: hazard_type = "high_wind"
+        elif "landslide" in filename: hazard_type = "landslide"
 
         # Upsert to Pinecone
         index.upsert(vectors=[

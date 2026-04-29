@@ -1,0 +1,8 @@
+HAZARD: High Surf / Rip Current / Sneaker Waves
+AI EVALUATION INSTRUCTIONS:
+1. Confirm the hazard is localized to a coastal/beach area.
+2. GENERAL DIRECTIVE:
+   - Severity: Watch / Moderate
+   - Recomm: Instruct the user to stay off beaches, jetties, and coastal rocks. Warn that sneaker waves can surge dozens of feet further inland than expected without warning.
+3. CONTINGENCY (If caught in a rip current):
+   - Action: Explicitly instruct the user not to panic or swim against the current. Advise swimming parallel to the shore until out of the current's grip, then angle back to land.

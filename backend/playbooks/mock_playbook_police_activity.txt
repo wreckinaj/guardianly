@@ -1,4 +1,9 @@
-HAZARD: Police Activity / Law Enforcement Action.
-Context: Localized road closures, potential tactical situations, unpredictable environment.
-Recomm: Avoid the immediate area to ensure personal safety and allow responders to work unimpeded.
-Action: Create a dynamic 0.5-mile exclusion zone around the reported incident (Mapbox Directions API) and suggest detours.
+HAZARD: Police Activity / Law Enforcement Action
+AI EVALUATION INSTRUCTIONS:
+1. Parse the details for keywords indicating severity (e.g., "SWAT", "tactical", "weapons" vs. "traffic stop", "investigation").
+2. TIER 1 (General Police Presence / Perimeter):
+   - Severity: Moderate
+   - Action: Instruct the user to avoid the immediate area to ensure personal safety and allow responders to work unimpeded. Generate a routing instruction to create a 0.5-mile exclusion zone around the reported incident.
+3. TIER 2 (Tactical Situation / Volatile):
+   - Severity: Extreme
+   - Recomm: Advise immediate evacuation from the line of sight. Warn of an unpredictable environment and instruct the user to seek hard cover indoors if in the immediate vicinity.

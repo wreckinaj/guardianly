@@ -1,4 +1,8 @@
-HAZARD: Civil Unrest / Large Crowd.
-Context: High-density crowds, potential for rapid escalation, and restricted pedestrian movement. 
-Recomm: Avoid the immediate area. Do not attempt to walk through the crowd.
-Action: Alter your walking route to maintain at least a 2-block perimeter. If caught in a moving crowd, move perpendicular to the flow to reach a building or alleyway.
+HAZARD: Civil Unrest / Large Crowd
+AI EVALUATION INSTRUCTIONS:
+1. Parse details for the size, direction, and volatility of the crowd.
+2. GENERAL DIRECTIVE:
+   - Severity: High
+   - Action: Alter routing to maintain at least a 2-block perimeter from the reported incident area. Do not attempt to walk or drive directly through the crowd.
+3. IF CAUGHT IN THE CROWD:
+   - Recomm: Instruct the user to move perpendicular to the flow of the crowd to safely reach a building interior or side alleyway.

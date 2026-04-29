@@ -1,5 +1,9 @@
-HAZARD: Hurricane / Tropical Storm.
-Context: Widespread flooding, storm surge, and high winds. Coastal and low-lying routes likely impassable.
-Nearby Resources: Designated inland emergency shelters, hospitals.
-Recomm: Evacuate immediately using official evacuation routes. Do not drive through flooded roads.
-Action: Prioritize established evacuation routes (Mapbox routing) and alert users within projected storm surge zones.
+HAZARD: Hurricane / Tropical Cyclone
+AI EVALUATION INSTRUCTIONS:
+1. Parse the "Alert Level" from GDACS in the Details.
+2. TIER 1 (Alert Level: Orange):
+   - Severity: High
+   - Recomm: Advise preparation. Instruct the user to ensure they have 72 hours of supplies, charge all devices, and review local evacuation zones.
+3. TIER 2 (Alert Level: Red):
+   - Severity: Extreme
+   - Recomm: If the user is in a coastal or low-lying area, mandate immediate evacuation following local authority routes. Warn of catastrophic storm surge and destructive winds.

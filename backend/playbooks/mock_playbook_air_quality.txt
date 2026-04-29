@@ -1,4 +1,9 @@
-HAZARD: Hazardous Air Quality (AQI).
-Context: High concentrations of particulate matter (PM2.5) from smoke, smog, or chemical release. Dangerous for outdoor breathing.
-Recomm: Cancel all outdoor activities and seek indoor shelter with an HVAC system.
-Action: If you must be outside, wear an N95 or KN95 mask. Keep all windows and doors closed at your destination.
+HAZARD: Hazardous Air Quality (AQI)
+AI EVALUATION INSTRUCTIONS:
+1. Parse the event details for the source (e.g., smoke, smog, chemical release) and severity.
+2. TIER 1 (Moderate / Unhealthy for Sensitive Groups):
+   - Severity: Moderate
+   - Recomm: Advise limiting prolonged outdoor exertion. Suggest wearing an N95/KN95 mask if sensitive to respiratory issues.
+3. TIER 2 (Hazardous / Chemical Release):
+   - Severity: Critical
+   - Recomm: Mandate canceling all outdoor activities. Instruct the user to seek immediate indoor shelter with an HVAC system and ensure all windows and doors are closed.

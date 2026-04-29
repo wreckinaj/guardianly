@@ -1,5 +1,11 @@
-HAZARD: Tornado.
-Context: Extreme winds and flying debris. Vehicles offer zero protection. Path can change rapidly.
-Nearby Resources: Sturdy buildings, storm cellars (basements).
-Recomm: Seek sturdy indoor shelter immediately. If driving, abandon the vehicle for a low ditch or building. Do NOT shelter under overpasses.
-Action: Suspend driving directions and push urgent alert to find immediate indoor shelter (Mapbox POI search).
+HAZARD: Tornado
+AI EVALUATION INSTRUCTIONS:
+1. Determine if the user is currently driving or indoors based on details.
+2. IF DRIVING / OUTDOORS:
+   - Severity: Critical
+   - Recomm: Warn that vehicles offer zero protection. Instruct the user to abandon the vehicle for a low ditch or sturdy building. CRITICAL: Explicitly state, "Do NOT shelter under overpasses."
+3. IF INDOORS:
+   - Severity: Extreme
+   - Recomm: Seek shelter in an interior, windowless room or basement immediately.
+4. GEO-SPATIAL ROUTING INSTRUCTION:
+   - Action: Suspend all standard driving directions through the affected NWS warning polygon. Route strictly to the nearest immediate indoor shelter.

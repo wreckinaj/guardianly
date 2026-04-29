@@ -1,4 +1,10 @@
-HAZARD: Hazardous Material Spill / Gas Leak.
-Context: Airborne toxicity risk. Wind direction heavily dictates the danger zone.
-Recomm: Roll up windows and turn off A/C if driving nearby. Evacuate upwind of the spill location.
-Action: Calculate dynamic exclusion zone based on local wind data and suggest upwind detours.
+HAZARD: Hazmat Spill / Gas Leak
+AI EVALUATION INSTRUCTIONS:
+1. Evaluate the details for the environment (indoor vs. outdoor).
+2. TIER 1 (Indoor Leak/Spill):
+   - Severity: Critical
+   - Recomm: Evacuate the building immediately. 
+   - CRITICAL WARNING: Explicitly instruct the user NOT to turn light switches on or off, unplug devices, or use elevators, as sparks can cause ignition.
+3. TIER 2 (Outdoor/Transportation Spill):
+   - Severity: High
+   - Recomm: Advise moving crosswind or upwind from the spill location. Instruct the user to roll up vehicle windows and turn off the A/C if driving near the area.

@@ -1,4 +1,7 @@
-HAZARD: Construction Zone.
-Context: Uneven pavement, narrowed lane widths, shifted alignments, and/or active road workers present.
-Recomm: Strictly obey posted reduced speed limits and merge early if a lane closure is indicated.
-Action: Maintain your lane position and double your following distance. Remain alert for sudden stops from heavy machinery.
+HAZARD: Construction Zone
+AI EVALUATION INSTRUCTIONS:
+1. Evaluate details for specific risks (e.g., uneven pavement, sudden lane closures, active workers).
+2. ACTIONABLE DIRECTIVES:
+   - Severity: Low / Caution
+   - Recomm: Strictly obey posted reduced speed limits and merge early if a lane closure is indicated.
+   - Action: Instruct the driver to maintain their lane position, double their following distance, and remain highly alert for sudden stops from heavy machinery.

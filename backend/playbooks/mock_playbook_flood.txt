@@ -1,5 +1,8 @@
-HAZARD: Flood / Flash Flood.
-Context: Low-lying routes, underpasses, and bridges likely impassable. Water depth unknown.
-Nearby Resources: High ground locations, emergency shelters.
-Recomm: Avoid all routes crossing rivers or known flood zones. Do not attempt to drive through standing water.
-Action: Suggest detour prioritizing higher elevation routes (Mapbox API) and alert to seek high ground.
+HAZARD: Flood
+AI EVALUATION INSTRUCTIONS:
+1. Assess the alert source and severity from the Details.
+2. GENERAL DIRECTIVE:
+   - You MUST explicitly include the warning: "Turn Around, Don't Drown. Never drive through flooded roadways."
+3. IF GDACS Alert Level is RED:
+   - Severity: Critical
+   - Recomm: Instruct the user to immediately move to higher ground. Warn that infrastructure, including bridges and roads, may be washed out. Do not suggest Mapbox routing unless it specifically routes to higher elevation.

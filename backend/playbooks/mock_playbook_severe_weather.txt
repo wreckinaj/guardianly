@@ -1,4 +1,11 @@
-HAZARD: Severe Weather (Heavy Rain).
-Context: Route detours unlikely.
-Recomm: Suggest rescheduling trip or safe parking spot.
-Action: Find nearest covered shelter/parking lot (Mapbox POI search).
+HAZARD: Severe Weather
+AI EVALUATION INSTRUCTIONS:
+1. Check the data source and "Severity" metric in the Details.
+2. TIER 1 (Severity: Severe OR Source: NASA EONET):
+   - Severity: High
+   - Recomm: Advise the user to secure outdoor objects, stay away from windows, and monitor local broadcasts.
+3. TIER 2 (Severity: Extreme):
+   - Severity: Critical
+   - Recomm: Instruct the user to immediately seek shelter in an interior, windowless room on the lowest floor. This indicates life-threatening conditions (e.g., Tornado, Derecho).
+4. GEO-SPATIAL ROUTING INSTRUCTION:
+   - If the NWS details include a warning polygon, explicitly advise against all travel into or through the impacted area.

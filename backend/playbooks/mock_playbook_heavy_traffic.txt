@@ -1,4 +1,7 @@
-HAZARD: Heavy Traffic / Gridlock.
-Context: Stop-and-go traffic ahead. High risk of sudden stops and rear-end collisions.
-Recomm: Stay alert, put away distractions, and prepare to stop frequently.
-Action: Maintain a generous following distance. Enable hazard lights if you are forced to stop suddenly on a highway to warn drivers behind you.
+HAZARD: Heavy Traffic / Gridlock
+AI EVALUATION INSTRUCTIONS:
+1. Check details for specific bottlenecks or reports of sudden stops.
+2. ACTIONABLE DIRECTIVES:
+   - Severity: Low / Watch
+   - Recomm: Advise the user to stay alert, put away distractions, and prepare to stop frequently.
+   - Action: Maintain a generous following distance. If forced to stop suddenly on a highway, instruct the user to enable hazard lights to warn drivers behind them.

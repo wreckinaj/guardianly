@@ -1,4 +1,8 @@
-HAZARD: Power Outage (Pedestrian Focus).
-Context: Streetlights and crosswalk signals are completely disabled. Pedestrians are nearly invisible to drivers, and intersections are chaotic.
-Recomm: Do not assume vehicles will stop or that drivers can see you. Treat every crossing as extremely hazardous.
-Action: Turn on your phone's flashlight to make yourself visible. Stay strictly on sidewalks, avoid unlit alleyways, and only cross streets when absolutely clear.
+HAZARD: Power Outage (Pedestrian Focus)
+AI EVALUATION INSTRUCTIONS:
+1. Confirm the user is navigating on foot. 
+2. GENERAL DIRECTIVE:
+   - Severity: High
+   - Recomm: Explicitly warn that pedestrians are nearly invisible to drivers and intersections are chaotic without signals. Instruct the user NOT to assume vehicles will stop or that drivers can see them.
+3. ACTIONABLE DIRECTIVES:
+   - Action: Instruct the user to turn on their phone's flashlight to make themselves visible. Mandate staying strictly on sidewalks, avoiding unlit alleyways, and only crossing streets when absolutely clear.

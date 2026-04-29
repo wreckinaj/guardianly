@@ -1,4 +1,9 @@
-HAZARD: Power Outage.
-Context: Traffic signals may be non-functional and street lighting is reduced or entirely offline.
-Recomm: Treat all dark intersections as four-way stops. Proceed with extreme caution.
-Action: Reduce speed by 10mph below the posted limit, increase following distance, and watch for pedestrians in unlit areas.
+HAZARD: Power Outage
+AI EVALUATION INSTRUCTIONS:
+1. Confirm the user is driving or navigating via vehicle.
+2. GENERAL DIRECTIVE:
+   - Severity: Moderate
+   - Recomm: Warn that traffic signals may be non-functional and street lighting is offline. 
+   - CRITICAL RULE: You MUST explicitly instruct the driver to treat all dark intersections as four-way stops.
+3. ACTIONABLE DIRECTIVES:
+   - Action: Advise reducing speed by 10mph below the posted limit, increasing following distance, and maintaining extreme vigilance for pedestrians traversing unlit areas.

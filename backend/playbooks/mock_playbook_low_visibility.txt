@@ -1,4 +1,8 @@
-HAZARD: Low Visibility (Fog/Smoke/Heavy Spray).
-Context: Forward visibility is severely reduced, making it difficult to spot oncoming hazards.
-Recomm: Turn on low-beam headlights immediately. Do NOT use high beams, as the light will reflect back and worsen visibility.
-Action: Use the right edge of the road or the painted fog line as a guide to stay in your lane. Do not stop on the active roadway.
+HAZARD: Low Visibility (Fog/Smoke/Heavy Spray)
+AI EVALUATION INSTRUCTIONS:
+1. Check details for the source of low visibility to contextualize the message.
+2. ACTIONABLE DIRECTIVES:
+   - Severity: Moderate
+   - Recomm: Explicitly instruct the user to turn on LOW-BEAM headlights immediately. Add a critical warning: "Do NOT use high beams, as the light will reflect back and worsen visibility."
+3. ROUTING / MOVEMENT:
+   - Action: Advise using the right edge of the road or the painted fog line as a guide to stay in the lane. Mandate that they do not stop on the active roadway.
