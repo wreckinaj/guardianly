@@ -1,5 +1,7 @@
-# guardianly
+# guardianly 
 CS Capstone 2025-2026
+
+Landing Page Link: https://69edaf9a8f1a228b4287787a--guardianly.netlify.app/
 
 Guardianly will be a mobile app that will notify mobile users with not only alerts related to safety and hazerdous events
 but provide a more proactive and quickpace solution around the obstacle using geospatial data from users and safety concern events.
