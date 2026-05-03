@@ -159,7 +159,7 @@ class FromToState extends State<FromTo> {
   @override
   Widget build(BuildContext context) {
     final screenHeight = MediaQuery.of(context).size.height;
-    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    // final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
     
     final bool isExpanded = _expandedField != null;
 
@@ -469,10 +469,10 @@ class FromToState extends State<FromTo> {
                                 color: Colors.white,
                                 borderRadius: BorderRadius.circular(12),
                                 boxShadow: [
-                                  BoxShadow(
+                                  const BoxShadow(
                                     color: Colors.black12,
                                     blurRadius: 4,
-                                    offset: const Offset(0, 2),
+                                    offset: Offset(0, 2),
                                   ),
                                 ],
                               ),
@@ -514,10 +514,10 @@ class FromToState extends State<FromTo> {
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
-                          BoxShadow(
+                          const BoxShadow(
                             color: Colors.black12,
                             blurRadius: 8,
-                            offset: const Offset(0, -2),
+                            offset: Offset(0, -2),
                           ),
                         ],
                         border: Border.all(color: Colors.blue.shade200),

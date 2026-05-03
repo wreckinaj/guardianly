@@ -181,126 +181,130 @@ class _SettingsState extends State<Settings> {
   }
 
   Future<void> _handleLocationToggle(bool value) async {
-    if (value) {
-      // User wants to ENABLE location sharing
-      // Save preference first
-      await _prefs.setBool('locationShare', true);
-      
-      LocationPermission permission = await Geolocator.checkPermission();
+  if (value) {
+    // User wants to ENABLE location sharing
+    // Save preference first
+    await _prefs.setBool('locationShare', true);
+    
+    LocationPermission permission = await Geolocator.checkPermission();
+    
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
       
       if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        
-        if (permission == LocationPermission.denied) {
-          if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Location permission denied')),
-            );
-            // Revert preference since permission denied
-            await _prefs.setBool('locationShare', false);
-            setState(() => locationShare = false);
-          }
-          return;
-        }
-      }
-      
-      if (permission == LocationPermission.deniedForever) {
         if (mounted) {
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              backgroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              title: const Text(
-                "Location Permission Required",
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  fontSize: 20,
-                ),
-              ),
-              content: const Text(
-                "Location permission is permanently denied. Please enable it in device settings to receive location-based alerts.",
-                textAlign: TextAlign.center,
-              ),
-              actions: [
-                const Divider(height: 1, thickness: 1),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Expanded(
-                        child: TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                              side: BorderSide(color: Colors.grey.shade300),
-                            ),
-                          ),
-                          child: const Text("Cancel"),
-                        ),
-                      ),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: TextButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            Geolocator.openAppSettings();
-                          },
-                          style: TextButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            backgroundColor: Colors.blue,
-                            foregroundColor: Colors.white,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
-                          child: const Text("Open Settings"),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Location permission denied')),
           );
-          // Revert preference
+          // Revert preference since permission denied
           await _prefs.setBool('locationShare', false);
           setState(() => locationShare = false);
         }
         return;
       }
-      
-      // Permission granted
+    }
+    
+    if (permission == LocationPermission.deniedForever) {
       if (mounted) {
-        setState(() => locationShare = true);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Location sharing enabled - You will receive nearby alerts')),
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            backgroundColor: Colors.white,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            title: const Text(
+              "Location Permission Required",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
+            ),
+            content: const Text(
+              "Location permission is permanently denied. Please enable it in device settings to receive location-based alerts.",
+              textAlign: TextAlign.center,
+            ),
+            actions: [
+              const Divider(height: 1, thickness: 1),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () => Navigator.pop(context),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            side: BorderSide(color: Colors.grey.shade300),
+                          ),
+                        ),
+                        child: const Text("Cancel"),
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                          Geolocator.openAppSettings();
+                        },
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          backgroundColor: Colors.blue,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: const Text("Open Settings"),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         );
+        // Revert preference
+        await _prefs.setBool('locationShare', false);
+        setState(() => locationShare = false);
       }
-      
-    } else {
-      // User wants to DISABLE location sharing
-      final confirm = await _showDisableLocationDialog();
-      
+      return;
+    }
+    
+    // Permission granted
+    if (mounted) {
+      setState(() => locationShare = true);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Location sharing enabled - You will receive nearby alerts')),
+      );
+    }
+    
+  } else {
+    // User wants to DISABLE location sharing
+    final confirm = await _showDisableLocationDialog();
+
       if (confirm == true && mounted) {
         // Save preference as disabled
         await _prefs.setBool('locationShare', false);
         setState(() => locationShare = false);
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Location sharing disabled - Nearby alerts paused')),
-        );
+        
+        // Add a mounted check here as well
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Location sharing disabled - Nearby alerts paused')),
+          );
+        }
       } else if (mounted) {
         // User cancelled, refresh the toggle state to show correct value
         await _updateLocationToggleState();
       }
-    }
   }
+}
   
   // Method to get enabled hazard types matching local_alert.dart hazardType values
   List<String> getEnabledHazards() {
