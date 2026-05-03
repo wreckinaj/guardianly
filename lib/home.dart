@@ -7,6 +7,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'alertdetails.dart';
 import 'models/local_alert.dart';
 import '/services/notification_service.dart';
@@ -30,6 +31,10 @@ class HomeState extends State<Home> {
   LatLng? _currentP;
   List<LocalAlert> _alerts = [];
   
+  // Settings
+  bool _showMapBadges = true;
+  bool _locationShareEnabled = true;
+  
   StreamSubscription<Position>? _positionStream;
   StreamSubscription<QuerySnapshot>? _alertsSubscription;
 
@@ -52,14 +57,49 @@ class HomeState extends State<Home> {
     _initAsync();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _refreshSettings();
+  }
+
+  Future<void> _refreshSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _showMapBadges = prefs.getBool('mapBadges') ?? true;
+        _locationShareEnabled = prefs.getBool('locationShare') ?? true;
+      });
+    }
+    
+    // Restart location updates if needed
+    if (_locationShareEnabled && _positionStream == null) {
+      _startLocationUpdates();
+    } else if (!_locationShareEnabled && _positionStream != null) {
+      setState(() {
+        _currentP = null;
+      });
+      _positionStream?.cancel();
+      _positionStream = null;
+    }
+  }
+
   Future<void> _initAsync() async {
     try {
       if (Firebase.apps.isEmpty) {
         await Firebase.initializeApp();
       }
       
+      // Load settings
+      await _loadSettings();
+      
       NotificationService().initialize(); 
-      _startLocationUpdates();
+      
+      // Only start location updates if sharing is enabled
+      if (_locationShareEnabled) {
+        _startLocationUpdates();
+      }
+      
       _listenToDatabaseAlerts();
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -71,6 +111,35 @@ class HomeState extends State<Home> {
       });
     } catch (e) {
       debugPrint("Initialization failed: $e");
+    }
+  }
+  
+  Future<void> _loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _showMapBadges = prefs.getBool('mapBadges') ?? true;
+        _locationShareEnabled = prefs.getBool('locationShare') ?? true;
+      });
+    }
+  }
+  
+  // Check if an alert type is enabled in settings
+  Future<bool> isAlertEnabled(String hazardType) async {
+    final prefs = await SharedPreferences.getInstance();
+    switch (hazardType) {
+      case 'wildfire':
+        return prefs.getBool('wildfireAlerts') ?? true;
+      case 'police_activity':
+        return prefs.getBool('policeActivityAlerts') ?? true;
+      case 'medical_emergency':
+        return prefs.getBool('medicalEmergencyAlerts') ?? true;
+      case 'severe_weather':
+        return prefs.getBool('severeWeatherAlerts') ?? true;
+      case 'road_closure':
+        return prefs.getBool('roadClosureAlerts') ?? true;
+      default:
+        return true;
     }
   }
 
@@ -86,37 +155,108 @@ class HomeState extends State<Home> {
     _alertsSubscription = FirebaseFirestore.instance
         .collection('alerts')
         .snapshots()
-        .listen((snapshot) {
+        .listen((snapshot) async {
       final dbAlerts = snapshot.docs.map((doc) {
         return LocalAlert.fromJson(doc.data());
       }).toList();
+      
+      // Filter alerts based on user settings
+      List<LocalAlert> filteredAlerts = [];
+      for (var alert in dbAlerts) {
+        if (await isAlertEnabled(alert.hazardType)) {
+          filteredAlerts.add(alert);
+        }
+      }
 
       if (mounted) {
         setState(() {
-          _alerts = dbAlerts;
+          _alerts = filteredAlerts;
         });
       }
     });
   }
 
   Future<void> _startLocationUpdates() async {
+    // Check if location sharing is enabled in settings
+    if (!_locationShareEnabled) {
+      debugPrint("Location sharing disabled in settings - not showing location");
+      return;
+    }
+    
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) return;
+    if (!serviceEnabled) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please enable location services to see your position')),
+        );
+      }
+      return;
+    }
 
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) return;
+      if (permission == LocationPermission.denied) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Location permission denied')),
+          );
+        }
+        return;
+      }
+    }
+    
+    if (permission == LocationPermission.deniedForever) {
+      if (mounted) {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Location Permission Required'),
+            content: const Text('Please enable location permission in settings to see your position on the map.'),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Geolocator.openAppSettings();
+                },
+                child: const Text('Open Settings'),
+              ),
+            ],
+          ),
+        );
+      }
+      return;
     }
 
     _positionStream = Geolocator.getPositionStream(
       locationSettings: const LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 10)
     ).listen((Position position) {
-      if (mounted) {
+      if (mounted && _locationShareEnabled) {
         setState(() => _currentP = LatLng(position.latitude, position.longitude));
         _checkProximityToHazards(position);
       }
     });
+  }
+  
+  // Reload location updates when settings change (called from settings page)
+  Future<void> refreshLocationSettings() async {
+    await _loadSettings();
+    if (_locationShareEnabled) {
+      if (_positionStream == null) {
+        _startLocationUpdates();
+      }
+    } else {
+      // Location sharing disabled - clear current position
+      setState(() {
+        _currentP = null;
+      });
+      _positionStream?.cancel();
+      _positionStream = null;
+    }
   }
 
   void _checkProximityToHazards(Position userPos) {
@@ -225,6 +365,26 @@ class HomeState extends State<Home> {
       locationName: alert.description, 
     )));
   }
+  
+  void _centerOnUserLocation() {
+    if (!_locationShareEnabled) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Location sharing is disabled. Enable it in settings.'), duration: Duration(seconds: 2)),
+      );
+      return;
+    }
+    
+    if (_currentP != null) {
+      mapController.move(_currentP!, 15.0);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Centering on your location...'), duration: Duration(seconds: 1)),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Waiting for location...'), duration: Duration(seconds: 1)),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -255,35 +415,52 @@ class HomeState extends State<Home> {
                           urlTemplate: 'https://api.mapbox.com/styles/v1/mapbox/streets-v12/tiles/{z}/{x}/{y}?access_token={accessToken}',
                           additionalOptions: {'accessToken': mapboxToken},
                         ),
-                        if (_currentP != null)
+                        // User location marker - ONLY show if location sharing is enabled
+                        if (_locationShareEnabled && _currentP != null)
                           MarkerLayer(markers: [
-                            Marker(point: _currentP!, width: 40, height: 40, child: const Icon(Icons.person_pin_circle, color: Colors.blue, size: 40)),
-                          ]),
-                        MarkerLayer(
-                          markers: _alerts.map((alert) => Marker(
-                            point: alert.position,
-                            width: 40, height: 40,
-                            child: GestureDetector(
-                              onTap: () => _showAlertDetails(alert),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  shape: BoxShape.circle,
-                                  boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 4, offset: const Offset(0, 2))],
-                                ),
-                                child: Icon(alert.icon, color: alert.color, size: 28),
-                              ),
+                            Marker(
+                              point: _currentP!, 
+                              width: 40, 
+                              height: 40, 
+                              child: const Icon(Icons.person_pin_circle, color: Colors.blue, size: 40),
                             ),
-                          )).toList(),
-                        ),
+                          ]),
+                        if (_showMapBadges)
+                          MarkerLayer(
+                            markers: _alerts.map((alert) => Marker(
+                              point: alert.position,
+                              width: 40, height: 40,
+                              child: GestureDetector(
+                                onTap: () => _showAlertDetails(alert),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.white,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 4, offset: const Offset(0, 2))],
+                                  ),
+                                  child: Icon(alert.icon, color: alert.color, size: 28),
+                                ),
+                              ),
+                            )).toList(),
+                          ),
                       ],
                     ),
                   ),
                   const Positioned(bottom: 16, left: 16, child: MapKey()),
-                  Positioned(bottom: 16, right: 16, child: FloatingActionButton(
-                    mini: true, onPressed: () { if (_currentP != null) mapController.move(_currentP!, 15.0); },
-                    backgroundColor: Colors.white, child: const Icon(Icons.my_location, color: Colors.blue),
-                  )),
+                  // Location button - still shows but gives feedback when disabled
+                  Positioned(
+                    bottom: 16, 
+                    right: 16, 
+                    child: FloatingActionButton(
+                      mini: true, 
+                      onPressed: _centerOnUserLocation,
+                      backgroundColor: Colors.white, 
+                      child: Icon(
+                        Icons.my_location, 
+                        color: _locationShareEnabled ? Colors.blue : Colors.grey,
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),

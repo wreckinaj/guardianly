@@ -29,7 +29,6 @@ class DirectionsState extends State<Directions> {
   List<DirectionStep> steps = [];
   bool isLoading = true;
   String? errorMessage;
-  bool isPanelExpanded = true;
   
   // Duration and arrival time variables
   String totalDuration = '';
@@ -63,7 +62,6 @@ class DirectionsState extends State<Directions> {
       }
 
       final mode = widget.transportMode == 'drive' ? 'driving' : widget.transportMode;
-      // URL with annotations=duration for traffic data
       final url = 'https://api.mapbox.com/directions/v5/mapbox/$mode/${startCoords.longitude},${startCoords.latitude};${endCoords.longitude},${endCoords.latitude}?geometries=geojson&steps=true&annotations=duration&access_token=$mapboxToken';
       
       final response = await http.get(Uri.parse(url));
@@ -72,17 +70,14 @@ class DirectionsState extends State<Directions> {
         final route = data['routes'][0];
         final List coords = route['geometry']['coordinates'];
         
-        // Get standard duration
         final durationSeconds = route['duration']?.toDouble() ?? 0.0;
         
-        // Get traffic-aware duration for driving
         double effectiveDuration = durationSeconds;
         if (widget.transportMode == 'drive' && route['duration_in_traffic'] != null) {
           effectiveDuration = route['duration_in_traffic'].toDouble();
           
-          // Calculate delay
           final delaySeconds = effectiveDuration - durationSeconds;
-          if (delaySeconds > 60) { // More than 1 minute delay
+          if (delaySeconds > 60) {
             trafficDelay = _formatDuration(delaySeconds);
           }
         }
@@ -91,7 +86,6 @@ class DirectionsState extends State<Directions> {
         totalDuration = _formatDuration(effectiveDuration);
         arrivalTime = _calculateArrivalTime(effectiveDuration);
         
-        // Parse the turn-by-turn steps (without duration)
         final List legs = route['legs'];
         List<DirectionStep> parsedSteps = [];
         int stepCount = 1;
@@ -203,11 +197,9 @@ class DirectionsState extends State<Directions> {
         backgroundColor: Colors.white,
         elevation: 0,
         iconTheme: const IconThemeData(color: Colors.black),
-        // Change the back arrow to a close/exit button
         leading: IconButton(
           icon: const Icon(Icons.close, size: 28),
           onPressed: () {
-            // Close the directions screen and return to the previous screen
             Navigator.of(context).pop();
           },
           tooltip: 'Close',
@@ -215,6 +207,7 @@ class DirectionsState extends State<Directions> {
       ),
       body: Stack(
         children: [
+          // Map - takes full screen
           FlutterMap(
             mapController: mapController,
             options: MapOptions(
@@ -252,12 +245,12 @@ class DirectionsState extends State<Directions> {
             ],
           ),
           
-          // Sliding Directions Panel
+          // Sliding Directions Panel - FIXED OVERFLOW
           if (!isLoading && steps.isNotEmpty)
             DraggableScrollableSheet(
-              initialChildSize: 0.3,
+              initialChildSize: 0.4,
               minChildSize: 0.2,
-              maxChildSize: 0.7,
+              maxChildSize: 0.6,
               builder: (context, scrollController) {
                 return Container(
                   decoration: const BoxDecoration(
@@ -265,106 +258,107 @@ class DirectionsState extends State<Directions> {
                     borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
                     boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 10)],
                   ),
-                  child: Column(
-                    children: [
+                  child: CustomScrollView(
+                    controller: scrollController,
+                    slivers: [
                       // Drag handle
-                      const Center(
-                        child: Padding(
-                          padding: EdgeInsets.all(8.0),
-                          child: Icon(Icons.maximize, color: Colors.grey, size: 40),
+                      SliverToBoxAdapter(
+                        child: Center(
+                          child: Padding(
+                            padding: const EdgeInsets.all(8.0),
+                            child: Icon(Icons.maximize, color: Colors.grey.shade400, size: 40),
+                          ),
                         ),
                       ),
                       
                       // Duration and Arrival Time Info Card
                       if (totalDuration.isNotEmpty)
-                        Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.blue.shade50,
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.blue.shade100),
-                          ),
-                          child: Column(
-                            children: [
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        const Text(
-                                          'Total Duration',
-                                          style: TextStyle(fontSize: 12, color: Colors.grey),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Row(
-                                          children: [
-                                            const Icon(Icons.access_time, size: 16, color: Colors.blue),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              totalDuration,
-                                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                  Container(
-                                    width: 1,
-                                    height: 40,
-                                    color: Colors.grey.shade300,
-                                  ),
-                                  Expanded(
-                                    child: Column(
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        const Text(
-                                          'Arrival Time',
-                                          style: TextStyle(fontSize: 12, color: Colors.grey),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Row(
-                                          children: [
-                                            const Icon(Icons.schedule, size: 16, color: Colors.green),
-                                            const SizedBox(width: 4),
-                                            Text(
-                                              arrivalTime,
-                                              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                                            ),
-                                          ],
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              // Show traffic delay if present
-                              if (trafficDelay != null && widget.transportMode == 'drive')
-                                Padding(
-                                  padding: const EdgeInsets.only(top: 8),
-                                  child: Row(
-                                    children: [
-                                      const Icon(Icons.traffic, size: 14, color: Colors.orange),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        '⚠️ Traffic delay: +$trafficDelay',
-                                        style: const TextStyle(fontSize: 12, color: Colors.orange),
+                        SliverToBoxAdapter(
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: Colors.blue.shade50,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.blue.shade100),
+                            ),
+                            child: Column(
+                              children: [
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                  children: [
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        children: [
+                                          const Text(
+                                            'Total Duration',
+                                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              const Icon(Icons.access_time, size: 16, color: Colors.blue),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                totalDuration,
+                                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
                                       ),
-                                    ],
-                                  ),
+                                    ),
+                                    Expanded(
+                                      child: Column(
+                                        crossAxisAlignment: CrossAxisAlignment.center,
+                                        children: [
+                                          const Text(
+                                            'Arrival Time',
+                                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              const Icon(Icons.schedule, size: 16, color: Colors.green),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                arrivalTime,
+                                                style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                 ),
-                            ],
+                                if (trafficDelay != null && widget.transportMode == 'drive')
+                                  Padding(
+                                    padding: const EdgeInsets.only(top: 8),
+                                    child: Row(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [
+                                        const Icon(Icons.traffic, size: 14, color: Colors.orange),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          '⚠️ Traffic delay: +$trafficDelay',
+                                          style: const TextStyle(fontSize: 12, color: Colors.orange),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                              ],
+                            ),
                           ),
                         ),
                       
-                      // Directions list - only showing distance, no duration
-                      Expanded(
-                        child: ListView.builder(
-                          controller: scrollController,
-                          itemCount: steps.length,
-                          itemBuilder: (context, index) {
+                      // Directions list
+                      SliverList(
+                        delegate: SliverChildBuilderDelegate(
+                          (context, index) {
                             final step = steps[index];
                             return ListTile(
                               leading: CircleAvatar(
@@ -372,10 +366,16 @@ class DirectionsState extends State<Directions> {
                                 child: Text("${step.stepNumber}"),
                               ),
                               title: Text(step.instruction),
-                              subtitle: Text(step.distance), // Only showing distance
+                              subtitle: Text(step.distance),
                             );
                           },
+                          childCount: steps.length,
                         ),
+                      ),
+                      
+                      // Bottom padding
+                      const SliverToBoxAdapter(
+                        child: SizedBox(height: 16),
                       ),
                     ],
                   ),
@@ -399,7 +399,7 @@ class DirectionsState extends State<Directions> {
   }
 }
 
-// DirectionStep class without duration field
+// DirectionStep class
 class DirectionStep {
   final String instruction;
   final String distance;
