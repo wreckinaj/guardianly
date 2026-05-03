@@ -159,7 +159,7 @@ class Menu extends StatelessWidget implements PreferredSizeWidget {
 
             const PopupMenuItem(
               value: 2,
-              child: Text('History & Saved'),
+              child: Text('Saved'),
             ),
 
             const PopupMenuItem(
