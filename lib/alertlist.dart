@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'Components/searchbar.dart';
 import '/Components/menu.dart';
 import 'alertdetails.dart';
 import 'models/local_alert.dart';
+import 'saved_alerts_provider.dart';
 
 class Alert extends StatefulWidget {
   const Alert({super.key});
@@ -13,6 +16,44 @@ class Alert extends StatefulWidget {
 }
 
 class _AlertState extends State<Alert> {
+  SharedPreferences? _prefs;
+  bool _isLoading = true;
+  
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+  
+  Future<void> _loadSettings() async {
+    _prefs = await SharedPreferences.getInstance();
+    if (mounted) {
+      setState(() {
+        _isLoading = false;
+      });
+    }
+  }
+  
+  // Check if an alert type is enabled in settings
+  bool isAlertEnabled(String hazardType) {
+    if (_prefs == null) return true; // Default to true if settings not loaded
+    
+    switch (hazardType) {
+      case 'wildfire':
+        return _prefs!.getBool('wildfireAlerts') ?? true;
+      case 'police_activity':
+        return _prefs!.getBool('policeActivityAlerts') ?? true;
+      case 'medical_emergency':
+        return _prefs!.getBool('medicalEmergencyAlerts') ?? true;
+      case 'severe_weather':
+        return _prefs!.getBool('severeWeatherAlerts') ?? true;
+      case 'road_closure':
+        return _prefs!.getBool('roadClosureAlerts') ?? true;
+      default:
+        return true; // Show unknown alert types by default
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -22,7 +63,6 @@ class _AlertState extends State<Alert> {
         children: [
           const SearchBarApp(isOnAlertPage: true),
           const SizedBox(height: 16),
-          // Real-time Database List
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
               stream: FirebaseFirestore.instance
@@ -32,7 +72,7 @@ class _AlertState extends State<Alert> {
                 if (snapshot.hasError) {
                   return const Center(child: Text("Error loading alerts"));
                 }
-                if (snapshot.connectionState == ConnectionState.waiting) {
+                if (snapshot.connectionState == ConnectionState.waiting || _isLoading) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
@@ -41,8 +81,38 @@ class _AlertState extends State<Alert> {
                   return const Center(child: Text("No active alerts found."));
                 }
 
-                // Sort manually in memory to handle missing timestamps gracefully
-                final sortedDocs = List.from(docs);
+                // Filter alerts based on user settings
+                final filteredDocs = docs.where((doc) {
+                  final data = doc.data() as Map<String, dynamic>;
+                  final hazardType = data['hazardType'] as String? ?? '';
+                  return isAlertEnabled(hazardType);
+                }).toList();
+
+                if (filteredDocs.isEmpty) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(Icons.notifications_off, size: 64, color: Colors.grey),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'No alerts match your preferences',
+                          style: TextStyle(fontSize: 16, color: Colors.grey),
+                        ),
+                        const SizedBox(height: 8),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.pushNamed(context, '/settings');
+                          },
+                          child: const Text('Adjust Alert Settings'),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                // Sort filtered alerts
+                final sortedDocs = List.from(filteredDocs);
                 sortedDocs.sort((a, b) {
                   final aData = a.data() as Map<String, dynamic>;
                   final bData = b.data() as Map<String, dynamic>;
@@ -59,10 +129,12 @@ class _AlertState extends State<Alert> {
                   itemBuilder: (context, index) {
                     final data = sortedDocs[index].data() as Map<String, dynamic>;
                     final alert = LocalAlert.fromJson(data);
-                    bool isSaved = false;
-
-                    return StatefulBuilder(
-                      builder: (context, setState) {
+                    
+                    // Use Consumer to listen to saved alerts changes
+                    return Consumer<SavedAlertsProvider>(
+                      builder: (context, savedProvider, child) {
+                        final isSaved = savedProvider.isAlertSaved(alert);
+                        
                         return Container(
                           margin: const EdgeInsets.symmetric(vertical: 8),
                           padding: const EdgeInsets.all(12),
@@ -121,7 +193,17 @@ class _AlertState extends State<Alert> {
                                       color: isSaved ? Colors.black : Colors.grey,
                                     ),
                                     onPressed: () {
-                                      setState(() => isSaved = !isSaved);
+                                      savedProvider.toggleSaveAlert(alert);
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text(
+                                            isSaved 
+                                              ? 'Removed from saved alerts' 
+                                              : 'Saved to bookmarks',
+                                          ),
+                                          duration: const Duration(seconds: 1),
+                                        ),
+                                      );
                                     },
                                   ),
                                 ],

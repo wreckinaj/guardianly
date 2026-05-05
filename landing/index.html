@@ -1,0 +1,1223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guardianly - Your Personal Safety Companion</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            scroll-behavior: smooth;
+            background: #0a0a2a;
+        }
+
+        /* Header */
+        .header {
+            background: rgba(10, 10, 42, 0.95);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo-text {
+            font-size: 2.2rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .nav-link {
+            text-decoration: none;
+            color: #ddd;
+            padding: 0.5rem 1rem;
+            transition: color 0.3s;
+        }
+
+        .nav-link:hover, .nav-link.active {
+            color: #667eea;
+        }
+
+        .btn-outline {
+            border: 2px solid #667eea;
+            background: transparent;
+            padding: 0.5rem 1.5rem;
+            border-radius: 25px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-outline:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 0.5rem 1.5rem;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102,126,234,0.4);
+        }
+
+        /* Hero */
+        .hero {
+            background: linear-gradient(135deg, #0a0a2a 0%, #1a1a4a 100%);
+            padding: 120px 2rem 80px;
+            margin-top: 60px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: radial-gradient(circle at 20% 50%, rgba(102,126,234,0.15) 0%, transparent 50%);
+            pointer-events: none;
+        }
+
+        .hero-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 4rem;
+            align-items: center;
+            position: relative;
+            z-index: 2;
+        }
+
+        .hero-title {
+            font-size: 3rem;
+            font-weight: bold;
+            background: linear-gradient(135deg, #fff 0%, #a8b3ff 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .hero-subtitle {
+            font-size: 1.125rem;
+            color: rgba(255,255,255,0.8);
+            margin: 1rem 0 2rem;
+        }
+
+        .hero-buttons {
+            display: flex;
+            gap: 1rem;
+        }
+
+        .btn-white {
+            background: white;
+            color: #667eea;
+            padding: 0.75rem 2rem;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .btn-white:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255,255,255,0.2);
+        }
+
+        /* Slideshow Container */
+        .slideshow-container {
+            width: 300px;
+            height: 580px;
+            background: linear-gradient(135deg, #1a1a3a 0%, #2a2a4a 100%);
+            border-radius: 32px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+            position: relative;
+            border: 1px solid rgba(102,126,234,0.3);
+        }
+
+        .slideshow {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .slide {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            transition: opacity 0.5s ease-in-out;
+            object-fit: cover;
+            object-position: top;
+        }
+
+        .slide.active {
+            opacity: 1;
+        }
+
+        .slide img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: top;
+        }
+
+        .slideshow-controls {
+            position: absolute;
+            bottom: 10px;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            z-index: 10;
+            flex-wrap: wrap;
+            padding: 0 5px;
+        }
+
+        .slide-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.5);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .slide-dot.active {
+            background: #667eea;
+            width: 16px;
+            border-radius: 4px;
+        }
+
+        .video-caption {
+            text-align: center;
+            font-size: 11px;
+            color: rgba(255,255,255,0.5);
+            margin-top: 12px;
+        }
+
+        /* Problem Section */
+        .problem-section {
+            padding: 4rem 2rem;
+            background: linear-gradient(135deg, #0f0f2a 0%, #151535 100%);
+            border-top: 1px solid rgba(102,126,234,0.2);
+            border-bottom: 1px solid rgba(102,126,234,0.2);
+        }
+
+        .content-container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        .section-label {
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        .problem-title {
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: white;
+        }
+
+        .highlight-box {
+            background: rgba(102,126,234,0.1);
+            border-left: 4px solid #667eea;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+            border-radius: 12px;
+        }
+
+        .highlight-box strong {
+            color: #667eea;
+        }
+
+        .highlight-box, .problem-section p {
+            color: rgba(255,255,255,0.8);
+        }
+
+        /* Comparison Section */
+        .comparison-section {
+            padding: 4rem 2rem;
+            background: linear-gradient(135deg, #0a0a2a 0%, #12122e 100%);
+        }
+
+        .comparison-grid {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .comparison-card {
+            background: rgba(26, 26, 58, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 24px;
+            padding: 2rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            text-align: center;
+            border: 1px solid rgba(102,126,234,0.2);
+        }
+
+        .comparison-card.traditional {
+            border-top: 6px solid #666;
+        }
+
+        .comparison-card.guardianly {
+            border-top: 6px solid #667eea;
+        }
+
+        .comparison-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1.5rem;
+            color: white;
+        }
+
+        .comparison-feature {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            text-align: left;
+            color: rgba(255,255,255,0.8);
+        }
+
+        .check-no {
+            font-size: 1.25rem;
+            min-width: 32px;
+        }
+
+        .check-yes {
+            font-size: 1.25rem;
+            min-width: 32px;
+            color: #667eea;
+        }
+
+        /* ========== INTEGRATED FEATURES + GALLERY ========== */
+        .integrated-features-section {
+            padding: 5rem 2rem;
+            background: linear-gradient(180deg, #0a0a2a 0%, #050515 100%);
+            position: relative;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+            color: white;
+        }
+
+        .section-subtitle {
+            text-align: center;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 2rem;
+        }
+
+        /* Gallery Styles - FIXED SCROLLING */
+        .collage-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        /* Scroll indicators */
+        .scroll-indicator {
+            text-align: center;
+            margin-bottom: 1rem;
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            color: rgba(255,255,255,0.5);
+            font-size: 0.8rem;
+        }
+
+        .scroll-hint {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.25rem;
+            background: rgba(102,126,234,0.2);
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+        }
+
+        .collage-wrapper {
+            position: relative;
+            overflow-x: auto;
+            overflow-y: visible;
+            padding: 2rem 0;
+            cursor: grab;
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: auto;
+        }
+
+        .collage-wrapper:active {
+            cursor: grabbing;
+        }
+
+        .collage-grid {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+            justify-content: flex-start;
+            padding: 0.5rem 5rem;
+            min-width: max-content;
+        }
+
+        .fade-overlay {
+            position: absolute;
+            top: 0;
+            bottom: 0;
+            width: 120px;
+            pointer-events: none;
+            z-index: 15;
+        }
+
+        .fade-overlay.left {
+            left: 0;
+            background: linear-gradient(to right, 
+                #0a0a2a 0%, 
+                rgba(10, 10, 42, 0.9) 40%,
+                transparent 100%
+            );
+        }
+
+        .fade-overlay.right {
+            right: 0;
+            background: linear-gradient(to left, 
+                #0a0a2a 0%, 
+                rgba(10, 10, 42, 0.9) 40%,
+                transparent 100%
+            );
+        }
+
+        .collage-wrapper::-webkit-scrollbar {
+            height: 8px;
+        }
+
+        .collage-wrapper::-webkit-scrollbar-track {
+            background: #1a1a3a;
+            border-radius: 10px;
+            margin: 0 20px;
+        }
+
+        .collage-wrapper::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            border-radius: 10px;
+        }
+
+        .collage-wrapper::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #7b8ef0, #8b5db8);
+        }
+
+        .collage-item {
+            position: relative;
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            transition: all 0.3s;
+            cursor: pointer;
+            border: 1px solid rgba(102,126,234,0.2);
+            flex-shrink: 0;
+        }
+
+        .collage-item:hover {
+            transform: scale(1.02);
+            box-shadow: 0 15px 40px rgba(102,126,234,0.3);
+            border-color: #667eea;
+        }
+
+        .collage-item.large {
+            width: 280px;
+            height: 500px;
+        }
+
+        .collage-item.medium {
+            width: 220px;
+            height: 380px;
+        }
+
+        .collage-item.small {
+            width: 180px;
+            height: 280px;
+        }
+
+        .collage-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: top;
+        }
+
+        .collage-label {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(transparent, rgba(0,0,0,0.9));
+            color: white;
+            padding: 1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            text-align: center;
+            z-index: 2;
+        }
+
+        .feature-description-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(26, 26, 58, 0.95) 0%, rgba(42, 42, 74, 0.95) 100%);
+            backdrop-filter: blur(8px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            z-index: 10;
+            padding: 1rem;
+        }
+
+        .collage-item:hover .feature-description-overlay {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .feature-description-content {
+            text-align: center;
+            color: white;
+            transform: translateY(20px);
+            transition: transform 0.3s ease;
+        }
+
+        .collage-item:hover .feature-description-content {
+            transform: translateY(0);
+        }
+
+        .feature-desc-icon {
+            font-size: 2.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        .feature-description-content h4 {
+            font-size: 1.1rem;
+            margin-bottom: 0.75rem;
+            color: #667eea;
+        }
+
+        .feature-description-content p {
+            font-size: 0.75rem;
+            line-height: 1.4;
+            margin-bottom: 0.75rem;
+            color: rgba(255,255,255,0.9);
+        }
+
+        .feature-tag {
+            font-size: 0.65rem;
+            color: rgba(102,126,234,0.8);
+            letter-spacing: 0.5px;
+            border-top: 1px solid rgba(102,126,234,0.3);
+            padding-top: 0.5rem;
+            margin-top: 0.5rem;
+        }
+
+        .collage-note {
+            text-align: center;
+            margin-top: 1.5rem;
+            color: rgba(255,255,255,0.5);
+            font-size: 0.875rem;
+        }
+
+        .gallery-nav {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .gallery-nav-btn {
+            background: rgba(102,126,234,0.2);
+            border: 1px solid rgba(102,126,234,0.4);
+            color: #667eea;
+            padding: 0.5rem 1rem;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 0.8rem;
+        }
+
+        .gallery-nav-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        /* Team */
+        .team {
+            padding: 5rem 2rem;
+            background: linear-gradient(135deg, #0a0a2a 0%, #0f0f2a 100%);
+        }
+
+        .team-grid {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 2rem;
+        }
+
+        .team-card {
+            text-align: center;
+            padding: 2rem;
+            border-radius: 16px;
+            background: rgba(26, 26, 58, 0.8);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(102,126,234,0.2);
+            transition: all 0.3s;
+        }
+
+        .team-card:hover {
+            transform: translateY(-5px);
+            border-color: #667eea;
+        }
+
+        .team-avatar {
+            width: 150px;
+            height: 150px;
+            background: linear-gradient(135deg, rgba(102,126,234,0.2) 0%, rgba(118,75,162,0.2) 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            overflow: hidden;
+            border: 3px solid rgba(102,126,234,0.3);
+        }
+
+        .avatar-img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .team-card h3 {
+            color: white;
+        }
+
+        .team-card p {
+            color: rgba(255,255,255,0.7);
+        }
+
+        .github-btn {
+            background: #333;
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-top: 1rem;
+            transition: background 0.3s;
+        }
+
+        .github-btn:hover {
+            background: #667eea;
+        }
+
+        /* Contact */
+        .contact {
+            padding: 5rem 2rem;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .contact-container {
+            max-width: 800px;
+            margin: 0 auto;
+            text-align: center;
+        }
+
+        .contact-options {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+
+        .contact-card {
+            background: rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px);
+            color: white;
+            padding: 2rem;
+            border-radius: 16px;
+            text-decoration: none;
+            transition: all 0.3s;
+            flex: 1;
+            min-width: 200px;
+            border: 1px solid rgba(255,255,255,0.2);
+        }
+
+        .contact-card:hover {
+            transform: translateY(-5px);
+            background: rgba(255,255,255,0.2);
+        }
+
+        .contact-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .contact-card h3 {
+            margin-bottom: 0.5rem;
+            color: white;
+        }
+
+        .contact-card p {
+            color: rgba(255,255,255,0.8);
+            font-size: 0.875rem;
+        }
+
+        /* Footer */
+        .footer {
+            background: #050515;
+            color: rgba(255,255,255,0.6);
+            padding: 3rem 2rem;
+            text-align: center;
+        }
+
+        /* Animation */
+        .fade-up {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s cubic-bezier(0.2, 0.9, 0.4, 1.1), transform 0.8s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+        }
+
+        .fade-up.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero-container {
+                grid-template-columns: 1fr;
+            }
+            .hero-title {
+                font-size: 2rem;
+            }
+            .nav-links {
+                display: none;
+            }
+            .comparison-grid {
+                grid-template-columns: 1fr;
+            }
+            .collage-item.large {
+                width: 200px;
+                height: 380px;
+            }
+            .collage-item.medium {
+                width: 160px;
+                height: 280px;
+            }
+            .collage-item.small {
+                width: 130px;
+                height: 200px;
+            }
+            .fade-overlay {
+                width: 60px;
+            }
+            .logo-text {
+                font-size: 1.8rem;
+            }
+            .slideshow-container {
+                width: 280px;
+                height: 540px;
+                margin: 0 auto;
+            }
+            .collage-grid {
+                padding: 0.5rem 2rem;
+            }
+            .scroll-hint {
+                font-size: 0.7rem;
+            }
+            .slideshow-controls {
+                bottom: 5px;
+            }
+            .slide-dot {
+                width: 4px;
+                height: 4px;
+            }
+            .slide-dot.active {
+                width: 10px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="header">
+        <div class="nav-container">
+            <div class="logo-text">Guardianly</div>
+            <div class="nav-links">
+                <a href="#problem" class="nav-link">Problem</a>
+                <a href="#comparison" class="nav-link">How We're Different</a>
+                <a href="#features" class="nav-link">Key Features</a>
+                <a href="#team" class="nav-link">Team</a>
+                <a href="https://github.com/wreckinaj/guardianly" target="_blank" class="btn-outline">GitHub</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-container">
+            <div>
+                <h1 class="hero-title">Navigate Smarter</h1>
+                <h1 class="hero-title">Avoid Danger</h1>
+                <h1 class="hero-title">Arrive Safer</h1>
+                <p class="hero-subtitle">Guardianly is a mobile navigation safety app that delivers real-time hazard alerts, safer alternate routes, and personalized safety guidance for commuters, travelers, and at-risk individuals.</p>
+                <div class="hero-buttons">
+                    <a href="https://guardianly-auth.web.app/#/home" class="btn-white" target="_blank" rel="noopener noreferrer">Get Started →</a>
+                </div>
+            </div>
+
+            <div class="video-container">
+                <div class="slideshow-container">
+                    <div class="slideshow" id="heroSlideshow">
+                        <!-- Original 9 screenshots -->
+                        <div class="slide active">
+                            <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.08.21.png" alt="Guardianly Login Screen">
+                        </div>
+                        <div class="slide">
+                            <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.08.25.png" alt="Guardianly Map View">
+                        </div>
+                        <div class="slide">
+                            <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.08.30.png" alt="Guardianly Map Legend">
+                        </div>
+                        <div class="slide">
+                            <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.08.49.png" alt="Guardianly Alerts">
+                        </div>
+                        <div class="slide">
+                            <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.09.06.png" alt="Guardianly AI Analysis">
+                        </div>
+                        <div class="slide">
+                            <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.09.23.png" alt="Guardianly Account Settings">
+                        </div>
+                        <div class="slide">
+                            <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.09.31.png" alt="Guardianly Saved Alerts">
+                        </div>
+                        <div class="slide">
+                            <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.09.37.png" alt="Guardianly Privacy Settings">
+                        </div>
+                        <div class="slide">
+                            <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.09.42.png" alt="Guardianly Policies">
+                        </div>
+                        <!-- NEW screenshots added -->
+                        <div class="slide">
+                            <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.10.01.png" alt="Guardianly Profile Menu">
+                        </div>
+                        <div class="slide">
+                            <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.10.22.png" alt="Guardianly Address Search">
+                        </div>
+                        <div class="slide">
+                            <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.10.31.png" alt="Guardianly Directions">
+                        </div>
+                        <div class="slide">
+                            <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.10.43.png" alt="Guardianly Route Results Map">
+                        </div>
+                        <div class="slide">
+                            <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.10.46.png" alt="Guardianly Turn by Turn">
+                        </div>
+                        <div class="slide">
+                            <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.11.13.png" alt="Guardianly Sign Up">
+                        </div>
+                    </div>
+                    <div class="slideshow-controls" id="slideshowControls"></div>
+                </div>
+                <p class="video-caption">Guardianly in action - Real-time safety alerts and navigation</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Problem -->
+    <section id="problem" class="problem-section fade-up">
+        <div class="content-container">
+            <div class="section-label">The Problem</div>
+            <h2 class="problem-title">Most tools prioritize speed and efficiency over user safety.</h2>
+            <div class="highlight-box">
+                <strong>⚠️ Why this matters:</strong> Current navigation systems lack real-time integration of dynamic risk factors, leaving users vulnerable to rapidly changing conditions. 
+                Individuals are forced to rely on fragmented sources of information such as news reports, social media, or delayed alerts, which are often incomplete or outdated.
+                This gap presents a critical issue: there is no centralized, user-friendly platform that actively guides individuals away from danger while adapting to real time 
+                environmental conditions. As a result, users face unnecessary exposure to preventable risks during everyday travel.
+            </div>
+            <p>Guardianly closes this gap by combining live hazard data with your real-time location and preferences — so you get <strong>actionable</strong> advice, not just noise.</p>
+        </div>
+    </section>
+
+    <!-- Comparison -->
+    <section id="comparison" class="comparison-section fade-up">
+        <div class="content-container">
+            <div class="section-label" style="text-align: center;">What Makes Us Different</div>
+            <h2 class="section-title" style="font-size: 1.8rem;">See the difference for yourself</h2>
+            <div class="comparison-grid">
+                <div class="comparison-card traditional">
+                    <div class="comparison-title">Typical Safety App</div>
+                    <div class="comparison-feature"><span class="check-no">❌</span><span>Generic alerts for everyone</span></div>
+                    <div class="comparison-feature"><span class="check-no">❌</span><span>Reacts after danger occurs</span></div>
+                    <div class="comparison-feature"><span class="check-no">❌</span><span>No solution for personal safety</span></div>
+                    <div class="comparison-feature"><span class="check-no">❌</span><span>One-size-fits-all warnings</span></div>
+                </div>
+                <div class="comparison-card guardianly">
+                    <div class="comparison-title">Guardianly</div>
+                    <div class="comparison-feature"><span class="check-yes">✅</span><span>Differentiated icons for certain hazards</span></div>
+                    <div class="comparison-feature"><span class="check-yes">✅</span><span>Predictive — alerts you before danger</span></div>
+                    <div class="comparison-feature"><span class="check-yes">✅</span><span>Safer alternate routes in real time</span></div>
+                    <div class="comparison-feature"><span class="check-yes">✅</span><span>AI-powered, context-aware guidance</span></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- INTEGRATED FEATURES + GALLERY -->
+    <section id="features" class="integrated-features-section fade-up">
+        <h2 class="section-title">Key Features <span style="font-size: 1rem; color: #667eea;">✨ Hover any screenshot to learn more</span></h2>
+        <p class="section-subtitle">Each screenshot reveals its feature — just hover to see details</p>
+        
+        <div class="scroll-indicator">
+            <span class="scroll-hint">← Drag or scroll to explore →</span>
+        </div>
+        
+        <div class="collage-container">
+            <div class="fade-overlay left"></div>
+            <div class="collage-wrapper" id="collageWrapperIntegrated">
+                <div class="collage-grid" id="collageGridIntegrated">
+                    
+                    
+                    <!-- Feature 3: Map View -->
+                    <div class="collage-item large">
+                        <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.08.25.png" alt="Map View">
+                        <div class="collage-label">Interactive Map</div>
+                        <div class="feature-description-overlay">
+                            <div class="feature-description-content">
+                                <div class="feature-desc-icon">🗺️</div>
+                                <h4>Interactive Map</h4>
+                                <p>Real-time hazard visualization on an interactive map. See nearby incidents, police activity, and emergency situations instantly.</p>
+                                <div class="feature-tag">Real-time • Visual • Accurate</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Feature 4: Map Legend -->
+                    <div class="collage-item large">
+                        <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.08.30.png" alt="Map Legend">
+                        <div class="collage-label">Color-Coded Legend</div>
+                        <div class="feature-description-overlay">
+                            <div class="feature-description-content">
+                                <div class="feature-desc-icon">🎨</div>
+                                <h4>Color-Coded Hazards</h4>
+                                <p>Easy-to-understand color coding for different hazard types: Fire (Red), Police (Blue), Medical (Green), Warnings (Yellow).</p>
+                                <div class="feature-tag">Visual • Intuitive • Clear</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Feature 5: Alert Details -->
+                    <div class="collage-item large">
+                        <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.08.49.png" alt="Alert Details">
+                        <div class="collage-label">Alert Details</div>
+                        <div class="feature-description-overlay">
+                            <div class="feature-description-content">
+                                <div class="feature-desc-icon">🚨</div>
+                                <h4>Detailed Alerts</h4>
+                                <p>Comprehensive alert information including type, severity, location, and recommended actions. View on map or get more details.</p>
+                                <div class="feature-tag">Detailed • Actionable • Clear</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Feature 6: AI Analysis -->
+                    <div class="collage-item large">
+                        <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.09.06.png" alt="AI Analysis">
+                        <div class="collage-label">AI Analysis</div>
+                        <div class="feature-description-overlay">
+                            <div class="feature-description-content">
+                                <div class="feature-desc-icon">🤖</div>
+                                <h4>AI-Powered Analysis</h4>
+                                <p>Smart AI analyzes threats and provides intelligent, context-aware recommendations. Get personalized safety guidance based on real-time data.</p>
+                                <div class="feature-tag">Smart • Predictive • Adaptive</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Feature 7: Navigation / Directions -->
+                    <div class="collage-item large">
+                        <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.10.31.png" alt="Directions">
+                        <div class="collage-label">Smart Navigation</div>
+                        <div class="feature-description-overlay">
+                            <div class="feature-description-content">
+                                <div class="feature-desc-icon">🧭</div>
+                                <h4>Smart Navigation</h4>
+                                <p>Get turn-by-turn directions with multiple transport modes: Walk, Drive, Transit, or Bike.</p>
+                                <div class="feature-tag">Multi-modal • Safe Routes • Real-time</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Feature 8: Route Results with Map -->
+                    <div class="collage-item large">
+                        <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.10.43.png" alt="Route Results">
+                        <div class="collage-label">Route Planning</div>
+                        <div class="feature-description-overlay">
+                            <div class="feature-description-content">
+                                <div class="feature-desc-icon">📍</div>
+                                <h4>Route Planning</h4>
+                                <p>View detailed route results with duration and arrival time.</p>
+                                <div class="feature-tag">Efficient • Clear • Detailed</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Feature 9: Turn by Turn Directions -->
+                    <div class="collage-item large">
+                        <img src="pictures/Simulator%20Screenshot%20-%20iPhone%2017%20-%202026-04-25%20at%2021.10.46.png" alt="Turn by Turn">
+                        <div class="collage-label">Turn by Turn</div>
+                        <div class="feature-description-overlay">
+                            <div class="feature-description-content">
+                                <div class="feature-desc-icon">🚗</div>
+                                <h4>Step-by-Step Directions</h4>
+                                <p>Follow precise turn-by-turn instructions with distance tracking. Never miss a turn with clear, easy-to-follow guidance.</p>
+                                <div class="feature-tag">Precise • Reliable • Easy</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    
+                </div>
+            </div>
+            <div class="fade-overlay right"></div>
+        </div>
+        
+        <div class="gallery-nav">
+            <button class="gallery-nav-btn" id="scrollLeftBtn">← Scroll Left</button>
+            <button class="gallery-nav-btn" id="scrollRightBtn">Scroll Right →</button>
+        </div>
+        
+        <p class="collage-note"><strong>💡 Tip:</strong> Drag horizontally with your mouse, use the scrollbar, or click the buttons above to see all 12+ features</p>
+    </section>
+
+    <!-- Team -->
+    <section id="team" class="team">
+        <h2 class="section-title">Meet the Team</h2>
+        <div class="team-grid">
+            <div class="team-card fade-up">
+                <div class="team-avatar">
+                    <img src="pictures/unnamed_5.jpeg" alt="Anthony Silva" class="avatar-img">
+                </div>
+                <h3>Anthony Silva</h3>
+                <p>Project Lead & Developer</p>
+                <a href="https://github.com/wreckinaj" target="_blank" class="github-btn">GitHub</a>
+            </div>
+            
+            <div class="team-card fade-up">
+                <div class="team-avatar">
+                    <img src="pictures/image.jpeg" alt="Devin Shook" class="avatar-img">
+                </div>
+                <h3>Devin Shook</h3>
+                <p>UX/UI & Backend</p>
+                <a href="https://github.com/dshook55" target="_blank" class="github-btn">GitHub</a>
+            </div>
+            
+            <div class="team-card fade-up">
+                <div class="team-avatar">
+                    <img src="pictures/1735431796836_copy.jpeg" alt="Feifei Huang" class="avatar-img">
+                </div>
+                <h3>Feifei Huang</h3>
+                <p>UX/UI & Frontend</p>
+                <a href="https://github.com/MoonyMochiey" target="_blank" class="github-btn">GitHub</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact -->
+    <section id="contact" class="contact">
+        <div class="contact-container">
+            <h2 class="section-title" style="color: white;">Get in Touch</h2>
+            <div class="contact-options">
+                <a href="https://github.com/wreckinaj/guardianly/issues" target="_blank" class="contact-card fade-up">
+                    <div class="contact-icon">📝</div>
+                    <h3>GitHub Issues</h3>
+                    <p>Report bugs or request features</p>
+                </a>
+                <a href="mailto:guardianlycs@gmail.com" class="contact-card fade-up">
+                    <div class="contact-icon">📧</div>
+                    <h3>Email Us</h3>
+                    <p>guardianlycs@gmail.com</p>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <p>© 2025 Guardianly</p>
+    </footer>
+
+    <script>
+        // Slideshow functionality
+        const slides = document.querySelectorAll('.slide');
+        const controlsContainer = document.getElementById('slideshowControls');
+        let currentSlide = 0;
+        let slideInterval;
+
+        // Create dots
+        if (slides.length > 0 && controlsContainer) {
+            slides.forEach((_, index) => {
+                const dot = document.createElement('div');
+                dot.classList.add('slide-dot');
+                if (index === 0) dot.classList.add('active');
+                dot.addEventListener('click', () => goToSlide(index));
+                controlsContainer.appendChild(dot);
+            });
+        }
+
+        const dots = document.querySelectorAll('.slide-dot');
+
+        function goToSlide(index) {
+            if (!slides.length) return;
+            slides[currentSlide].classList.remove('active');
+            if (dots[currentSlide]) dots[currentSlide].classList.remove('active');
+            currentSlide = index;
+            slides[currentSlide].classList.add('active');
+            if (dots[currentSlide]) dots[currentSlide].classList.add('active');
+        }
+
+        function nextSlide() {
+            if (!slides.length) return;
+            let next = (currentSlide + 1) % slides.length;
+            goToSlide(next);
+        }
+
+        // Start slideshow
+        function startSlideshow() {
+            if (slides.length <= 1) return;
+            slideInterval = setInterval(nextSlide, 3000);
+        }
+
+        // Stop slideshow on hover
+        const slideshowContainer = document.querySelector('.slideshow-container');
+        if (slideshowContainer) {
+            slideshowContainer.addEventListener('mouseenter', () => {
+                clearInterval(slideInterval);
+            });
+            slideshowContainer.addEventListener('mouseleave', () => {
+                startSlideshow();
+            });
+        }
+
+        startSlideshow();
+
+        // Integrated Gallery drag and scroll functionality
+        const integratedWrapper = document.getElementById('collageWrapperIntegrated');
+        let isDownIntegrated = false;
+        let startXIntegrated, scrollLeftIntegrated;
+        
+        if (integratedWrapper) {
+            integratedWrapper.addEventListener('mousedown', (e) => {
+                isDownIntegrated = true;
+                integratedWrapper.style.cursor = 'grabbing';
+                startXIntegrated = e.pageX - integratedWrapper.offsetLeft;
+                scrollLeftIntegrated = integratedWrapper.scrollLeft;
+            });
+            integratedWrapper.addEventListener('mouseleave', () => { 
+                isDownIntegrated = false; 
+                integratedWrapper.style.cursor = 'grab'; 
+            });
+            integratedWrapper.addEventListener('mouseup', () => { 
+                isDownIntegrated = false; 
+                integratedWrapper.style.cursor = 'grab'; 
+            });
+            integratedWrapper.addEventListener('mousemove', (e) => {
+                if (!isDownIntegrated) return;
+                e.preventDefault();
+                const x = e.pageX - integratedWrapper.offsetLeft;
+                const walk = (x - startXIntegrated) * 1.5;
+                integratedWrapper.scrollLeft = scrollLeftIntegrated - walk;
+            });
+        }
+
+        // Navigation buttons for gallery
+        const scrollLeftBtn = document.getElementById('scrollLeftBtn');
+        const scrollRightBtn = document.getElementById('scrollRightBtn');
+        
+        if (scrollLeftBtn && integratedWrapper) {
+            scrollLeftBtn.addEventListener('click', () => {
+                integratedWrapper.scrollBy({ left: -300, behavior: 'smooth' });
+            });
+        }
+        
+        if (scrollRightBtn && integratedWrapper) {
+            scrollRightBtn.addEventListener('click', () => {
+                integratedWrapper.scrollBy({ left: 300, behavior: 'smooth' });
+            });
+        }
+
+        // Scroll animations
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(e => { if (e.isIntersecting) e.target.classList.add('visible'); });
+        }, { threshold: 0.15 });
+        document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+    </script>
+</body>
+</html>
