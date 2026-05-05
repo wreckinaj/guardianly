@@ -15,25 +15,27 @@ import 'forgot_pw.dart';
 import 'reset_pw.dart';
 import 'fromto.dart';
 import 'saved_alerts_provider.dart';
-import 'package:shared_preferences/shared_preferences.dart'; // added
+import 'package:shared_preferences/shared_preferences.dart';
 
-// --- New: RadiusProvider to keep selected radius across page refreshes/navigation ---
-// Persisted using shared_preferences under key 'filter_radius_miles'
+// --- RadiusProvider to keep selected radius across page refreshes/navigation ---
 class RadiusProvider extends ChangeNotifier {
   static const _prefsKey = 'filter_radius_miles';
 
-  double _radiusMiles = 1.0; // default
+  double? _radiusMiles; // null means "No limit"
   bool _isLoaded = false;
 
-  double get radiusMiles => _radiusMiles;
+  double? get radiusMiles => _radiusMiles;
   bool get isLoaded => _isLoaded;
 
   Future<void> load() async {
     if (_isLoaded) return;
     try {
       final prefs = await SharedPreferences.getInstance();
-      final saved = prefs.getDouble(_prefsKey);
-      if (saved != null) _radiusMiles = saved;
+      if (prefs.containsKey(_prefsKey)) {
+        _radiusMiles = prefs.getDouble(_prefsKey);
+      } else {
+        _radiusMiles = null; // Default to no limit
+      }
     } catch (e) {
       debugPrint('RadiusProvider.load() failed: $e');
     } finally {
@@ -42,24 +44,26 @@ class RadiusProvider extends ChangeNotifier {
     }
   }
 
-  Future<void> setRadiusMiles(double miles) async {
+  Future<void> setRadiusMiles(double? miles) async {
     if (miles == _radiusMiles) return;
     _radiusMiles = miles;
     notifyListeners();
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setDouble(_prefsKey, miles);
+      if (miles == null) {
+        await prefs.remove(_prefsKey);
+      } else {
+        await prefs.setDouble(_prefsKey, miles);
+      }
     } catch (e) {
       debugPrint('RadiusProvider.setRadiusMiles() failed to persist: $e');
     }
   }
 }
-// --- end RadiusProvider ---
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Preload preferences-backed radius before the widget tree builds.
   final radiusProvider = RadiusProvider();
   await radiusProvider.load();
 
@@ -95,17 +99,10 @@ class _AppInitializerState extends State<AppInitializer> {
   Future<void> _initializeApp() async {
     try {
       debugPrint('📱 Starting app initialization...');
-      
-      // Load environment variables
       await dotenv.load(fileName: ".env");
-      debugPrint('✅ .env loaded');
-      
-      debugPrint('🔥 Initializing Firebase...');
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
-      debugPrint('✅ Firebase initialized successfully!');
-      
       if (mounted) {
         setState(() {
           _isInitialized = true;
@@ -113,7 +110,6 @@ class _AppInitializerState extends State<AppInitializer> {
       }
     } catch (e) {
       debugPrint('❌ Initialization failed: $e');
-      
       if (mounted) {
         setState(() {
           _hasError = true;
@@ -125,7 +121,6 @@ class _AppInitializerState extends State<AppInitializer> {
 
   @override
   Widget build(BuildContext context) {
-    // Show loading while initializing
     if (!_isInitialized && !_hasError) {
       return const MaterialApp(
         home: Scaffold(
@@ -143,7 +138,6 @@ class _AppInitializerState extends State<AppInitializer> {
       );
     }
 
-    // Show error if initialization failed
     if (_hasError) {
       return MaterialApp(
         home: Scaffold(
@@ -177,7 +171,6 @@ class _AppInitializerState extends State<AppInitializer> {
       );
     }
 
-    // App is initialized, show your main app
     return const MyApp();
   }
 }
@@ -189,7 +182,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: Home(),
+      home: const Home(), // FIXED: Added const
       routes: {
         '/signup': (context) => SignUpPage(),
         '/forgot_pw': (context) => const ForgotPW(),
@@ -212,20 +205,3 @@ class MyApp extends StatelessWidget {
     );
   }
 }
-
-/*
-Usage hints (make these edits in your home.dart / map widget / alertlist.dart):
-
-- Read current radius:
-  final radius = context.watch<RadiusProvider>().radiusMiles;
-
-- Update radius when user selects a new value:
-  await context.read<RadiusProvider>().setRadiusMiles(1.0);
-
-- If you need the persisted value immediately after navigation, you can watch the provider
-  and rebuild UI when it updates. The provider will call notifyListeners() after load().
-
-- Optional: if your Home widget currently keeps its own local radius state,
-  replace that local state with the provider reads/updates above so the value is shared
-  across pages and persists between refreshes/navigation.
-*/

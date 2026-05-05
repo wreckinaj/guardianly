@@ -49,7 +49,6 @@ class FromToState extends State<FromTo> {
   static const int maxSuggestions = 5;
 
   // New variables for location feature
-  bool _useMyLocationAsStart = false;
   bool _gettingLocation = false;
 
   @override
@@ -161,10 +160,6 @@ class FromToState extends State<FromTo> {
     }
   }
 
-  void _setFromValueToCoordinates(double lat, double lng) {
-    fromController.text = '$lat, $lng';
-  }
-
   // Add reverse-geocoding method to convert coordinates to address
   Future<void> _reverseGeocodeAndSetFrom(double lat, double lng) async {
     try {
@@ -221,7 +216,9 @@ class FromToState extends State<FromTo> {
       }
 
       final pos = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
       );
 
       // Use reverse geocoding to get address instead of raw coordinates
