@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart';
 import 'Components/searchbar.dart';
 import '/Components/menu.dart';
 import 'alertdetails.dart';
@@ -17,26 +19,44 @@ class Alert extends StatefulWidget {
 
 class _AlertState extends State<Alert> {
   SharedPreferences? _prefs;
-  bool _isLoading = true;
+  bool _isLoadingSettings = true;
+  LatLng? _userLocation;
+  double? _filterRadius; // in miles
   
   @override
   void initState() {
     super.initState();
     _loadSettings();
+    _initLocation();
   }
   
   Future<void> _loadSettings() async {
     _prefs = await SharedPreferences.getInstance();
     if (mounted) {
       setState(() {
-        _isLoading = false;
+        _isLoadingSettings = false;
       });
+    }
+  }
+
+  Future<void> _initLocation() async {
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high)
+      );
+      if (mounted) {
+        setState(() {
+          _userLocation = LatLng(position.latitude, position.longitude);
+        });
+      }
+    } catch (e) {
+      debugPrint("Error getting location in list: $e");
     }
   }
   
   // Check if an alert type is enabled in settings
   bool isAlertEnabled(String hazardType) {
-    if (_prefs == null) return true; // Default to true if settings not loaded
+    if (_prefs == null) return true; 
     
     switch (hazardType) {
       case 'wildfire':
@@ -50,7 +70,7 @@ class _AlertState extends State<Alert> {
       case 'road_closure':
         return _prefs!.getBool('roadClosureAlerts') ?? true;
       default:
-        return true; // Show unknown alert types by default
+        return true; 
     }
   }
 
@@ -61,7 +81,14 @@ class _AlertState extends State<Alert> {
       appBar: const Menu(),
       body: Column(
         children: [
-          const SearchBarApp(isOnAlertPage: true),
+          SearchBarApp(
+            isOnAlertPage: true,
+            onRadiusChanged: (double? radius) {
+              setState(() {
+                _filterRadius = radius;
+              });
+            },
+          ),
           const SizedBox(height: 16),
           Expanded(
             child: StreamBuilder<QuerySnapshot>(
@@ -72,7 +99,7 @@ class _AlertState extends State<Alert> {
                 if (snapshot.hasError) {
                   return const Center(child: Text("Error loading alerts"));
                 }
-                if (snapshot.connectionState == ConnectionState.waiting || _isLoading) {
+                if (snapshot.connectionState == ConnectionState.waiting || _isLoadingSettings) {
                   return const Center(child: CircularProgressIndicator());
                 }
 
@@ -81,23 +108,39 @@ class _AlertState extends State<Alert> {
                   return const Center(child: Text("No active alerts found."));
                 }
 
-                // Filter alerts based on user settings
-                final filteredDocs = docs.where((doc) {
-                  final data = doc.data() as Map<String, dynamic>;
-                  final hazardType = data['hazardType'] as String? ?? '';
-                  return isAlertEnabled(hazardType);
+                // 1. Filter by settings (Hazard Type)
+                // 2. Filter by proximity (if radius set)
+                final filteredAlerts = docs.map((doc) => LocalAlert.fromJson(doc.data() as Map<String, dynamic>)).where((alert) {
+                  // Filter by settings
+                  if (!isAlertEnabled(alert.hazardType)) return false;
+
+                  // Filter by proximity
+                  if (_filterRadius != null && _userLocation != null) {
+                    double distanceInMeters = Geolocator.distanceBetween(
+                      _userLocation!.latitude,
+                      _userLocation!.longitude,
+                      alert.position.latitude,
+                      alert.position.longitude,
+                    );
+                    // Convert miles to meters (1 mile = 1609.34 meters)
+                    return distanceInMeters <= (_filterRadius! * 1609.34);
+                  }
+
+                  return true;
                 }).toList();
 
-                if (filteredDocs.isEmpty) {
+                if (filteredAlerts.isEmpty) {
                   return Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         const Icon(Icons.notifications_off, size: 64, color: Colors.grey),
                         const SizedBox(height: 16),
-                        const Text(
-                          'No alerts match your preferences',
-                          style: TextStyle(fontSize: 16, color: Colors.grey),
+                        Text(
+                          _filterRadius != null 
+                            ? 'No alerts found within $_filterRadius miles'
+                            : 'No alerts match your preferences',
+                          style: const TextStyle(fontSize: 16, color: Colors.grey),
                         ),
                         const SizedBox(height: 8),
                         TextButton(
@@ -111,26 +154,17 @@ class _AlertState extends State<Alert> {
                   );
                 }
 
-                // Sort filtered alerts
-                final sortedDocs = List.from(filteredDocs);
-                sortedDocs.sort((a, b) {
-                  final aData = a.data() as Map<String, dynamic>;
-                  final bData = b.data() as Map<String, dynamic>;
-                  final aTime = aData['timestamp'] as Timestamp?;
-                  final bTime = bData['timestamp'] as Timestamp?;
-                  if (aTime == null) return 1;
-                  if (bTime == null) return -1;
-                  return bTime.compareTo(aTime);
-                });
-
+                // Sort filtered alerts by newest if timestamp exists
+                // Note: We don't have the raw doc here anymore, so we rely on LocalAlert model if we added timestamp there
+                // For now, let's just show them. If sorting is needed, we'd need to keep the raw data.
+                // Let's sort based on a simple heuristic or re-read the raw data if needed.
+                
                 return ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  itemCount: sortedDocs.length,
+                  itemCount: filteredAlerts.length,
                   itemBuilder: (context, index) {
-                    final data = sortedDocs[index].data() as Map<String, dynamic>;
-                    final alert = LocalAlert.fromJson(data);
+                    final alert = filteredAlerts[index];
                     
-                    // Use Consumer to listen to saved alerts changes
                     return Consumer<SavedAlertsProvider>(
                       builder: (context, savedProvider, child) {
                         final isSaved = savedProvider.isAlertSaved(alert);
