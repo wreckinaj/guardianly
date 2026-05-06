@@ -45,6 +45,7 @@ dependencies:
 
   # Local Notifications
   flutter_local_notifications: 18.0.1
+  firebase_core_platform_interface: 5.4.2
 
 dependency_overrides:
   flutter_local_notifications: ^18.0.1
