@@ -102,32 +102,25 @@ jobs:
 
   build-windows:
     name: Build Windows
-    runs-on: windows-latest
+    runs-on: windows-2022
     needs: analyze-test
     steps:
       - uses: actions/checkout@v5
-      # added some changes to see if it passes window build
-      - name: Add MSBuild to PATH
-        uses: microsoft/setup-msbuild@v2
-      # until here
-
+      
+      - name: Setup Visual Studio developer prompt
+        uses: ilammy/msvc-dev-cmd@v1
+      
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.35.7'
+      
       - run: flutter pub get
-      # added more help stuff here too for windows
+      
       - name: Enable Windows desktop
         run: flutter config --enable-windows-desktop
-
-
-      - name: Verify Visual Studio
-        run: |
-          vswhere -latest -property installationPath
-          echo "MSBuild path:"
-          where.exe msbuild
-      # until here
-
-      - run: flutter build windows
+      
+      - name: Build Windows
+        run: flutter build windows
   
   build-web:
     name: Build Web
