@@ -3,7 +3,7 @@ name: Flutter CI
 on:
   pull_request:
   push:
-    branches: [ main ]
+    branches: [ '**' ]
 
 jobs:
   backend-test:
