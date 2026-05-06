@@ -8,6 +8,7 @@ import '/Components/menu.dart';
 import '/Components/key.dart';
 import '/Components/textfield.dart';
 import '/directions.dart';
+import 'package:geolocator/geolocator.dart';
 
 class FromTo extends StatefulWidget {
   final String? initialFromAddress;
@@ -46,6 +47,9 @@ class FromToState extends State<FromTo> {
   
   // Limit suggestions to display
   static const int maxSuggestions = 5;
+
+  // New variables for location feature
+  bool _gettingLocation = false;
 
   @override
   void initState() {
@@ -155,6 +159,80 @@ class FromToState extends State<FromTo> {
       debugPrint('Error searching address: $e');
     }
   }
+
+  // Add reverse-geocoding method to convert coordinates to address
+  Future<void> _reverseGeocodeAndSetFrom(double lat, double lng) async {
+    try {
+      final url = 'https://api.mapbox.com/geocoding/v5/mapbox.places/$lng,$lat.json'
+          '?access_token=$mapboxToken'
+          '&limit=1'
+          '&types=address,poi,place,locality';
+
+      final response = await http.get(Uri.parse(url));
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['features'].isNotEmpty) {
+          final address = data['features'][0]['place_name'];
+          if (mounted) {
+            setState(() {
+              fromController.text = address;
+            });
+          }
+        } else {
+          // Fallback to coordinates if no address found
+          if (mounted) {
+            setState(() {
+              fromController.text = '$lat, $lng';
+            });
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error reverse geocoding: $e');
+      // Fallback to coordinates
+      if (mounted) {
+        setState(() {
+          fromController.text = '$lat, $lng';
+        });
+      }
+    }
+  }
+
+  Future<void> _setStartToMyLocation() async {
+    setState(() => _gettingLocation = true);
+    try {
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.denied ||
+          permission == LocationPermission.deniedForever) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Location permission not granted.')),
+        );
+        return;
+      }
+
+      final pos = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+        ),
+      );
+
+      // Use reverse geocoding to get address instead of raw coordinates
+      await _reverseGeocodeAndSetFrom(pos.latitude, pos.longitude);
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Failed to get location: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _gettingLocation = false);
+    }
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -309,6 +387,22 @@ class FromToState extends State<FromTo> {
                                                     },
                                                   ),
                                                 ),
+                                                // Add "Use my location" button
+                                                if (!_gettingLocation)
+                                                  IconButton(
+                                                    icon: const Icon(Icons.my_location, color: Colors.blue),
+                                                    onPressed: _setStartToMyLocation,
+                                                    tooltip: 'Use my location',
+                                                  )
+                                                else
+                                                  const Padding(
+                                                    padding: EdgeInsets.all(12),
+                                                    child: SizedBox(
+                                                      width: 20,
+                                                      height: 20,
+                                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                                    ),
+                                                  ),
                                               ],
                                             ),
                                           ],

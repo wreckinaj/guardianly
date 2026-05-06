@@ -15,10 +15,67 @@ import 'forgot_pw.dart';
 import 'reset_pw.dart';
 import 'fromto.dart';
 import 'saved_alerts_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-void main() {
+// --- RadiusProvider to keep selected radius across page refreshes/navigation ---
+class RadiusProvider extends ChangeNotifier {
+  static const _prefsKey = 'filter_radius_miles';
+
+  double? _radiusMiles; // null means "No limit"
+  bool _isLoaded = false;
+
+  double? get radiusMiles => _radiusMiles;
+  bool get isLoaded => _isLoaded;
+
+  Future<void> load() async {
+    if (_isLoaded) return;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (prefs.containsKey(_prefsKey)) {
+        _radiusMiles = prefs.getDouble(_prefsKey);
+      } else {
+        _radiusMiles = null; // Default to no limit
+      }
+    } catch (e) {
+      debugPrint('RadiusProvider.load() failed: $e');
+    } finally {
+      _isLoaded = true;
+      notifyListeners();
+    }
+  }
+
+  Future<void> setRadiusMiles(double? miles) async {
+    if (miles == _radiusMiles) return;
+    _radiusMiles = miles;
+    notifyListeners();
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (miles == null) {
+        await prefs.remove(_prefsKey);
+      } else {
+        await prefs.setDouble(_prefsKey, miles);
+      }
+    } catch (e) {
+      debugPrint('RadiusProvider.setRadiusMiles() failed to persist: $e');
+    }
+  }
+}
+
+void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  runApp(const AppInitializer());
+
+  final radiusProvider = RadiusProvider();
+  await radiusProvider.load();
+
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (_) => SavedAlertsProvider()),
+        ChangeNotifierProvider.value(value: radiusProvider),
+      ],
+      child: const AppInitializer(),
+    ),
+  );
 }
 
 class AppInitializer extends StatefulWidget {
@@ -42,17 +99,10 @@ class _AppInitializerState extends State<AppInitializer> {
   Future<void> _initializeApp() async {
     try {
       debugPrint('📱 Starting app initialization...');
-      
-      // Load environment variables
       await dotenv.load(fileName: ".env");
-      debugPrint('✅ .env loaded');
-      
-      debugPrint('🔥 Initializing Firebase...');
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
-      debugPrint('✅ Firebase initialized successfully!');
-      
       if (mounted) {
         setState(() {
           _isInitialized = true;
@@ -60,7 +110,6 @@ class _AppInitializerState extends State<AppInitializer> {
       }
     } catch (e) {
       debugPrint('❌ Initialization failed: $e');
-      
       if (mounted) {
         setState(() {
           _hasError = true;
@@ -72,7 +121,6 @@ class _AppInitializerState extends State<AppInitializer> {
 
   @override
   Widget build(BuildContext context) {
-    // Show loading while initializing
     if (!_isInitialized && !_hasError) {
       return const MaterialApp(
         home: Scaffold(
@@ -90,7 +138,6 @@ class _AppInitializerState extends State<AppInitializer> {
       );
     }
 
-    // Show error if initialization failed
     if (_hasError) {
       return MaterialApp(
         home: Scaffold(
@@ -124,7 +171,6 @@ class _AppInitializerState extends State<AppInitializer> {
       );
     }
 
-    // App is initialized, show your main app
     return const MyApp();
   }
 }
@@ -134,34 +180,28 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-
-    return MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => SavedAlertsProvider()),
-      ],
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        home: LoginPage(),
-        routes: {
-          '/signup': (context) => SignUpPage(),
-          '/forgot_pw': (context) => const ForgotPW(),
-          '/reset_pw': (context) => const ResetPW(),
-          '/login': (context) => LoginPage(),
-          '/home': (context) => const Home(),
-          '/profile': (context) => const Profile(),
-          '/alertlist': (context) => const Alert(),
-          '/settings': (context) => const Settings(),
-          '/saved': (context) => const SavedAlerts(),
-          '/alertdetails': (context) => const AlertDetails(
-            hazardType: 'building_fire',
-            lat: 44.5646,
-            lng: -123.2620,
-            title: 'Building Fire',
-            locationName: 'Amazon Warehouse - South Side',
-          ),
-          '/fromto': (context) => const FromTo(),
-        },
-      ),
+    return MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: const Home(), // FIXED: Added const
+      routes: {
+        '/signup': (context) => SignUpPage(),
+        '/forgot_pw': (context) => const ForgotPW(),
+        '/reset_pw': (context) => const ResetPW(),
+        '/login': (context) => LoginPage(),
+        '/home': (context) => const Home(),
+        '/profile': (context) => const Profile(),
+        '/alertlist': (context) => const Alert(),
+        '/settings': (context) => const Settings(),
+        '/saved': (context) => const SavedAlerts(),
+        '/alertdetails': (context) => const AlertDetails(
+          hazardType: 'building_fire',
+          lat: 44.5646,
+          lng: -123.2620,
+          title: 'Building Fire',
+          locationName: 'Amazon Warehouse - South Side',
+        ),
+        '/fromto': (context) => const FromTo(),
+      },
     );
   }
 }

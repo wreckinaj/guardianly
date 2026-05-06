@@ -3,7 +3,7 @@ name: Flutter CI
 on:
   pull_request:
   push:
-    branches: [ main ]
+    branches: [ '**' ]
 
 jobs:
   backend-test:
@@ -62,12 +62,6 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
       
-      # FIX: Ensure a compatible JDK for AGP/Gradle + Jetifier transforms
-      - name: Set up Java 17
-        uses: actions/setup-java@v4
-        with:
-          distribution: 'temurin'
-          java-version: '17'
       # Restore the google-services.json file from secrets
       - name: Decode google-services.json
         run: echo "${{ secrets.ANDROID_GOOGLE_SERVICES_JSON }}" | base64 -d > android/app/google-services.json
@@ -96,19 +90,37 @@ jobs:
         with:
           flutter-version: '3.35.7'
       - run: flutter pub get
+
+      - name: Refresh CocoaPods dependencies
+        run: |
+          cd ios
+          rm -f Podfile.lock
+          pod repo update
+          pod install --repo-update
+
       - run: flutter build ipa --no-codesign
 
   build-windows:
     name: Build Windows
-    runs-on: windows-latest
+    runs-on: windows-2022
     needs: analyze-test
     steps:
       - uses: actions/checkout@v5
+      
+      - name: Setup Visual Studio developer prompt
+        uses: ilammy/msvc-dev-cmd@v1
+      
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.35.7'
+      
       - run: flutter pub get
-      - run: flutter build windows
+      
+      - name: Enable Windows desktop
+        run: flutter config --enable-windows-desktop
+      
+      - name: Build Windows
+        run: flutter build windows
   
   build-web:
     name: Build Web
