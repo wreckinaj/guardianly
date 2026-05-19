@@ -538,7 +538,7 @@ def generate_ai_recommendation(hazard_display, event_description, retrieved_cont
     
     You must output a VALID JSON object matching this schema:
     {
-      "severity": "String (e.g., Low, Moderate, Critical, Extreme)",
+      "severity": "String (You MUST choose one of: High, Moderate, Low, Unknown)", 
       "message": "String (Your customized, playbook-driven safety message)",
       "actions": ["Array", "of", "actionable", "steps"],
       "source": "String (Derived from the Details)"
