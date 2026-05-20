@@ -276,6 +276,7 @@ class _AlertState extends State<Alert> {
                                             lng: alert.position.longitude,
                                             title: alert.title,
                                             locationName: alert.title,
+                                            source: alert.source,
                                           ),
                                         ),
                                       );

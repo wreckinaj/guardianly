@@ -331,6 +331,7 @@ class HomeState extends State<Home> {
                   'lng': location.longitude,
                   'timestamp': FieldValue.serverTimestamp(),
                   'reportedBy': FirebaseAuth.instance.currentUser?.uid,
+                  'source': 'User Reported',
                 });
                 if (navigator.mounted) {
                   navigator.pop();
@@ -352,6 +353,7 @@ class HomeState extends State<Home> {
       lng: alert.position.longitude,
       title: alert.title,
       locationName: alert.description, 
+      source: alert.source,
     )));
   }
   

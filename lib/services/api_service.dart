@@ -87,6 +87,9 @@ class ApiService {
     required String hazardType,
     required double lat,
     required double lng,
+    required String title,
+    required String description,
+    required String source,
   }) async {
     try {
       final token = await _getAuthToken();
@@ -104,6 +107,7 @@ class ApiService {
           'hazard': hazardType,
           'user_lat': lat,
           'user_lng': lng,
+          'event_description': 'Source: $source | Title: $title | Details: $description',
         }),
       );
 

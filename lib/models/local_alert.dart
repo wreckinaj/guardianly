@@ -8,6 +8,7 @@ class LocalAlert {
   final String hazardType; 
   final IconData icon;
   final Color color;
+  final String source;
 
   LocalAlert({
     required this.position,
@@ -16,6 +17,7 @@ class LocalAlert {
     required this.hazardType, 
     required this.icon,
     required this.color,
+    required this.source,
   });
 
   factory LocalAlert.fromJson(Map<String, dynamic> json) {
@@ -62,6 +64,7 @@ class LocalAlert {
       hazardType: type,
       icon: icon,
       color: color,
+      source: json['source'] ?? 'User Reported',
     );
   }
 }
