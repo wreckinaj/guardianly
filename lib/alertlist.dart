@@ -31,11 +31,18 @@ class _AlertState extends State<Alert> {
   }
   
   Future<void> _loadSettings() async {
-    _prefs = await SharedPreferences.getInstance();
-    if (mounted) {
-      setState(() {
-        _isLoadingSettings = false;
-      });
+    try {
+      _prefs = await SharedPreferences.getInstance();
+    } catch (e) {
+      debugPrint("⚠️ alertlist _loadSettings prefs failed: $e");
+      _prefs = null; 
+    } finally {
+      // Whether it succeeds or fails, we must tell the UI to stop loading
+      if (mounted) {
+        setState(() {
+          _isLoadingSettings = false;
+        });
+      }
     }
   }
 

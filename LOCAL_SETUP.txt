@@ -105,7 +105,7 @@ The web version of Guardianly is hosted via Firebase Hosting. If you are authori
 3. Build the Web App:
    - Open a terminal in the root `guardianly/` directory.
    - Run the Flutter build command:
-     flutter build web
+     flutter build web --release
    - This compiles the Dart code into optimized HTML/JS/CSS assets inside the `build/web/` directory.
 
 4. Deploy to Firebase:

@@ -21,12 +21,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 class RadiusProvider extends ChangeNotifier {
   static const _prefsKey = 'filter_radius_miles';
 
-  double? _radiusMiles; // null means "No limit"
+  double? _radiusMiles;
   bool _isLoaded = false;
 
   double? get radiusMiles => _radiusMiles;
   bool get isLoaded => _isLoaded;
 
+  // Make this completely fail-safe
   Future<void> load() async {
     if (_isLoaded) return;
     try {
@@ -34,10 +35,12 @@ class RadiusProvider extends ChangeNotifier {
       if (prefs.containsKey(_prefsKey)) {
         _radiusMiles = prefs.getDouble(_prefsKey);
       } else {
-        _radiusMiles = null; // Default to no limit
+        _radiusMiles = null; 
       }
     } catch (e) {
-      debugPrint('RadiusProvider.load() failed: $e');
+      // DO NOT THROW. Just log and use defaults.
+      debugPrint('Shared preferences web error: $e');
+      _radiusMiles = null; 
     } finally {
       _isLoaded = true;
       notifyListeners();
@@ -99,7 +102,7 @@ class _AppInitializerState extends State<AppInitializer> {
   Future<void> _initializeApp() async {
     try {
       debugPrint('📱 Starting app initialization...');
-      await dotenv.load(fileName: ".env");
+      await dotenv.load(fileName: "assets/config.env");
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
@@ -182,7 +185,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: const Home(), // FIXED: Added const
+      home: LoginPage(),
       routes: {
         '/signup': (context) => SignUpPage(),
         '/forgot_pw': (context) => const ForgotPW(),

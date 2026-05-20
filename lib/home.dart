@@ -64,12 +64,23 @@ class HomeState extends State<Home> {
   }
 
   Future<void> _refreshSettings() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (mounted) {
-      setState(() {
-        _showMapBadges = prefs.getBool('mapBadges') ?? true;
-        _locationShareEnabled = prefs.getBool('locationShare') ?? true;
-      });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (mounted) {
+        setState(() {
+          _showMapBadges = prefs.getBool('mapBadges') ?? true;
+          _locationShareEnabled = prefs.getBool('locationShare') ?? true;
+        });
+      }
+    } catch (e) {
+      debugPrint("⚠️ _refreshSettings prefs failed: $e");
+      // Use defaults if storage fails
+      if (mounted) {
+        setState(() {
+          _showMapBadges = true;
+          _locationShareEnabled = true;
+        });
+      }
     }
     
     if (_locationShareEnabled && _positionStream == null) {
@@ -91,24 +102,8 @@ class HomeState extends State<Home> {
       
       await _loadSettings();
       NotificationService().initialize(); 
-      
-      if (_locationShareEnabled) {
-        _startLocationUpdates();
-        // Get initial location immediately
-        try {
-          Position position = await Geolocator.getCurrentPosition(
-            locationSettings: const LocationSettings(accuracy: LocationAccuracy.high)
-          );
-          if (mounted) {
-            setState(() => _currentP = LatLng(position.latitude, position.longitude));
-          }
-        } catch (e) {
-          debugPrint("Initial location error: $e");
-        }
-      }
-      
-      _listenToDatabaseAlerts();
 
+      // 1. Move map to the target alert IMMEDIATELY 
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
         final LatLng? navTarget = ModalRoute.of(context)?.settings.arguments as LatLng?;
@@ -116,36 +111,76 @@ class HomeState extends State<Home> {
           mapController.move(navTarget, 15.0);
         }
       });
+
+      // 2. Start listening to alerts so they draw on the map instantly
+      _listenToDatabaseAlerts();
+      
+      // 3. Fetch location in the background WITHOUT blocking the UI
+      if (_locationShareEnabled) {
+        _startLocationUpdates();
+        _fetchUserLocationInBackground(); 
+      }
+      
     } catch (e) {
       debugPrint("Initialization failed: $e");
     }
   }
+
+  // Add this new helper method to handle the slow browser GPS fetch
+  Future<void> _fetchUserLocationInBackground() async {
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(accuracy: LocationAccuracy.high)
+      );
+      if (mounted) {
+        setState(() => _currentP = LatLng(position.latitude, position.longitude));
+      }
+    } catch (e) {
+      debugPrint("Initial location error: $e");
+    }
+  }
   
   Future<void> _loadSettings() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (mounted) {
-      setState(() {
-        _showMapBadges = prefs.getBool('mapBadges') ?? true;
-        _locationShareEnabled = prefs.getBool('locationShare') ?? true;
-      });
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (mounted) {
+        setState(() {
+          _showMapBadges = prefs.getBool('mapBadges') ?? true;
+          _locationShareEnabled = prefs.getBool('locationShare') ?? true;
+        });
+      }
+    } catch (e) {
+      debugPrint("⚠️ _loadSettings prefs failed: $e");
+      // Safe defaults
+      if (mounted) {
+        setState(() {
+          _showMapBadges = true;
+          _locationShareEnabled = true;
+        });
+      }
     }
   }
   
   Future<bool> isAlertEnabled(String hazardType) async {
-    final prefs = await SharedPreferences.getInstance();
-    switch (hazardType) {
-      case 'wildfire':
-        return prefs.getBool('wildfireAlerts') ?? true;
-      case 'police_activity':
-        return prefs.getBool('policeActivityAlerts') ?? true;
-      case 'medical_emergency':
-        return prefs.getBool('medicalEmergencyAlerts') ?? true;
-      case 'severe_weather':
-        return prefs.getBool('severeWeatherAlerts') ?? true;
-      case 'road_closure':
-        return prefs.getBool('roadClosureAlerts') ?? true;
-      default:
-        return true;
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      switch (hazardType) {
+        case 'wildfire':
+          return prefs.getBool('wildfireAlerts') ?? true;
+        case 'police_activity':
+          return prefs.getBool('policeActivityAlerts') ?? true;
+        case 'medical_emergency':
+          return prefs.getBool('medicalEmergencyAlerts') ?? true;
+        case 'severe_weather':
+          return prefs.getBool('severeWeatherAlerts') ?? true;
+        case 'road_closure':
+          return prefs.getBool('roadClosureAlerts') ?? true;
+        default:
+          return true;
+      }
+    } catch (e) {
+      debugPrint("⚠️ isAlertEnabled prefs failed: $e");
+      return true; // Default to showing alerts if storage fails
     }
   }
 

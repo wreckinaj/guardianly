@@ -13,39 +13,39 @@ dependencies:
   
 
   provider: ^6.1.2
-  shared_preferences: ^2.2.2
+  shared_preferences: ^2.2.3
 
   cupertino_icons: ^1.0.8
   http: ^1.2.0
 
   # Firebase
-  firebase_core: 3.12.1
-  firebase_auth: 5.4.1
-  cloud_firestore: 5.5.0
-  firebase_messaging: 15.1.4
+  firebase_core: ^4.9.0
+  firebase_auth: ^6.5.1
+  cloud_firestore: ^6.4.1
+  firebase_messaging: ^16.2.2
 
   # Fonts
-  google_fonts: ^7.0.1
+  google_fonts: ^8.1.0
 
   # SVG support
   flutter_svg: ^2.1.1
 
   # Settings UI components
-  settings_ui: ^2.0.2
+  settings_ui: ^3.0.1
 
   # Real-time Location Services
-  geolocator: ^13.0.1
+  geolocator: ^14.0.2
 
   # Mapbox / OpenStreetMap integration
-  flutter_map: ^7.0.2
+  flutter_map: ^8.3.0
   latlong2: ^0.9.1
 
   # Environment variable management
-  flutter_dotenv: ^5.1.0
+  flutter_dotenv: ^6.0.1
 
   # Local Notifications
   flutter_local_notifications: 18.0.1
-  firebase_core_platform_interface: 5.4.2
+  firebase_core_platform_interface: ^7.0.1
 
 dependency_overrides:
   flutter_local_notifications: ^18.0.1
@@ -59,4 +59,4 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - .env
+    - assets/config.env
