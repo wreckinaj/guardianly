@@ -26,13 +26,12 @@ class AlertRecommendationSchema(Schema):
     """
     The structured recommendation output to be sent to the client.
     """
-    # The calculated severity (e.g., 'High', 'Moderate')
-    severity = fields.Str(required=True, validate=validate.OneOf(["High", "Moderate", "Low", "Unknown"]))
-    # The primary recommendation message
+    # Expand the allowed list to include Watch and Critical
+    severity = fields.Str(required=True, validate=validate.OneOf(
+        ["Critical", "High", "Moderate", "Watch", "Low", "Unknown"]
+    ))
     message = fields.Str(required=True)
-    # A list of actionable steps for the user
     actions = fields.List(fields.Str(), required=True)
-    # The source of the recommendation (e.g., 'Guardianly AI')
     source = fields.Str(required=True)
 
 # --- Existing API Input Schema (from previous advice) ---

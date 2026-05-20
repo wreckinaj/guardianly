@@ -13,6 +13,7 @@ class AlertDetails extends StatefulWidget {
   final double lng;
   final String title;
   final String locationName;
+  final String source;
 
   const AlertDetails({
     super.key,
@@ -21,6 +22,7 @@ class AlertDetails extends StatefulWidget {
     required this.lng,
     required this.title,
     required this.locationName,
+    required this.source,
   });
 
   @override
@@ -49,6 +51,9 @@ class AlertDetailsState extends State<AlertDetails> {
       hazardType: widget.hazardType,
       lat: widget.lat,
       lng: widget.lng,
+      title: widget.title,
+      description: widget.locationName,
+      source: widget.source,
     );
 
     if (mounted) {

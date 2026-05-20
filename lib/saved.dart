@@ -104,6 +104,7 @@ class SavedAlerts extends StatelessWidget {
                                           lng: alert.position.longitude,
                                           title: alert.title,
                                           locationName: alert.description,
+                                          source: alert.source,
                                         ),
                                       ),
                                     );

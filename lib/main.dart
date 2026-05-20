@@ -202,6 +202,7 @@ class MyApp extends StatelessWidget {
           lng: -123.2620,
           title: 'Building Fire',
           locationName: 'Amazon Warehouse - South Side',
+          source: "User reported"
         ),
         '/fromto': (context) => const FromTo(),
       },

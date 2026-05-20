@@ -43,9 +43,15 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.35.7'
+      
+      # Force create the folder and file BEFORE flutter pub get/test
+      - name: Create Dummy Asset
+        run: |
+          mkdir -p assets
+          touch assets/config.env
+          
       - run: flutter pub get
       - run: flutter analyze
-      # Note: Ensure test/widget_test.dart mocks Firebase.initializeApp()
       - run: flutter test --coverage
 
   build-android:
@@ -69,6 +75,13 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.35.7'
+
+      - name: Inject Real Secrets
+        run: |
+          mkdir -p assets
+          echo "MAPBOX_ACCESS_TOKEN=${{ secrets.MAPBOX_ACCESS_TOKEN }}" > assets/config.env
+          echo "NASA_FIRMS_KEY=${{ secrets.NASA_FIRMS_KEY }}" >> assets/config.env
+
       - run: flutter pub get
       - run: flutter build apk --release
 
@@ -89,6 +102,13 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.35.7'
+      
+      - name: Inject Real Secrets
+        run: |
+          mkdir -p assets
+          echo "MAPBOX_ACCESS_TOKEN=${{ secrets.MAPBOX_ACCESS_TOKEN }}" > assets/config.env
+          echo "NASA_FIRMS_KEY=${{ secrets.NASA_FIRMS_KEY }}" >> assets/config.env
+
       - run: flutter pub get
 
       - name: Refresh CocoaPods dependencies
@@ -113,6 +133,11 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.35.7'
+
+      - name: Inject Real Secrets
+        run: |
+          echo "MAPBOX_ACCESS_TOKEN=${{ secrets.MAPBOX_ACCESS_TOKEN }}" > assets/config.env
+          echo "NASA_FIRMS_KEY=${{ secrets.NASA_FIRMS_KEY }}" >> assets/config.env
       
       - run: flutter pub get
       
@@ -133,8 +158,15 @@ jobs:
         with:
           flutter-version: '3.35.7'
           
+      # 1. FIX: Create the asset directory and an empty file immediately
+      - name: Create asset placeholder
+        run: |
+          mkdir -p assets
+          touch assets/config.env
+          
       - name: Install Dependencies
         run: flutter pub get
         
+      # 2. Now that the file exists, the build will pass validation
       - name: Build Web Release
         run: flutter build web --release
