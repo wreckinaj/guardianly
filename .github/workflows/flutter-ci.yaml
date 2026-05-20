@@ -43,9 +43,15 @@ jobs:
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.35.7'
+      
+      # Force create the folder and file BEFORE flutter pub get/test
+      - name: Create Dummy Asset
+        run: |
+          mkdir -p assets
+          touch assets/config.env
+          
       - run: flutter pub get
-      # Skipping for now:- run: flutter analyze
-      # Note: Ensure test/widget_test.dart mocks Firebase.initializeApp()
+      - run: flutter analyze
       - run: flutter test --coverage
 
   build-android:
