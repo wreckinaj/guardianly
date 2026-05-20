@@ -140,8 +140,10 @@ jobs:
       - name: Create dummy asset for analysis
         run: |
           mkdir -p assets
-          echo "MAPBOX_ACCESS_TOKEN=dummy" > assets/config.env
-          echo "NASA_FIRMS_KEY=dummy" >> assets/config.env
+          cd assets
+          touch config.env
+          echo "MAPBOX_ACCESS_TOKEN=dummy" >> config.env
+          echo "NASA_FIRMS_KEY=dummy" >> config.env
 
       # 2. Re-run analysis (now it will find the dummy file)
       - name: Analyze
