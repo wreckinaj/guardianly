@@ -134,12 +134,6 @@ jobs:
         with:
           flutter-version: '3.35.7'
       
-      - name: Inject Real Secrets
-        run: |
-          mkdir -p assets
-          echo "MAPBOX_ACCESS_TOKEN=${{ secrets.MAPBOX_ACCESS_TOKEN }}" > assets/config.env
-          echo "NASA_FIRMS_KEY=${{ secrets.NASA_FIRMS_KEY }}" >> assets/config.env
-      
       - run: flutter pub get
       
       - name: Enable Windows desktop
